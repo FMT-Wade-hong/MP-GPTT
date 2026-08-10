@@ -1,7 +1,6 @@
 ﻿// Comprehensive Log Investigator for Mission Planner
-// Build: 0.5.7.1 HEBREW POLISH - stable bilingual UI with selective RTL and natural Hebrew
 // Created by Nadav Golan-Yanay
-// Copyright (c) 2026 Nadav Golan-Yanay. All rights reserved.
+// Version 0.5.7.1
 // Expected menu: LOG INVESTIGATOR
 
 using System;
