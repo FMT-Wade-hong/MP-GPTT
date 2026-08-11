@@ -1,0 +1,64 @@
+name: FMTPlanner Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Source branch or tag to package
+        required: true
+        default: FMTPlanner-v1.0.0
+      release_tag:
+        description: GitHub Release tag
+        required: true
+        default: FMTPlanner-v1.0.0
+      release_name:
+        description: GitHub Release title
+        required: true
+        default: FMTPlanner v1.0.0
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish FMTPlanner
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref }}
+          submodules: true
+          fetch-depth: 10
+
+      - name: Build Release
+        shell: pwsh
+        run: |
+          $msbuildPath = Split-Path (& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\Current\Bin\amd64\MSBuild.exe | Select-Object -First 1) -Parent
+          $env:PATH = $msbuildPath + ';' + $env:PATH
+          nuget locals all -clear
+          msbuild -v:m -restore -t:Build -p:Configuration=Release MissionPlanner.sln
+
+      - name: Prepare package
+        shell: pwsh
+        run: |
+          Get-ChildItem bin\Release\net461\plugins -File -ErrorAction SilentlyContinue |
+            Remove-Item -Force
+          .\FMT\Build-FMTPlannerPackage.ps1
+          Get-FileHash bin\Package\FMTPlanner.exe -Algorithm SHA256 | Format-List
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FMTPlanner-Windows-Portable
+          path: bin/Package/FMTPlanner.exe
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          name: ${{ inputs.release_name }}
+          body_path: CHANGELOG-FMT.md
+          files: bin/Package/FMTPlanner.exe
+          fail_on_unmatched_files: true
