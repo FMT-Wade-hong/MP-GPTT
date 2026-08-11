@@ -122,42 +122,42 @@
     <value>55, 13</value>
   </data>
   <data name="label2rtlalt.Text" xml:space="preserve">
-    <value>返航最低高度</value>
+    <value>自返最低高度(米)</value>
   </data>
   <data name="mavlinkCheckBox1.Size" type="System.Drawing.Size, System.Drawing">
     <value>50, 17</value>
   </data>
   <data name="mavlinkCheckBox1.Text" xml:space="preserve">
-    <value>启用</value>
+    <value>啟用</value>
   </data>
   <data name="label3enable.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
   </data>
   <data name="label3enable.Text" xml:space="preserve">
-    <value>启用</value>
+    <value>啟用</value>
   </data>
   <data name="label4type.Text" xml:space="preserve">
-    <value>类型</value>
+    <value>限制方式</value>
   </data>
   <data name="label5action.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
   </data>
   <data name="label5action.Text" xml:space="preserve">
-    <value>动作</value>
+    <value>處置方式</value>
   </data>
   <data name="label6maxalt.Size" type="System.Drawing.Size, System.Drawing">
     <value>55, 13</value>
   </data>
   <data name="label6maxalt.Text" xml:space="preserve">
-    <value>最大高度</value>
+    <value>最大高度(米)</value>
   </data>
   <data name="label7maxrad.Size" type="System.Drawing.Size, System.Drawing">
     <value>55, 13</value>
   </data>
   <data name="label7maxrad.Text" xml:space="preserve">
-    <value>最大半径</value>
+    <value>最大半徑(米)</value>
   </data>
   <data name="label1gftitle.Text" xml:space="preserve">
-    <value>地理围栏</value>
+    <value>電子圍籬</value>
   </data>
 </root>

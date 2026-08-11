@@ -50,6 +50,7 @@ namespace MissionPlanner
 
         public static int KIndexstatic = -1;
         private float _airspeed;
+        private float _accel_air;
 
         private float _alt;
         private float _alt_error;
@@ -115,6 +116,8 @@ namespace MissionPlanner
         internal double imutime;
 
         private DateTime lastalt = DateTime.MinValue;
+        private DateTime lastairspeedupdate = DateTime.MinValue;
+        private float oldairspeed;
 
         public int lastautowp = -1;
 
@@ -494,7 +497,33 @@ namespace MissionPlanner
         public float airspeed
         {
             get => _airspeed * multiplierspeed;
-            set => _airspeed = value;
+            set
+            {
+                _airspeed = value;
+
+                double elapsedSeconds = (datetime - lastairspeedupdate).TotalSeconds;
+                if ((elapsedSeconds >= 0.2 && oldairspeed != airspeed) || lastairspeedupdate > datetime)
+                {
+                    _accel_air = elapsedSeconds > 0
+                        ? (airspeed - oldairspeed) / (float)elapsedSeconds
+                        : 0;
+
+                    if (float.IsInfinity(_accel_air) || float.IsNaN(_accel_air))
+                        _accel_air = 0;
+
+                    lastairspeedupdate = datetime;
+                    oldairspeed = airspeed;
+                }
+            }
+        }
+
+        [DisplayFieldName("accel_air.Field")]
+        [DisplayText("Airspeed Accel (speed/s)")]
+        [GroupText("Sensor")]
+        public float accel_air
+        {
+            get => _accel_air;
+            set => _accel_air = value;
         }
 
         [DisplayFieldName("targetairspeed.Field")]
@@ -1253,7 +1282,8 @@ namespace MissionPlanner
 
         [JsonIgnore]
         [IgnoreDataMember]
-        public List<(DateTime time, string message)> messages { get; set; } = new List<(DateTime, string)>();
+        public List<(DateTime time, string message, byte severity)> messages { get; set; } =
+            new List<(DateTime, string, byte)>();
 
         /// <summary>
         /// a message that originates from the mav
@@ -4388,7 +4418,7 @@ namespace MissionPlanner
             {
                 mode = "Unknown";
                 _mode = 99999;
-                messages = new List<(DateTime time, string message)>();
+                messages = new List<(DateTime time, string message, byte severity)>();
                 useLocation = false;
                 rateattitude = rateattitudebackup;
                 rateposition = ratepositionbackup;

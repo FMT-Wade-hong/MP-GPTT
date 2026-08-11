@@ -105,7 +105,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             // setup language selection
             var cultureCodes = new[]
             {
-                "en-US", "zh-Hans", "zh-TW", "ru-RU", "Fr", "Pl", "it-IT", "es-ES", "de-DE", "ja-JP", "id-ID", "ko-KR",
+                "en-US", "zh-TW", "ru-RU", "Fr", "Pl", "it-IT", "es-ES", "de-DE", "ja-JP", "id-ID", "ko-KR",
                 "ar", "pt", "tr", "ru-KZ", "uk"
             };
 

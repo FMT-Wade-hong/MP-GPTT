@@ -121,7 +121,7 @@
     <value>巡航速度</value>
   </data>
   <data name="label10.Text" xml:space="preserve">
-    <value>转向距离</value>
+    <value>轉向距離</value>
   </data>
   <data name="label13.Text" xml:space="preserve">
     <value>阻尼</value>
@@ -130,7 +130,7 @@
     <value>I</value>
   </data>
   <data name="label11.Text" xml:space="preserve">
-    <value>转向速度</value>
+    <value>轉向速度</value>
   </data>
   <data name="label14.Text" xml:space="preserve">
     <value>INT_MAX</value>
@@ -145,13 +145,13 @@
     <value>周期</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>转向角度</value>
+    <value>轉向角度</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>触发器 cm</value>
+    <value>觸發器 cm</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>转向时间</value>
+    <value>轉向時間</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
     <value>最大</value>
@@ -166,28 +166,28 @@
     <value>防抖</value>
   </data>
   <data name="groupBox5.Text" xml:space="preserve">
-    <value>方向舵 至 舵机</value>
+    <value>方向舵 至 舵機</value>
   </data>
   <data name="label5.Text" xml:space="preserve">
     <value>FS 值</value>
   </data>
   <data name="groupBox2.Text" xml:space="preserve">
-    <value>L1 控制 - 转向控制</value>
+    <value>L1 控制 - 轉向控制</value>
   </data>
   <data name="groupBox3.Text" xml:space="preserve">
-    <value>油门 0-100%</value>
+    <value>油門 0-100%</value>
   </data>
   <data name="label8.Text" xml:space="preserve">
     <value>巡航</value>
   </data>
   <data name="groupBox1.Text" xml:space="preserve">
-    <value>声呐</value>
+    <value>聲吶</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
-    <value>航点半径</value>
+    <value>航點半徑</value>
   </data>
   <data name="groupBox14.Text" xml:space="preserve">
-    <value>速度 至 油门</value>
+    <value>速度 至 油門</value>
   </data>
   <data name="label74.Text" xml:space="preserve">
     <value>D</value>
@@ -202,12 +202,12 @@
     <value>INT_MAX</value>
   </data>
   <data name="BUT_writePIDS.Text" xml:space="preserve">
-    <value>写入参数</value>
+    <value>寫入參數</value>
   </data>
   <data name="BUT_refreshpart.Text" xml:space="preserve">
-    <value>刷新屏幕</value>
+    <value>刷新螢幕</value>
   </data>
   <data name="BUT_rerequestparams.Text" xml:space="preserve">
-    <value>刷新参数</value>
+    <value>刷新參數</value>
   </data>
 </root>

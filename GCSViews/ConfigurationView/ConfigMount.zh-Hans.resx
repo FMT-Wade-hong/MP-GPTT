@@ -122,13 +122,13 @@
     <value>73, 20</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
-    <value>角度限位</value>
+    <value>角度限制</value>
   </data>
   <data name="label10.Size" type="System.Drawing.Size, System.Drawing">
     <value>73, 20</value>
   </data>
   <data name="label10.Text" xml:space="preserve">
-    <value>舵机限位</value>
+    <value>舵機限制</value>
   </data>
   <data name="label11.Size" type="System.Drawing.Size, System.Drawing">
     <value>29, 12</value>
@@ -158,13 +158,13 @@
     <value>73, 20</value>
   </data>
   <data name="label16.Text" xml:space="preserve">
-    <value>角度限位</value>
+    <value>角度限制</value>
   </data>
   <data name="label17.Size" type="System.Drawing.Size, System.Drawing">
     <value>73, 20</value>
   </data>
   <data name="label17.Text" xml:space="preserve">
-    <value>舵机限位</value>
+    <value>舵機限制</value>
   </data>
   <data name="label18.Size" type="System.Drawing.Size, System.Drawing">
     <value>29, 12</value>
@@ -194,13 +194,13 @@
     <value>73, 20</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>角度限位</value>
+    <value>角度限制</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
     <value>73, 20</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>舵机限位</value>
+    <value>舵機限制</value>
   </data>
   <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
     <value>29, 12</value>
@@ -230,76 +230,76 @@
     <value>73, 20</value>
   </data>
   <data name="label22.Text" xml:space="preserve">
-    <value>输入通道</value>
+    <value>遙控通道</value>
   </data>
   <data name="label23.Size" type="System.Drawing.Size, System.Drawing">
     <value>73, 20</value>
   </data>
   <data name="label23.Text" xml:space="preserve">
-    <value>输入通道</value>
+    <value>遙控通道</value>
   </data>
   <data name="label24.Size" type="System.Drawing.Size, System.Drawing">
     <value>73, 20</value>
   </data>
   <data name="label24.Text" xml:space="preserve">
-    <value>输入通道</value>
+    <value>遙控通道</value>
   </data>
   <data name="mavlinkCheckBoxTR.Size" type="System.Drawing.Size, System.Drawing">
     <value>48, 16</value>
   </data>
   <data name="mavlinkCheckBoxTR.Text" xml:space="preserve">
-    <value>反转</value>
+    <value>舵機反向</value>
   </data>
   <data name="mavlinkCheckBoxPR.Size" type="System.Drawing.Size, System.Drawing">
     <value>48, 16</value>
   </data>
   <data name="mavlinkCheckBoxPR.Text" xml:space="preserve">
-    <value>反转</value>
+    <value>舵機反向</value>
   </data>
   <data name="mavlinkCheckBoxRR.Size" type="System.Drawing.Size, System.Drawing">
     <value>48, 16</value>
   </data>
   <data name="mavlinkCheckBoxRR.Text" xml:space="preserve">
-    <value>反转</value>
+    <value>舵機反向</value>
   </data>
   <data name="groupBox4.Text" xml:space="preserve">
-    <value>收回角度</value>
+    <value>回縮位置(固定翼用)</value>
   </data>
   <data name="groupBox5.Text" xml:space="preserve">
-    <value>中立角度</value>
+    <value>雲臺初始位置</value>
   </data>
   <data name="groupBox6.Text" xml:space="preserve">
-    <value>控制角度</value>
+    <value>遙桿控制(地面站)</value>
   </data>
   <data name="CHK_stab_tilt.Size" type="System.Drawing.Size, System.Drawing">
     <value>72, 16</value>
   </data>
   <data name="CHK_stab_tilt.Text" xml:space="preserve">
-    <value>Tilt自稳</value>
+    <value>俯仰 自動修正</value>
   </data>
   <data name="CHK_stab_roll.Size" type="System.Drawing.Size, System.Drawing">
     <value>72, 16</value>
   </data>
   <data name="CHK_stab_roll.Text" xml:space="preserve">
-    <value>Roll自稳</value>
+    <value>橫滾 自動修正</value>
   </data>
   <data name="CHK_stab_pan.Size" type="System.Drawing.Size, System.Drawing">
     <value>66, 16</value>
   </data>
   <data name="CHK_stab_pan.Text" xml:space="preserve">
-    <value>Pan自稳</value>
+    <value>平移 自動修正</value>
   </data>
   <data name="label35.Size" type="System.Drawing.Size, System.Drawing">
     <value>41, 20</value>
   </data>
   <data name="label35.Text" xml:space="preserve">
-    <value>快门</value>
+    <value>快門控制</value>
   </data>
   <data name="label36.Size" type="System.Drawing.Size, System.Drawing">
     <value>73, 20</value>
   </data>
   <data name="label36.Text" xml:space="preserve">
-    <value>舵机限位</value>
+    <value>舵機限制</value>
   </data>
   <data name="label37.Location" type="System.Drawing.Point, System.Drawing">
     <value>376, 474</value>
@@ -308,7 +308,7 @@
     <value>41, 12</value>
   </data>
   <data name="label37.Text" xml:space="preserve">
-    <value>未按下</value>
+    <value>未按快門</value>
   </data>
   <data name="label38.Location" type="System.Drawing.Point, System.Drawing">
     <value>388, 446</value>
@@ -317,7 +317,7 @@
     <value>29, 12</value>
   </data>
   <data name="label38.Text" xml:space="preserve">
-    <value>按下</value>
+    <value>按下快門</value>
   </data>
   <data name="label39.Size" type="System.Drawing.Size, System.Drawing">
     <value>29, 12</value>
@@ -335,7 +335,7 @@
     <value>41, 20</value>
   </data>
   <data name="label41.Text" xml:space="preserve">
-    <value>快门</value>
+    <value>快門</value>
   </data>
   <data name="label34.Location" type="System.Drawing.Point, System.Drawing">
     <value>364, 496</value>
@@ -344,13 +344,12 @@
     <value>53, 28</value>
   </data>
   <data name="label34.Text" xml:space="preserve">
-    <value>持续时间
-(1/10秒)</value>
+    <value>觸發時間 (1/10th sec)</value>
   </data>
   <data name="label42.Size" type="System.Drawing.Size, System.Drawing">
     <value>194, 20</value>
   </data>
   <data name="label42.Text" xml:space="preserve">
-    <value>请设置通道7为相机触发器</value>
+    <value>請使用遙控器的通道7，做為快門觸發開關</value>
   </data>
 </root>

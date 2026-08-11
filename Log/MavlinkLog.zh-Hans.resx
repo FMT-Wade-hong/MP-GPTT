@@ -118,30 +118,30 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BUT_paramsfromlog.Text" xml:space="preserve">
-    <value>下一个参数</value>
+    <value>下一個參數</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>日志</value>
+    <value>日誌</value>
   </data>
   <data name="BUT_redokml.Text" xml:space="preserve">
-    <value>创建 KML + GPX</value>
+    <value>建立 KML + GPX</value>
   </data>
   <data name="BUT_getwpsfromlog.Text" xml:space="preserve">
-    <value>提取航点</value>
+    <value>提取航點</value>
   </data>
   <data name="BUT_convertcsv.Text" xml:space="preserve">
-    <value>转换为CSV</value>
+    <value>轉換為CSV</value>
   </data>
   <data name="BUT_droneshare.Text" xml:space="preserve">
-    <value>上传至DroneShare</value>
+    <value>上傳至DroneShare</value>
   </data>
   <data name="BUT_matlab.Text" xml:space="preserve">
-    <value>创建Matlab文件</value>
+    <value>建立Matlab檔案</value>
   </data>
   <data name="BUT_graphmavlog.Text" xml:space="preserve">
-    <value>图表日志</value>
+    <value>圖表日誌</value>
   </data>
   <data name="BUT_humanreadable.Text" xml:space="preserve">
-    <value>转换为文本</value>
+    <value>轉換為文本</value>
   </data>
 </root>

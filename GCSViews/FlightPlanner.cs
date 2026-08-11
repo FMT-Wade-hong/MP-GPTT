@@ -54,6 +54,7 @@ using MissionPlanner.ArduPilot.Mavlink;
 using System.Drawing.Imaging;
 using SharpKml.Engine;
 using MissionPlanner.Controls.Waypoints;
+using MissionPlanner.FMT;
 
 namespace MissionPlanner.GCSViews
 {
@@ -128,6 +129,8 @@ namespace MissionPlanner.GCSViews
         private Point MouseDownStartLocal;
         private PointLatLngAlt mouseposdisplay = new PointLatLngAlt(0, 0);
         private WPOverlay wpOverlay;
+        private readonly GMapOverlay taiwanCaaOverlay = new GMapOverlay("Taiwan CAA Airspace");
+        private readonly HashSet<string> taiwanCaaZoneIds = new HashSet<string>();
         private bool polygongridmode;
         private MissionPlanner.Controls.Icon.Polygon polyicon = new MissionPlanner.Controls.Icon.Polygon();
         private MissionPlanner.Controls.Icon.Zoom zoomicon = new MissionPlanner.Controls.Icon.Zoom();
@@ -190,6 +193,9 @@ namespace MissionPlanner.GCSViews
             // draw this layer first
             kmlpolygonsoverlay = new GMapOverlay("kmlpolygons");
             MainMap.Overlays.Add(kmlpolygonsoverlay);
+
+            // Official Taiwan CAA airspace. Red is prohibited; yellow is restricted.
+            MainMap.Overlays.Add(taiwanCaaOverlay);
 
             geofenceoverlay = new GMapOverlay("geofence");
             MainMap.Overlays.Add(geofenceoverlay);
@@ -1432,6 +1438,7 @@ namespace MissionPlanner.GCSViews
                             commandlist,
                             double.Parse(TXT_WPRad.Text) / CurrentState.multiplierdist,
                             double.Parse(TXT_loiterrad.Text) / CurrentState.multiplierdist, CurrentState.multiplieralt);
+                        AddWaypointDistanceLabels(wpOverlay);
                     }
                     catch (FormatException)
                     {
@@ -7909,6 +7916,70 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
             }
         }
 
+        private void AddWaypointDistanceLabels(WPOverlay overlay)
+        {
+            PointLatLngAlt previous = null;
+            var previousNumber = 0;
+
+            foreach (var current in overlay.pointlist)
+            {
+                int currentNumber;
+                if (current == null || !int.TryParse(current.Tag, out currentNumber))
+                    continue;
+
+                if (previous != null)
+                {
+                    var distance = previous.GetDistance(current) * CurrentState.multiplierdist;
+                    var midpoint = new PointLatLng((previous.Lat + current.Lat) / 2.0,
+                        (previous.Lng + current.Lng) / 2.0);
+                    var text = "WP" + previousNumber + "-WP" + currentNumber + "  " +
+                               distance.ToString("0") + " " + CurrentState.DistanceUnit;
+                    overlay.overlay.Markers.Add(new FmtWaypointDistanceMarker(midpoint, text));
+                }
+
+                previous = current;
+                previousNumber = currentNumber;
+            }
+        }
+
+        private async Task UpdateTaiwanCaaAirspace(PointLatLng point)
+        {
+            try
+            {
+                var zones = await TaiwanCaaAirspace.LoadNearbyAsync(point);
+                if (IsDisposed)
+                    return;
+
+                this.BeginInvokeIfRequired((Action)(() =>
+                {
+                    foreach (var zone in zones)
+                    {
+                        for (var index = 0; index < zone.Polygons.Count; index++)
+                        {
+                            var id = zone.Id + "-" + index;
+                            if (!taiwanCaaZoneIds.Add(id))
+                                continue;
+
+                            var polygon = new GMapPolygon(zone.Polygons[index], id)
+                            {
+                                Tag = zone,
+                                Stroke = new Pen(zone.Color, 2),
+                                Fill = new SolidBrush(Color.FromArgb(48, zone.Color)),
+                                IsHitTestVisible = true
+                            };
+                            taiwanCaaOverlay.Polygons.Add(polygon);
+                        }
+                    }
+                    taiwanCaaOverlay.ForceUpdate();
+                    MainMap.Refresh();
+                }));
+            }
+            catch (Exception ex)
+            {
+                log.Warn("Unable to update Taiwan CAA airspace", ex);
+            }
+        }
+
         private void MainMap_OnCurrentPositionChanged(PointLatLng point)
         {
             if (point.Lat > 90)
@@ -7932,6 +8003,8 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
             }
 
             center.Position = point;
+
+            _ = UpdateTaiwanCaaAirspace(point);
 
             coords1.Lat = point.Lat;
             coords1.Lng = point.Lng;

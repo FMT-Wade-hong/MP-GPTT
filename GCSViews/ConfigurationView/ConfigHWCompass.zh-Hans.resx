@@ -118,44 +118,48 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BUT_MagCalibrationLive.Text" xml:space="preserve">
-    <value>现场校准</value>
+    <value>開始校準</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="linkLabelmagdec.Size" type="System.Drawing.Size, System.Drawing">
     <value>89, 12</value>
   </data>
   <data name="linkLabelmagdec.Text" xml:space="preserve">
-    <value>磁偏角查询网站</value>
+    <value>磁偏角查詢網頁</value>
   </data>
   <data name="CHK_autodec.Text" xml:space="preserve">
-    <value>自动获取磁偏角</value>
+    <value>自動磁偏角</value>
   </data>
   <data name="label5.Text" xml:space="preserve">
-    <value>指南针</value>
+    <value>羅盤校準</value>
   </data>
   <data name="linkLabel1.Size" type="System.Drawing.Size, System.Drawing">
     <value>77, 12</value>
   </data>
   <data name="linkLabel1.Text" xml:space="preserve">
-    <value>Youtube 示范</value>
+    <value>羅盤校準示範影片</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
     <value>149, 12</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>选择设备以快速配置参数：</value>
+    <value>APM 內建羅盤: ROTATION_NONE
+
+APM 外置羅盤: ROTATION_ROLL_180
+
+PX4 內建或外置羅盤: ROTATION_NONE</value>
   </data>
   <data name="buttonAPMExternal.Location" type="System.Drawing.Point, System.Drawing">
     <value>479, 30</value>
   </data>
   <data name="buttonAPMExternal.Text" xml:space="preserve">
-    <value>APM与外置罗盘</value>
+    <value>APM與外置羅盤</value>
   </data>
   <data name="QuickAPM25.Location" type="System.Drawing.Point, System.Drawing">
     <value>331, 30</value>
   </data>
   <data name="QuickAPM25.Text" xml:space="preserve">
-    <value>APM2.5 (内置罗盘)</value>
+    <value>APM2.5 (內置羅盤)</value>
   </data>
   <data name="buttonQuickPixhawk.Location" type="System.Drawing.Point, System.Drawing">
     <value>213, 30</value>
@@ -179,7 +183,7 @@
     <value>分</value>
   </data>
   <data name="lbl_obmagresult.Text" xml:space="preserve">
-    <value>结果</value>
+    <value>結果</value>
   </data>
   <data name="BUT_OBmagcalaccept.Text" xml:space="preserve">
     <value>接受</value>
@@ -188,16 +192,16 @@
     <value>取消</value>
   </data>
   <data name="BUT_OBmagcalstart.Text" xml:space="preserve">
-    <value>开始</value>
+    <value>開始</value>
   </data>
   <data name="groupBox4.Text" xml:space="preserve">
-    <value>板载磁校准</value>
+    <value>板載磁校準</value>
   </data>
   <data name="CHK_enablecompass.Text" xml:space="preserve">
-    <value>启用指南针</value>
+    <value>使用羅盤</value>
   </data>
   <data name="groupBox5.Text" xml:space="preserve">
-    <value>Mission Planner 磁校准</value>
+    <value>Mission Planner 磁校準</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
     <value>或</value>
@@ -209,13 +213,13 @@
     <value>65, 12</value>
   </data>
   <data name="LBL_primary_compass.Text" xml:space="preserve">
-    <value>主指南针：</value>
+    <value>主指南針：</value>
   </data>
   <data name="CHK_compass_learn.Text" xml:space="preserve">
-    <value>自动学习偏移量</value>
+    <value>自動學習偏移量</value>
   </data>
   <data name="groupBoxGeneralSettings.Text" xml:space="preserve">
-    <value>常规指南针设置</value>
+    <value>常規指南針設定</value>
   </data>
   <data name="LBL_compass1_mot.Font" type="System.Drawing.Font, System.Drawing">
     <value>Segoe UI, 9pt</value>
@@ -230,13 +234,13 @@
     <value>47, 15</value>
   </data>
   <data name="CHK_compass1_external.Text" xml:space="preserve">
-    <value>外部安装</value>
+    <value>外部安裝</value>
   </data>
   <data name="CHK_compass1_use.Text" xml:space="preserve">
-    <value>使用这个指南针</value>
+    <value>使用這個指南針</value>
   </data>
   <data name="groupBoxCompass1.Text" xml:space="preserve">
-    <value>指南针 #1</value>
+    <value>指南針 #1</value>
   </data>
   <data name="LBL_compass2_mot.Font" type="System.Drawing.Font, System.Drawing">
     <value>Segoe UI, 9pt</value>
@@ -251,13 +255,13 @@
     <value>47, 15</value>
   </data>
   <data name="CHK_compass2_external.Text" xml:space="preserve">
-    <value>外部安装</value>
+    <value>外部安裝</value>
   </data>
   <data name="CHK_compass2_use.Text" xml:space="preserve">
-    <value>使用这个指南针</value>
+    <value>使用這個指南針</value>
   </data>
   <data name="groupBoxCompass2.Text" xml:space="preserve">
-    <value>指南针 #2</value>
+    <value>指南針 #2</value>
   </data>
   <data name="LBL_compass3_mot.Font" type="System.Drawing.Font, System.Drawing">
     <value>Segoe UI, 9pt</value>
@@ -272,12 +276,12 @@
     <value>47, 15</value>
   </data>
   <data name="CHK_compass3_external.Text" xml:space="preserve">
-    <value>外部安装</value>
+    <value>外部安裝</value>
   </data>
   <data name="CHK_compass3_use.Text" xml:space="preserve">
-    <value>使用这个指南针</value>
+    <value>使用這個指南針</value>
   </data>
   <data name="groupBoxCompass3.Text" xml:space="preserve">
-    <value>指南针 #3</value>
+    <value>指南針 #3</value>
   </data>
 </root>

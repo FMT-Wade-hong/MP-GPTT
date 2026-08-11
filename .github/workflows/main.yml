@@ -1,5 +1,16 @@
-name: DotNet Build
-on: [push, workflow_dispatch, pull_request]
+name: FMTPlanner Windows Build
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "FMTPlanner-v*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -7,7 +18,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 10
@@ -23,31 +34,28 @@ jobs:
       - name: Cleanup
         shell: pwsh
         run: |
-          cd bin\Release\net461
-          gci plugins | ForEach-Object {                 if (Test-Path $_.Name -PathType Leaf)                {                    Write-Host "Remove" $_.FullName   ;                 Remove-Item $_.FullName                            } else {                    Write-Host $_.Name                }            }
+          Get-ChildItem bin\Release\net461\plugins -File -ErrorAction SilentlyContinue |
+            Remove-Item -Force
 
-          copy version.txt ..\..\..\
-          7z a -tzip ..\..\..\MissionPlannerBeta.zip *
-          cd ..
-          .\md5sum.exe net461 > ..\..\checksums.txt
+      - name: Package single-file portable launcher
+        shell: pwsh
+        run: |
+          .\FMT\Build-FMTPlannerPackage.ps1
+          Get-FileHash bin\Package\FMTPlanner.exe -Algorithm SHA256 | Format-List
           
       - uses: actions/upload-artifact@v4
         with:
-          name: MissionPlannerBeta
-          path: bin\Release\net461
-          
-      - uses: "marvinpinto/action-automatic-releases@v1.2.1"
-        if: ${{ github.ref == 'refs/tags/beta' }}
+          name: FMTPlanner-Windows-Portable
+          path: bin\Package\FMTPlanner.exe
+
+      - name: Publish tagged GitHub release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/FMTPlanner-v')
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "betarelease"
-          prerelease: true
-          title: "Beta Build"
-          files: |
-            MissionPlannerBeta.zip
-            checksums.txt
-            version.txt
-            ChangeLog.txt
+          name: ${{ github.ref_name }}
+          body_path: CHANGELOG-FMT.md
+          files: bin/Package/FMTPlanner.exe
+          fail_on_unmatched_files: true
 
 
   buildDebug:
@@ -55,7 +63,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 10
@@ -80,3 +88,8 @@ jobs:
         run: |
           cd bin\Debug\net461
           gci plugins | ForEach-Object {                 if (Test-Path $_.Name -PathType Leaf)                {                    Write-Host "Remove" $_.FullName   ;                 Remove-Item $_.FullName                            } else {                    Write-Host $_.Name                }            }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FeiMaoTecPlanner-V1-Windows-Debug
+          path: bin\Debug\net461

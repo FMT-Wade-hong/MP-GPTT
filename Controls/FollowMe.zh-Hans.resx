@@ -118,6 +118,14 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="textBox1.Text" xml:space="preserve">
-    <value>这是什么。 1. 从nmea gps获得当前gps记录。 2. 以你选的频率发送引导模式航点至APM。 （记住这限制了你用什么gps) 如何使用 1. 连接APM。 2. 起飞，测试引导模式正常工作。 3. 打开这个然后为你的nmea gps选择COM口和波特率。 4. 它现在就回跟着你了</value>
+    <value>這是做什麼的?
+1. 從 nmea gps 取得目前 gps coords 。
+2. 以你所選擇的頻率送出指導模式的航點到 APM。 (請注意這會限制你所使用的 GPS )
+
+該如何設定呢?
+1. 連線 APM。
+2. 起飛並測試指導模式運作是否正常。
+3. 開啟程式選擇通訊埠及 nmea gps 的鮑率。
+4. 載具現在應該就會跟著你了。</value>
   </data>
 </root>

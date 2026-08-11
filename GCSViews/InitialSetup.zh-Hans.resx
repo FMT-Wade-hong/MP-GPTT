@@ -118,89 +118,89 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="backstageViewPagefw.Text" xml:space="preserve">
-    <value>安装固件</value>
+    <value>韌體安裝</value>
   </data>
   <data name="backstageViewPagefwdisabled.Text" xml:space="preserve">
-    <value>安装固件</value>
+    <value>韌體安裝</value>
   </data>
   <data name="backstageViewPagewizard.Text" xml:space="preserve">
-    <value>向导</value>
+    <value>安裝嚮導</value>
   </data>
   <data name="backstageViewPagemand.Text" xml:space="preserve">
-    <value>必要硬件</value>
+    <value>硬體設備(必要)</value>
   </data>
   <data name="backstageViewPagetradheli.Text" xml:space="preserve">
-    <value>直升机安装</value>
+    <value>直升機安裝</value>
   </data>
   <data name="backstageViewPageframetype.Text" xml:space="preserve">
-    <value>机架类型</value>
+    <value>機架型式</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="configAccelerometerCalibration.Size" type="System.Drawing.Size, System.Drawing">
     <value>1000, 450</value>
   </data>
   <data name="backstageViewPagecompass.Text" xml:space="preserve">
-    <value>指南针</value>
+    <value>羅盤校準</value>
   </data>
   <data name="backstageViewPageradio.Text" xml:space="preserve">
-    <value>遥控器校准</value>
+    <value>遙控器校準</value>
   </data>
   <data name="backstageViewPageflmode.Text" xml:space="preserve">
-    <value>飞行模式</value>
+    <value>飛行模式設定</value>
   </data>
   <data name="backstageViewPagefs.Text" xml:space="preserve">
-    <value>故障保护</value>
+    <value>失控保護</value>
   </data>
   <data name="backstageViewPageopt.Text" xml:space="preserve">
-    <value>可选硬件</value>
+    <value>硬體設備(選擇性)</value>
   </data>
   <data name="backstageViewPageSikradio.Text" xml:space="preserve">
-    <value>SiK电台(数传)</value>
+    <value>SiK電臺(數傳)</value>
   </data>
   <data name="backstageViewPagebatmon.Text" xml:space="preserve">
-    <value>电池监测器</value>
+    <value>電源模組</value>
   </data>
   <data name="backstageViewPagecompassmot.Text" xml:space="preserve">
-    <value>指南针/电机 校准</value>
+    <value>羅盤/馬達 干擾抑制</value>
   </data>
   <data name="backstageViewPagesonar.Text" xml:space="preserve">
-    <value>声呐</value>
+    <value>聲納</value>
   </data>
   <data name="backstageViewPageairspeed.Text" xml:space="preserve">
-    <value>空速</value>
+    <value>空速計</value>
   </data>
   <data name="backstageViewPageoptflow.Text" xml:space="preserve">
-    <value>光流</value>
+    <value>光流模組</value>
   </data>
   <data name="backstageViewPagegimbal.Text" xml:space="preserve">
-    <value>相机云台</value>
+    <value>相機雲臺</value>
   </data>
   <data name="backstageViewPageAntTrack.Text" xml:space="preserve">
-    <value>天线追踪器</value>
+    <value>自動追蹤天線</value>
   </data>
   <data name="backstageViewPageMotorTest.Text" xml:space="preserve">
-    <value>电机测试</value>
+    <value>馬達測試</value>
   </data>
   <data name="configHWBT1.Size" type="System.Drawing.Size, System.Drawing">
     <value>1000, 450</value>
   </data>
   <data name="backstageViewPagehwbt.Text" xml:space="preserve">
-    <value>蓝牙设置</value>
+    <value>藍牙設定</value>
   </data>
   <data name="backstageViewPageaccel.Text" xml:space="preserve">
-    <value>加速度计校准</value>
+    <value>加速度計校準</value>
   </data>
   <data name="backstageViewPageParachute.Text" xml:space="preserve">
-    <value>降落伞</value>
+    <value>降落傘</value>
   </data>
   <data name="backstageViewPageESC.Text" xml:space="preserve">
-    <value>电调校准</value>
+    <value>電調校準</value>
   </data>
   <data name="backstageViewPageBatt2.Text" xml:space="preserve">
-    <value>电池监测器2</value>
+    <value>電池監測器2</value>
   </data>
   <data name="backstageViewPageESP.Text" xml:space="preserve">
-    <value>ESP8266设置</value>
+    <value>ESP8266設定</value>
   </data>
   <data name="backstageViewPagePX4Flow.Text" xml:space="preserve">
     <value>PX4Flow光流</value>

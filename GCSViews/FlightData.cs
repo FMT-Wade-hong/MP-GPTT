@@ -13,6 +13,7 @@ using MissionPlanner.Log;
 using MissionPlanner.Maps;
 using MissionPlanner.Utilities;
 using MissionPlanner.Warnings;
+using MissionPlanner.FMT;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -54,6 +55,8 @@ namespace MissionPlanner.GCSViews
         internal static GMapOverlay rallypointoverlay;
         internal static GMapOverlay tfrpolygons;
         internal GMapMarker CurrentGMapMarker;
+        private readonly GMapOverlay taiwanCaaOverlay = new GMapOverlay("Taiwan CAA Airspace");
+        private readonly HashSet<string> taiwanCaaZoneIds = new HashSet<string>();
 
         internal PointLatLng MouseDownStart;
         internal Point MouseDownStartLocal;
@@ -385,6 +388,8 @@ namespace MissionPlanner.GCSViews
 
             kmlpolygons = new GMapOverlay("kmlpolygons");
             gMapControl1.Overlays.Add(kmlpolygons);
+
+            gMapControl1.Overlays.Add(taiwanCaaOverlay);
 
             geofence = new GMapOverlay("geofence");
             gMapControl1.Overlays.Add(geofence);
@@ -3073,7 +3078,46 @@ namespace MissionPlanner.GCSViews
         {
             center.Position = point;
 
+            _ = UpdateTaiwanCaaAirspace(point);
+
             UpdateOverlayVisibility();
+        }
+
+        private async Task UpdateTaiwanCaaAirspace(PointLatLng point)
+        {
+            try
+            {
+                var zones = await TaiwanCaaAirspace.LoadNearbyAsync(point);
+                if (IsDisposed)
+                    return;
+
+                this.BeginInvokeIfRequired((Action)(() =>
+                {
+                    foreach (var zone in zones)
+                    {
+                        for (var index = 0; index < zone.Polygons.Count; index++)
+                        {
+                            var id = zone.Id + "-" + index;
+                            if (!taiwanCaaZoneIds.Add(id))
+                                continue;
+
+                            taiwanCaaOverlay.Polygons.Add(new GMapPolygon(zone.Polygons[index], id)
+                            {
+                                Tag = zone,
+                                Stroke = new Pen(zone.Color, 2),
+                                Fill = new SolidBrush(Color.FromArgb(48, zone.Color)),
+                                IsHitTestVisible = true
+                            });
+                        }
+                    }
+                    taiwanCaaOverlay.ForceUpdate();
+                    gMapControl1.Refresh();
+                }));
+            }
+            catch (Exception ex)
+            {
+                log.Warn("Unable to update Taiwan CAA airspace", ex);
+            }
         }
 
         private void gMapControl1_Resize(object sender, EventArgs e)
@@ -4380,12 +4424,7 @@ namespace MissionPlanner.GCSViews
             {
                 try
                 {
-                    StringBuilder message = new StringBuilder();
-                    MainV2.comPort.MAV.cs.messages.ForEach(x =>
-                    {
-                        message.Insert(0, x.Item1 + " : " + x.Item2 + "\r\n");
-                    });
-                    txt_messagebox.Text = message.ToString();
+                    messagesList1.UpdateMessages(MainV2.comPort.MAV.cs.messages);
 
                     messagecount = messagetime.toUnixTime();
                 }

@@ -118,6 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="textBox1.Text" xml:space="preserve">
-    <value>这是什么。 1. 从nmea gps中获取当前GPS记录。 2. 在地图上更新家的位置。（注意不要在MAV上更新家的位置） 如何使用 1. 连接到飞控。 2. 打开这个，为你的nmea gps选择COM口和波特率。 3. 现在已经更新家的位置了。</value>
+    <value>這是做什麼的?
+1. 從 nmea gps 取得目前 gps coords 。
+2. 更新地圖上的 home 位置(並不會更新 MAV 上的 home 位置)
+
+該如何設定呢?
+1.連線至 APM。
+2. 開啟程式選擇通訊埠及 nmea gps 的鮑率。
+3. 現在應該就會更新 home 位置。</value>
   </data>
 </root>

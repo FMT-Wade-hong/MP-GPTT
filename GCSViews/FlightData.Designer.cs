@@ -72,6 +72,7 @@ namespace MissionPlanner.GCSViews
             this.BUT_quickauto = new MissionPlanner.Controls.MyButton();
             this.BUT_setmode = new MissionPlanner.Controls.MyButton();
             this.tabPagemessages = new System.Windows.Forms.TabPage();
+            this.messagesList1 = new MissionPlanner.Controls.MessagesList();
             this.txt_messagebox = new System.Windows.Forms.TextBox();
             this.tabActionsSimple = new System.Windows.Forms.TabPage();
             this.myButton1 = new MissionPlanner.Controls.MyButton();
@@ -387,17 +388,21 @@ namespace MissionPlanner.GCSViews
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("targetspeed", this.bindingSourceHud, "targetairspeed", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("turnrate", this.bindingSourceHud, "turnrate", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("verticalspeed", this.bindingSourceHud, "verticalspeed", true));
+            this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("accel_air", this.bindingSourceHud, "accel_air", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("vibex", this.bindingSourceHud, "vibex", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("vibey", this.bindingSourceHud, "vibey", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("vibez", this.bindingSourceHud, "vibez", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("wpno", this.bindingSourceHud, "wpno", true));
+            this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("distToHome", this.bindingSourceHud, "DistToHome", true));
+            this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("AZToMav", this.bindingSourceHud, "AZToMAV", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("xtrack_error", this.bindingSourceHud, "xtrack_error", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("AOA", this.bindingSourceHud, "AOA", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("SSA", this.bindingSourceHud, "SSA", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("critAOA", this.bindingSourceHud, "crit_AOA", true));
             this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("lowairspeed", this.bindingSourceHud, "lowairspeed", true));
+            this.hud1.DataBindings.Add(new System.Windows.Forms.Binding("lowgroundspeed", this.bindingSourceHud, "lowgroundspeed", true));
             this.hud1.datetime = new System.DateTime(((long)(0)));
-            this.hud1.displayAOASSA = false;
+            this.hud1.displayAOASSA = true;
             this.hud1.displayCellVoltage = false;
             this.hud1.displayicons = false;
             this.hud1.disttowp = 0F;
@@ -428,7 +433,6 @@ namespace MissionPlanner.GCSViews
             this.hud1.pitch = 0F;
             this.hud1.prearmstatus = false;
             this.hud1.roll = 0F;
-            this.hud1.Russian = false;
             this.hud1.safetyactive = false;
             this.hud1.skyColor1 = System.Drawing.Color.Blue;
             this.hud1.skyColor2 = System.Drawing.Color.LightBlue;
@@ -440,6 +444,7 @@ namespace MissionPlanner.GCSViews
             this.hud1.targetspeed = 0F;
             this.hud1.turnrate = 0F;
             this.hud1.verticalspeed = 0F;
+            this.hud1.accel_air = 0F;
             this.hud1.vibex = 0F;
             this.hud1.vibey = 0F;
             this.hud1.vibez = 0F;
@@ -1083,11 +1088,16 @@ namespace MissionPlanner.GCSViews
             // 
             // tabPagemessages
             // 
-            this.tabPagemessages.Controls.Add(this.txt_messagebox);
+            this.tabPagemessages.Controls.Add(this.messagesList1);
             resources.ApplyResources(this.tabPagemessages, "tabPagemessages");
             this.tabPagemessages.Name = "tabPagemessages";
             this.tabPagemessages.UseVisualStyleBackColor = true;
-            // 
+            //
+            // messagesList1
+            //
+            this.messagesList1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.messagesList1.Name = "messagesList1";
+            //
             // txt_messagebox
             // 
             resources.ApplyResources(this.txt_messagebox, "txt_messagebox");
@@ -3102,6 +3112,7 @@ namespace MissionPlanner.GCSViews
         private Controls.MyButton but_dflogtokml;
         private Controls.MyButton BUT_DFMavlink;
         public System.Windows.Forms.TabPage tabPagemessages;
+        private Controls.MessagesList messagesList1;
         private System.Windows.Forms.TextBox txt_messagebox;
         private System.Windows.Forms.Timer Messagetabtimer;
         public System.Windows.Forms.TabPage tabActionsSimple;

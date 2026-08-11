@@ -129,7 +129,8 @@ namespace AltitudeAngelWings.Plugin
                 .SelectMany(o => o.Polygons)
                 .Where(p => p.IsVisible && p.IsHitTestVisible)
                 .Where(p => p.IsInside(_mapControl.FromLocalToLatLng(point.X, point.Y)))
-                .Select(p=> (Feature)p.Tag);
+                .Select(p => p.Tag)
+                .OfType<Feature>();
             mapItems.AddRange(polygons);
 
             var routes = _mapControl.Overlays
@@ -141,7 +142,8 @@ namespace AltitudeAngelWings.Plugin
                     rp.OffsetNegative(_mapControl.Core.renderOffset);
                     return r.IsInside((int)rp.X, (int)rp.Y);
                 })
-                .Select(r => (Feature)r.Tag);
+                .Select(r => r.Tag)
+                .OfType<Feature>();
             mapItems.AddRange(routes);
 
             return mapItems.ToArray();

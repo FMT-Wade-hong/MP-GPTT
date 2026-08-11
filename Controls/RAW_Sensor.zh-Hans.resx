@@ -118,50 +118,48 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="tabRawSensor.Text" xml:space="preserve">
-    <value>原始传感器</value>
+    <value>感應器原始資料</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>原始传感器</value>
+    <value>原始傳感器</value>
   </data>
   <data name="CMB_rawupdaterate.Text" xml:space="preserve">
-    <value>更新速度</value>
+    <value>更新頻率</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>舵机/电机输出</value>
+    <value>舵機/馬達輸入</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>注意：
-当通过Xbee
-@ 50hz查看时有延时</value>
+    <value>注意：如果是使用 Xbee 時 delay 頻率 @ 50hz</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>遥控输入</value>
+    <value>遙控器輸入</value>
   </data>
   <data name="chkax.Text" xml:space="preserve">
-    <value>加速度 X</value>
+    <value>加速度計 X</value>
   </data>
   <data name="chkaz.Text" xml:space="preserve">
-    <value>加速度 Z</value>
+    <value>加速度計 Z</value>
   </data>
   <data name="chkay.Text" xml:space="preserve">
-    <value>加速度 Y</value>
+    <value>加速度計 Y</value>
   </data>
   <data name="tabRadio.Text" xml:space="preserve">
-    <value>遥控</value>
+    <value>遙控器</value>
   </data>
   <data name="tabOrientation.Text" xml:space="preserve">
-    <value>飞行数据</value>
+    <value>飛行資料</value>
   </data>
   <data name="BUT_savecsv.Text" xml:space="preserve">
-    <value>保存 CSV</value>
+    <value>儲存為 CSV</value>
   </data>
   <data name="chkgz.Text" xml:space="preserve">
-    <value>陀螺仪 Z</value>
+    <value>陀螺儀 Z</value>
   </data>
   <data name="chkgx.Text" xml:space="preserve">
-    <value>陀螺仪 X</value>
+    <value>陀螺儀 X</value>
   </data>
   <data name="chkgy.Text" xml:space="preserve">
-    <value>陀螺仪 Y</value>
+    <value>陀螺儀 Y</value>
   </data>
 </root>

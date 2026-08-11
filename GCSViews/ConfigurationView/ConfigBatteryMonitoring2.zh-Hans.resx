@@ -118,54 +118,54 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="CHK_speechbattery.Text" xml:space="preserve">
-    <value>低电量时MP警告 </value>
+    <value>低電壓警報</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
     <value>mAh</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>4. 测量电流：</value>
+    <value>4. 量測電流:</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>APM版本</value>
+    <value>APM 版本</value>
   </data>
   <data name="label29.Text" xml:space="preserve">
-    <value>电池容量</value>
+    <value>電池容量</value>
   </data>
   <data name="groupBox4.Text" xml:space="preserve">
-    <value>校准</value>
+    <value>校準</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
-    <value>5. 电流(计算过)：</value>
+    <value>5. 電流 (計算)</value>
   </data>
   <data name="TXT_battcapacity.Text" xml:space="preserve">
     <value>2200</value>
   </data>
   <data name="label30.Text" xml:space="preserve">
-    <value>监控器</value>
+    <value>電源監控</value>
   </data>
   <data name="label32.Text" xml:space="preserve">
-    <value>1. 测量电池电压：</value>
+    <value>1. 量測電池電壓:</value>
   </data>
   <data name="label34.Text" xml:space="preserve">
-    <value>3. 电压分压器(计算过)：</value>
+    <value>3. Voltage divider (計算):</value>
   </data>
   <data name="label33.Text" xml:space="preserve">
-    <value>2. 电池电压(计算过)：</value>
+    <value>2. 電池電壓 (計算):</value>
   </data>
   <data name="label35.Text" xml:space="preserve">
     <value>6. 安培每伏：</value>
   </data>
   <data name="label47.Text" xml:space="preserve">
-    <value>传感器</value>
+    <value>電源感應器</value>
   </data>
   <data name="CMB_batmontype.Items" xml:space="preserve">
-    <value>0: 关闭监测</value>
+    <value>0: 關閉監控</value>
   </data>
   <data name="CMB_batmontype.Items1" xml:space="preserve">
-    <value>3: 电池电压</value>
+    <value>3: 電池電壓</value>
   </data>
   <data name="CMB_batmontype.Items2" xml:space="preserve">
-    <value>4: 电压及电流</value>
+    <value>4: 電壓及電流</value>
   </data>
 </root>

@@ -130,13 +130,13 @@
     <value>通道6</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>游戏摇杆</value>
+    <value>游戲搖桿</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
     <value>Pitch</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>油门</value>
+    <value>油門</value>
   </data>
   <data name="expo_ch3.Text" xml:space="preserve">
     <value>0</value>
@@ -145,13 +145,13 @@
     <value>Roll</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
-    <value>指数</value>
+    <value>指數</value>
   </data>
   <data name="expo_ch1.Text" xml:space="preserve">
     <value>30</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>输出</value>
+    <value>輸出</value>
   </data>
   <data name="expo_ch2.Text" xml:space="preserve">
     <value>30</value>
@@ -163,19 +163,19 @@
     <value>0</value>
   </data>
   <data name="label5.Text" xml:space="preserve">
-    <value>游戏摇杆</value>
+    <value>遙桿</value>
   </data>
   <data name="expo_ch5.Text" xml:space="preserve">
     <value>0</value>
   </data>
   <data name="label8.Text" xml:space="preserve">
-    <value>控制器轴</value>
+    <value>控制器軸</value>
   </data>
   <data name="expo_ch6.Text" xml:space="preserve">
     <value>0</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
-    <value>反转</value>
+    <value>反向</value>
   </data>
   <data name="expo_ch4.Text" xml:space="preserve">
     <value>30</value>
@@ -184,36 +184,36 @@
     <value>0</value>
   </data>
   <data name="BUT_save.Text" xml:space="preserve">
-    <value>保存</value>
+    <value>儲存</value>
   </data>
   <data name="BUT_detch6.Text" xml:space="preserve">
-    <value>自动匹配</value>
+    <value>自動檢測</value>
   </data>
   <data name="CHK_elevons.Text" xml:space="preserve">
     <value>副翼</value>
   </data>
   <data name="BUT_detch7.Text" xml:space="preserve">
-    <value>自动匹配</value>
+    <value>自動檢測</value>
   </data>
   <data name="BUT_detch4.Text" xml:space="preserve">
-    <value>自动匹配</value>
+    <value>自動檢測</value>
   </data>
   <data name="BUT_detch5.Text" xml:space="preserve">
-    <value>自动匹配</value>
+    <value>自動檢測</value>
   </data>
   <data name="BUT_detch2.Text" xml:space="preserve">
-    <value>自动匹配</value>
+    <value>自動檢測</value>
   </data>
   <data name="BUT_detch3.Text" xml:space="preserve">
-    <value>自动匹配</value>
+    <value>自動檢測</value>
   </data>
   <data name="BUT_detch1.Text" xml:space="preserve">
-    <value>自动匹配</value>
+    <value>自動檢測</value>
   </data>
   <data name="BUT_detch8.Text" xml:space="preserve">
-    <value>自动匹配</value>
+    <value>自動檢測</value>
   </data>
   <data name="BUT_enable.Text" xml:space="preserve">
-    <value>启用</value>
+    <value>啟用</value>
   </data>
 </root>

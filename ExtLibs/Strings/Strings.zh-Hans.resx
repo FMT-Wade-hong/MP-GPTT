@@ -118,202 +118,202 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BadCoords" xml:space="preserve">
-    <value>有问题的经度/纬度</value>
+    <value>有問題的經度/緯度</value>
   </data>
   <data name="CannotGraphField" xml:space="preserve">
-    <value>不能绘制这一区域</value>
+    <value>不能繪製這一區域</value>
   </data>
   <data name="CommandFailed" xml:space="preserve">
-    <value>命令执行失败
+    <value>命令執行失敗
 </value>
   </data>
   <data name="ERROR" xml:space="preserve">
-    <value>错误</value>
+    <value>錯誤</value>
   </data>
   <data name="ErrorClosingLogFile" xml:space="preserve">
-    <value>关闭日志文件时错误</value>
+    <value>關閉日誌檔案時錯誤</value>
   </data>
   <data name="ErrorCommunicating" xml:space="preserve">
-    <value>与自动驾驶仪通讯时错误</value>
+    <value>與自動駕駛儀通訊時錯誤</value>
   </data>
   <data name="ErrorConnecting" xml:space="preserve">
-    <value>连接错误
+    <value>連線錯誤
 </value>
   </data>
   <data name="ErrorFeatureNotEnabled" xml:space="preserve">
-    <value>这个功能在您的固件没有启用</value>
+    <value>這個功能在您的韌體沒有啟用</value>
   </data>
   <data name="ErrorFirmwareFile" xml:space="preserve">
-    <value>加载固件时错误</value>
+    <value>載入韌體時錯誤</value>
   </data>
   <data name="ErrorLogList" xml:space="preserve">
-    <value>接收日志列表时错误</value>
+    <value>接收日誌列表時錯誤</value>
   </data>
   <data name="ErrorNoResponse" xml:space="preserve">
-    <value>错误: 没有来自飞行器的响应</value>
+    <value>錯誤: 沒有來自飛行器的響應</value>
   </data>
   <data name="ErrorNotConnected" xml:space="preserve">
-    <value>您还没有连接。</value>
+    <value>您還沒有連線。</value>
   </data>
   <data name="ErrorReceivingParams" xml:space="preserve">
-    <value>接收列表时错误
+    <value>接收列表時錯誤
 </value>
   </data>
   <data name="ErrorRejectedByMAV" xml:space="preserve">
-    <value>错误: 飞行器拒绝了命令</value>
+    <value>錯誤: 飛行器拒絕了命令</value>
   </data>
   <data name="ErrorRenameFile" xml:space="preserve">
-    <value>重命名文件时出错</value>
+    <value>重命名檔案時出錯</value>
   </data>
   <data name="ErrorSettingParameter" xml:space="preserve">
-    <value>设置参数时出错</value>
+    <value>設定參數時出錯</value>
   </data>
   <data name="ErrorSetValueFailed" xml:space="preserve">
-    <value>设置 {0} 失败</value>
+    <value>設定 {0} 失敗</value>
   </data>
   <data name="InvalidAlt" xml:space="preserve">
-    <value>无效的高度</value>
+    <value>無效的高度</value>
   </data>
   <data name="InvalidBaudRate" xml:space="preserve">
-    <value>无效的波特率</value>
+    <value>無效的波特率</value>
   </data>
   <data name="InvalidField" xml:space="preserve">
-    <value>无效的 Field</value>
+    <value>無效的 Field</value>
   </data>
   <data name="InvalidFileName" xml:space="preserve">
-    <value>无效的文件名</value>
+    <value>無效的檔名</value>
   </data>
   <data name="InvalidNumberEntered" xml:space="preserve">
-    <value>输入的数字无效
+    <value>輸入的數字無效
 </value>
   </data>
   <data name="InvalidPanRange" xml:space="preserve">
-    <value>无效的 Pan 范围</value>
+    <value>無效的 Pan 範圍</value>
   </data>
   <data name="InvalidPortName" xml:space="preserve">
-    <value>无效的串口名</value>
+    <value>無效的串口名</value>
   </data>
   <data name="InvalidTiltRange" xml:space="preserve">
-    <value>无效的倾斜范围</value>
+    <value>無效的傾斜範圍</value>
   </data>
   <data name="InvalidUpdateRate" xml:space="preserve">
-    <value>无效的刷新率</value>
+    <value>無效的刷新率</value>
   </data>
   <data name="NoFMTMessage" xml:space="preserve">
-    <value>没有格式(FMT)信息 for</value>
+    <value>沒有格式(FMT)資訊 for</value>
   </data>
   <data name="PleaseConnect" xml:space="preserve">
-    <value>请先连接</value>
+    <value>請先連線</value>
   </data>
   <data name="PleaseLoadValidFile" xml:space="preserve">
-    <value>请加载一个有效的文件</value>
+    <value>請載入一個有效的檔案</value>
   </data>
   <data name="PleaseSelectCell" xml:space="preserve">
     <value>Please select a cell first</value>
   </data>
   <data name="SelectComport" xml:space="preserve">
-    <value>请先选择一个串口</value>
+    <value>請先選擇一個串口</value>
   </data>
   <data name="WarningLogBrowseFMTMissing" xml:space="preserve">
-    <value>日志浏览因您的日志中没有格式(FMT)信息而不能正确工作。
-这些似乎是从您的日志里丢失的。</value>
+    <value>日誌瀏覽因您的日誌中沒有格式(FMT)資訊而不能正確工作。
+這些似乎是從您的日誌裡丟失的。</value>
   </data>
   <data name="WarningUpdateParamList" xml:space="preserve">
-    <value>更新参数
-如果您的载具在空中，请不要这么做！
+    <value>更新參數
+如果您的載具在空中，請不要這么做！
 </value>
   </data>
   <data name="Checking" xml:space="preserve">
-    <value>正在检查 </value>
+    <value>正在檢查 </value>
   </data>
   <data name="DownloadedFromInternet" xml:space="preserve">
-    <value>下载完毕</value>
+    <value>下載完畢</value>
   </data>
   <data name="Getting" xml:space="preserve">
-    <value>正在获取 </value>
+    <value>正在獲取 </value>
   </data>
   <data name="GettingUpdatedParams" xml:space="preserve">
-    <value>正在获取更新的参数列表</value>
+    <value>正在獲取更新的參數列表</value>
   </data>
   <data name="AdvancedParams" xml:space="preserve">
-    <value>高级参数</value>
+    <value>高級參數</value>
   </data>
   <data name="BasicTuning" xml:space="preserve">
-    <value>基本调参</value>
+    <value>基本調參</value>
   </data>
   <data name="Desc" xml:space="preserve">
     <value>描述：</value>
   </data>
   <data name="ExtendedTuning" xml:space="preserve">
-    <value>扩展调参</value>
+    <value>擴展調參</value>
   </data>
   <data name="FlightModes" xml:space="preserve">
-    <value>飞行模式</value>
+    <value>飛行模式</value>
   </data>
   <data name="FullParameterList" xml:space="preserve">
-    <value>全部参数表</value>
+    <value>全部參數表</value>
   </data>
   <data name="FullParameterTree" xml:space="preserve">
-    <value>全部参数树</value>
+    <value>全部參數樹</value>
   </data>
   <data name="GeoFence" xml:space="preserve">
-    <value>地理围栏</value>
+    <value>地理圍欄</value>
   </data>
   <data name="StandardParams" xml:space="preserve">
-    <value>标准参数</value>
+    <value>標準參數</value>
   </data>
   <data name="Units" xml:space="preserve">
-    <value>单位：{0}{1}</value>
+    <value>單位：{0}{1}</value>
   </data>
   <data name="CONNECTc" xml:space="preserve">
-    <value>连接</value>
+    <value>連線</value>
   </data>
   <data name="Disconnect" xml:space="preserve">
-    <value>断开连接</value>
+    <value>斷開連線</value>
   </data>
   <data name="DISCONNECTc" xml:space="preserve">
-    <value>断开连接</value>
+    <value>斷開連線</value>
   </data>
   <data name="Failclog" xml:space="preserve">
-    <value>创建日志失败 - 将不会记录本次会话</value>
+    <value>建立日誌失敗 - 將不會記錄本次會話</value>
   </data>
   <data name="NewFirmware" xml:space="preserve">
-    <value>新固件</value>
+    <value>新韌體</value>
   </data>
   <data name="NewFirmwareA" xml:space="preserve">
-    <value>有新固件可用
+    <value>有新韌體可用
 </value>
   </data>
   <data name="Pleaseup" xml:space="preserve">
     <value>
-请升级</value>
+請升級</value>
   </data>
   <data name="Stillmoving" xml:space="preserve">
-    <value>您的模型仍然在移动，确认断开连接？</value>
+    <value>您的模型仍然在移動，確認斷開連線？</value>
   </data>
   <data name="Timeout" xml:space="preserve">
-    <value>自动扫描超时或者没有mavlink设备</value>
+    <value>自動掃描超時或者沒有mavlink設備</value>
   </data>
   <data name="ConnectFailed" xml:space="preserve">
-    <value>连接失败</value>
+    <value>連線失敗</value>
   </data>
   <data name="ConnectingMavlink" xml:space="preserve">
-    <value>正在连接Mavlink</value>
+    <value>正在連線Mavlink</value>
   </data>
   <data name="Done" xml:space="preserve">
     <value>完成</value>
   </data>
   <data name="GettingParams" xml:space="preserve">
-    <value>正在获取参数</value>
+    <value>正在獲取參數</value>
   </data>
   <data name="GettingParamsD" xml:space="preserve">
-    <value>正在获取参数...</value>
+    <value>正在獲取參數...</value>
   </data>
   <data name="Gotparam" xml:space="preserve">
-    <value>获得参数 </value>
+    <value>獲得參數 </value>
   </data>
   <data name="MavlinkConnecting" xml:space="preserve">
-    <value>Mavlink 正在连接...</value>
+    <value>Mavlink 正在連線...</value>
   </data>
   <data name="Only1Hb" xml:space="preserve">
     <value>只接收到一次Heartbeat</value>
@@ -323,219 +323,219 @@
 Mission Planner waits for 2 valid heartbeat packets before connecting</value>
   </data>
   <data name="Trying" xml:space="preserve">
-    <value>尝试连接。
-在{0}秒后超时</value>
+    <value>嘗試連線。
+在{0}秒后超時</value>
   </data>
   <data name="CantDetectBoardVersion" xml:space="preserve">
-    <value>不能检测到您控制板的版本。 请检查连接</value>
+    <value>不能檢測到您控制板的版本。 請檢查連線</value>
   </data>
   <data name="CheckPortSettingsOr" xml:space="preserve">
-    <value>检查端口设置或者正在使用端口？</value>
+    <value>檢查端口設定或者正在使用端口？</value>
   </data>
   <data name="CommunicationErrorNoConnection" xml:space="preserve">
-    <value>通信错误 - 没有连接</value>
+    <value>通信錯誤 - 沒有連線</value>
   </data>
   <data name="DetectedA" xml:space="preserve">
-    <value>检测到一个</value>
+    <value>檢測到一個</value>
   </data>
   <data name="DetectingBoardVersion" xml:space="preserve">
-    <value>正在检测控制板的版本</value>
+    <value>正在檢測控制板的版本</value>
   </data>
   <data name="DownloadingFromInternet" xml:space="preserve">
-    <value>正在下载</value>
+    <value>正在下載</value>
   </data>
   <data name="EppromChanged" xml:space="preserve">
-    <value>Epprom更改了, 您所有的设置将在更新中丢失,
-您希望继续吗？</value>
+    <value>Epprom更改了, 您所有的設定將在更新中丟失,
+您希望繼續嗎？</value>
   </data>
   <data name="EppromFormatChanged" xml:space="preserve">
     <value>Epprom格式已更改 ({0) vs {1})</value>
   </data>
   <data name="FailedDownload" xml:space="preserve">
-    <value>下载失败</value>
+    <value>下載失敗</value>
   </data>
   <data name="FailedReadHEX" xml:space="preserve">
-    <value>读取十六进制文件失败</value>
+    <value>讀取十六進制檔案失敗</value>
   </data>
   <data name="FailedToReadHex" xml:space="preserve">
-    <value>读取firmware.hex失败 :</value>
+    <value>讀取firmware.hex失敗 :</value>
   </data>
   <data name="FailedUpload" xml:space="preserve">
-    <value>上传失败</value>
+    <value>上傳失敗</value>
   </data>
   <data name="GettingFWList" xml:space="preserve">
-    <value>正在获取固件列表</value>
+    <value>正在獲取韌體列表</value>
   </data>
   <data name="GettingFWVersion" xml:space="preserve">
-    <value>正在获取固件版本</value>
+    <value>正在獲取韌體版本</value>
   </data>
   <data name="InvalidBoardType" xml:space="preserve">
-    <value>无效的控制板类型</value>
+    <value>無效的控制板類型</value>
   </data>
   <data name="PleaseConnectAndBackupConfig" xml:space="preserve">
-    <value>请在配置选项卡连接并备份配置。</value>
+    <value>請在配置選項卡連線并備份配置。</value>
   </data>
   <data name="ReadingHexFile" xml:space="preserve">
-    <value>正在读取十六进制文件</value>
+    <value>正在讀取十六進制檔案</value>
   </data>
   <data name="ReceivedList" xml:space="preserve">
-    <value>获取列表完成</value>
+    <value>獲取列表完成</value>
   </data>
   <data name="UploadComplete" xml:space="preserve">
-    <value>上传完成</value>
+    <value>上傳完成</value>
   </data>
   <data name="UploadingBytesToBoard" xml:space="preserve">
-    <value>正在上传 {0}字节 到您的控制板</value>
+    <value>正在上傳 {0}字節 到您的控制板</value>
   </data>
   <data name="VerifyComplete" xml:space="preserve">
-    <value>校验完成</value>
+    <value>校驗完成</value>
   </data>
   <data name="VerifyFirmware" xml:space="preserve">
-    <value>校验固件</value>
+    <value>校驗韌體</value>
   </data>
   <data name="UploadSucceededButVerifyFailed" xml:space="preserve">
-    <value>上传成功，但是校验失败: 输出 {0} 获得 {1} 位于 </value>
+    <value>上傳成功，但是校驗失敗: 輸出 {0} 獲得 {1} 位於 </value>
   </data>
   <data name="ReadingHex" xml:space="preserve">
-    <value>正在读取十六进制文件</value>
+    <value>正在讀取十六進制檔案</value>
   </data>
   <data name="Warningrallypointdistance" xml:space="preserve">
-    <value>警告，集结点放置在了比RALLY_LIMIT_KM还大的地方</value>
+    <value>警告，集結點放置在了比RALLY_LIMIT_KM還大的地方</value>
   </data>
   <data name="Warning" xml:space="preserve">
     <value>警告</value>
   </data>
   <data name="WarningAC32" xml:space="preserve">
-    <value>警告，如果您是第一次安装AC 3.2，您“必须”重做一次罗盘校准。</value>
+    <value>警告，如果您是第一次安裝AC 3.2，您“必須”重做一次羅盤校準。</value>
   </data>
   <data name="WarningAC31" xml:space="preserve">
-    <value>警告，从AC 3.1起，电机将在解锁后转动，这可以通过MOT_SPIN_ARMED参数配置</value>
+    <value>警告，從AC 3.1起，電機將在解鎖后轉動，這可以通過MOT_SPIN_ARMED參數配置</value>
   </data>
   <data name="MagCalibMsg" xml:space="preserve">
-    <value>请单击确认并且将自动驾驶仪绕所有轴做圆周运动</value>
+    <value>請單擊確認并且將自動駕駛儀繞所有軸做圓周運動</value>
   </data>
   <data name="MissingDataPoints" xml:space="preserve">
-    <value>还缺少数据点。您无论如何也想结束校准吗？</value>
+    <value>還缺少資料點。您無論如何也想結束校準嗎？</value>
   </data>
   <data name="RunAnyway" xml:space="preserve">
-    <value>非要运行</value>
+    <value>非要運行</value>
   </data>
   <data name="UpdateFound" xml:space="preserve">
-    <value>发现更新
+    <value>發現更新
 
-您希望现在更新吗？ [link;</value>
+您希望現在更新嗎？ [link;</value>
   </data>
   <data name="UpdateNow" xml:space="preserve">
-    <value>现在更新</value>
+    <value>現在更新</value>
   </data>
   <data name="RawParamWarning" xml:space="preserve">
-    <value>原始参数警告</value>
+    <value>原始參數警告</value>
   </data>
   <data name="RawParamWarningi" xml:space="preserve">
-    <value>本页面所有的值都不会进行大小检查。请再三检查您输入的值。
-如想安全地设置，请使用标准/高级参数</value>
+    <value>本頁面所有的值都不會進行大小檢查。請再三檢查您輸入的值。
+如想安全地設定，請使用標準/高級參數</value>
   </data>
   <data name="ShowMeAgain" xml:space="preserve">
-    <value>再次显示？</value>
+    <value>再次顯示？</value>
   </data>
   <data name="OK" xml:space="preserve">
     <value>好的</value>
   </data>
   <data name="LinkStats" xml:space="preserve">
-    <value>链接统计</value>
+    <value>鏈接統計</value>
   </data>
   <data name="Stop" xml:space="preserve">
     <value>停止</value>
   </data>
   <data name="Connect" xml:space="preserve">
-    <value>连接</value>
+    <value>連線</value>
   </data>
   <data name="Start" xml:space="preserve">
-    <value>开始</value>
+    <value>開始</value>
   </data>
   <data name="AreYouSureYouWantToUpload" xml:space="preserve">
-    <value>您确认要升级到</value>
+    <value>您確認要升級到</value>
   </data>
   <data name="Beta" xml:space="preserve">
-    <value>测试版</value>
+    <value>測試版</value>
   </data>
   <data name="BetaWarning" xml:space="preserve">
-    <value>这些是测试版固件，请您自担风险！！！</value>
+    <value>這些是測試版韌體，請您自擔風險！！！</value>
   </data>
   <data name="CanNotConnectToComPortAnd" xml:space="preserve">
-    <value>不能连接COM口检测控制板类型</value>
+    <value>不能連線COM口檢測控制板類型</value>
   </data>
   <data name="Continue" xml:space="preserve">
-    <value>继续</value>
+    <value>繼續</value>
   </data>
   <data name="ErrorUploadingFirmware" xml:space="preserve">
-    <value>上载固件错误</value>
+    <value>上載韌體錯誤</value>
   </data>
   <data name="QuestionMark" xml:space="preserve">
-    <value>吗？</value>
+    <value>嗎？</value>
   </data>
   <data name="Trunk" xml:space="preserve">
-    <value>主干分支</value>
+    <value>主幹分支</value>
   </data>
   <data name="TrunkWarning" xml:space="preserve">
-    <value>这些是最新的主干分支（开发版）固件，请您自担风险！！！</value>
+    <value>這些是最新的主幹分支（開發版）韌體，請您自擔風險！！！</value>
   </data>
   <data name="AutoWP" xml:space="preserve">
-    <value>自动航点</value>
+    <value>自動航點</value>
   </data>
   <data name="EnsurePropsNotOn" xml:space="preserve">
-    <value>确保飞行器没有安装螺旋桨</value>
+    <value>確保飛行器沒有安裝螺旋槳</value>
   </data>
   <data name="FailSafe" xml:space="preserve">
-    <value>故障保护</value>
+    <value>故障保護</value>
   </data>
   <data name="Error_binding" xml:space="preserve">
-    <value>对频错误</value>
+    <value>對頻錯誤</value>
   </data>
   <data name="Put_the_transmitter_in_bind_mode__Receiver_is_waiting" xml:space="preserve">
-    <value>请将发射机置于对频(bind)模式。接收机正在等待。</value>
+    <value>請將發射機置于對頻(bind)模式。接收機正在等待。</value>
   </data>
   <data name="Completed" xml:space="preserve">
     <value>完成</value>
   </data>
   <data name="Click_when_Done" xml:space="preserve">
-    <value>完成时点击</value>
+    <value>完成時點擊</value>
   </data>
   <data name="Saving" xml:space="preserve">
-    <value>保存中</value>
+    <value>儲存中</value>
   </data>
   <data name="InvalidCert" xml:space="preserve">
-    <value>证书无效</value>
+    <value>證書無效</value>
   </data>
   <data name="Note" xml:space="preserve">
     <value>注意</value>
   </data>
   <data name="PleaseUnplugTheBoardAnd" xml:space="preserve">
-    <value>请拔下控制板，点击OK后再插入。
-Mission Planner将会在30秒内寻找控制板。</value>
+    <value>請拔下控制板，點擊OK后再插入。
+Mission Planner將會在30秒內尋找控制板。</value>
   </data>
   <data name="ThisBoardHasBeenRetired" xml:space="preserve">
-    <value>此控制板已经退出历史舞台了，Mission Planner将会上传最后一个支持的版本到您控制板。</value>
+    <value>此控制板已經退出歷史舞臺了，Mission Planner將會上傳最後一個支持的版本到您控制板。</value>
   </data>
   <data name="YouAreUsingUnsupportedHardware" xml:space="preserve">
-    <value>您正在使用不受支持的硬件。
-此控制板没有包含真伪性的有效证书。
-请就为您的硬件签名联系您的硬件提供商。</value>
+    <value>您正在使用不受支持的硬體。
+此控制板沒有包含真偽性的有效證書。
+請就為您的硬體簽名聯繫您的硬體提供商。</value>
   </data>
   <data name="NoNeedToUpload" xml:space="preserve">
-    <value>无需上传。当前固件已经安装在控制板上。</value>
+    <value>無需上傳。當前韌體已經安裝在控制板上。</value>
   </data>
   <data name="PleaseWaitForTheMusicalTones" xml:space="preserve">
-    <value>请在音乐播放完后再点击OK。</value>
+    <value>請在音樂播放完后再點擊OK。</value>
   </data>
   <data name="ObtainFromModule" xml:space="preserve">
-    <value>从模块获取</value>
+    <value>從模組獲取</value>
   </data>
   <data name="SetHere" xml:space="preserve">
-    <value>设置在这</value>
+    <value>設定在這</value>
   </data>
   <data name="TrackerHome" xml:space="preserve">
-    <value>追踪器的家</value>
+    <value>追蹤器的家</value>
   </data>
   <data name="velocity_variance" xml:space="preserve">
     <value>velocity variance</value>
@@ -550,21 +550,21 @@ Mission Planner将会在30秒内寻找控制板。</value>
     <value>pos vert variance</value>
   </data>
   <data name="terrain_alt_variance" xml:space="preserve">
-    <value>地形高度差异</value>
+    <value>地形高度差異</value>
   </data>
   <data name="ChangeThrottle" xml:space="preserve">
-    <value>更改油门</value>
+    <value>更改油門</value>
   </data>
   <data name="Invalid_home_location" xml:space="preserve">
-    <value>无效的家位置</value>
+    <value>無效的家位置</value>
   </data>
   <data name="Converting_bin_to_log" xml:space="preserve">
-    <value>转换bin文件到log文件</value>
+    <value>轉換bin檔案到log檔案</value>
   </data>
   <data name="UpdateNotFound" xml:space="preserve">
-    <value>没有可用更新</value>
+    <value>沒有可用更新</value>
   </data>
   <data name="Failed_to_connect_to_SITL_instance" xml:space="preserve">
-    <value>无法连接到SITL实例</value>
+    <value>無法連線到SITL實例</value>
   </data>
 </root>

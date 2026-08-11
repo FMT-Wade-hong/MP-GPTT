@@ -175,10 +175,10 @@
     <value>Effort Lim</value>
   </data>
   <data name="label26.Text" xml:space="preserve">
-    <value>EH范围</value>
+    <value>EH範圍</value>
   </data>
   <data name="groupBox8.Text" xml:space="preserve">
-    <value>舵机Roll Pid</value>
+    <value>舵機Roll Pid</value>
   </data>
   <data name="label27.Text" xml:space="preserve">
     <value>最小Pitch</value>
@@ -193,10 +193,10 @@
     <value>Int Lim</value>
   </data>
   <data name="label28.Text" xml:space="preserve">
-    <value>默认半径</value>
+    <value>預設半徑</value>
   </data>
   <data name="groupBox6.Text" xml:space="preserve">
-    <value>舵机Yaw Pid</value>
+    <value>舵機Yaw Pid</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
     <value>最大</value>
@@ -232,13 +232,13 @@
     <value>I</value>
   </data>
   <data name="groupBox3.Text" xml:space="preserve">
-    <value>油门 0-100%</value>
+    <value>油門 0-100%</value>
   </data>
   <data name="label8.Text" xml:space="preserve">
     <value>巡航</value>
   </data>
   <data name="groupBox1.Text" xml:space="preserve">
-    <value>舵机 Pitch Pid</value>
+    <value>舵機 Pitch Pid</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
     <value>I</value>
@@ -250,19 +250,19 @@
     <value>Yaw 速率限制</value>
   </data>
   <data name="groupBox10.Text" xml:space="preserve">
-    <value>高度计设置</value>
+    <value>高度計設定</value>
   </data>
   <data name="groupBox13.Text" xml:space="preserve">
     <value>Roll to Elev</value>
   </data>
   <data name="label32.Text" xml:space="preserve">
-    <value>输入角度</value>
+    <value>輸入角度</value>
   </data>
   <data name="label31.Text" xml:space="preserve">
     <value>P</value>
   </data>
   <data name="groupBox11.Text" xml:space="preserve">
-    <value>起飞/降落</value>
+    <value>起飛/降落</value>
   </data>
   <data name="label34.Text" xml:space="preserve">
     <value>最大Pitch</value>
@@ -286,13 +286,13 @@
     <value>Approach 速度</value>
   </data>
   <data name="BUT_write_flash.Text" xml:space="preserve">
-    <value>写入闪存</value>
+    <value>寫入閃存</value>
   </data>
   <data name="BUT_writePIDS.Text" xml:space="preserve">
-    <value>写入参数</value>
+    <value>寫入參數</value>
   </data>
   <data name="BUT_read_flash.Text" xml:space="preserve">
-    <value>读取闪存</value>
+    <value>讀取閃存</value>
   </data>
   <data name="label44.Text" xml:space="preserve">
     <value>Cruise</value>
@@ -307,6 +307,6 @@
     <value>最小 TO Pitch</value>
   </data>
   <data name="BUT_rerequestparams.Text" xml:space="preserve">
-    <value>刷新参数</value>
+    <value>刷新參數</value>
   </data>
 </root>

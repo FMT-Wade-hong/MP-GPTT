@@ -202,7 +202,7 @@ namespace MissionPlanner
                 return;
             }
 
-            name = "Mission Planner";
+            name = FMT.FmtAuthentication.ProductName;
 
             try
             {
@@ -474,6 +474,14 @@ namespace MissionPlanner
             try
             {
                 Thread.CurrentThread.Name = "Base Thread";
+                FMT.FmtAuthentication.EnsureDefaults();
+                Splash?.Hide();
+                using (var login = new FMT.FmtLoginForm())
+                {
+                    if (login.ShowDialog() != DialogResult.OK)
+                        return;
+                }
+                Splash?.Show();
                 Console.WriteLine("Application.Run(new MainV2())");
                 Application.Run(new MainV2());
             }
