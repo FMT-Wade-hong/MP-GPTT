@@ -249,7 +249,12 @@ namespace MissionPlanner
                 {
                     // trying to set it true twice
                     log.Error(new System.Diagnostics.StackTrace().ToString());
-                    Debugger.Break();
+
+                    // Debugger.Break terminates a production build with CLR20r3 when no
+                    // just-in-time debugger is installed. Preserve the diagnostic break
+                    // for developers without crashing an operator's live session.
+                    if (Debugger.IsAttached)
+                        Debugger.Break();
                 }
 
                 if (value == true)

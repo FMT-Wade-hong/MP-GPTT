@@ -1,5 +1,11 @@
 # FMTPlanner release history
 
+## FMTPlanner v1.0.1 — 2026-08-12
+
+### Stability
+
+- Prevented a production crash when MAVLink serial-port ownership is requested twice. The condition is still logged, while the diagnostic breakpoint now runs only when a debugger is attached.
+
 ## FMTPlanner v1.0.0 — 2026-08-12
 
 First packaged release of the FMT 飛貓科技 Mission Planner customization.
