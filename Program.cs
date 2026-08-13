@@ -202,7 +202,7 @@ namespace MissionPlanner
                 return;
             }
 
-            name = "Mission Planner";
+            name = FMT.FmtAuthentication.ProductTitle;
 
             try
             {
@@ -276,10 +276,7 @@ namespace MissionPlanner
             if (IconFile != null)
                 Splash.Icon = Icon.FromHandle(((Bitmap) IconFile).GetHicon());
 
-            string strVersion = File.Exists("version.txt")
-                ? File.ReadAllText("version.txt")
-                : System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            Splash.Text = name + " " + Application.ProductVersion + " build " + strVersion;
+            Splash.Text = name;
             Console.WriteLine("Splash.Show()");
             Splash.Show();
 
@@ -474,6 +471,14 @@ namespace MissionPlanner
             try
             {
                 Thread.CurrentThread.Name = "Base Thread";
+                FMT.FmtAuthentication.EnsureDefaults();
+                Splash?.Hide();
+                using (var login = new FMT.FmtLoginForm())
+                {
+                    if (login.ShowDialog() != DialogResult.OK)
+                        return;
+                }
+                Splash?.Show();
                 Console.WriteLine("Application.Run(new MainV2())");
                 Application.Run(new MainV2());
             }

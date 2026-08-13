@@ -1,15 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
+    <AssemblyName>FMTPlanner</AssemblyName>
     <ApplicationIcon>mpdesktop.ico</ApplicationIcon>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <StartupObject>MissionPlanner.Program</StartupObject>
-    <Authors>Michael Oborne</Authors>
-    <Version>1.3.83</Version>
-    <Company>Michael Oborne</Company>
-    <Product>Mission Planner</Product>
-    <Description>Mission Planner ground control station for ardupilot</Description>
-    <Copyright>Copyright © Michael Oborne 2010-2024</Copyright>
+    <Authors>FMT飛貓科技; Mission Planner contributors</Authors>
+    <Version>1.0.3</Version>
+    <Company>FMT飛貓科技</Company>
+    <Product>FeiMaoTecPlanner</Product>
+    <Description>FeiMaoTecPlanner V1.0.3 ground control station for ArduPilot</Description>
+    <Copyright>Mission Planner contributors; FMT飛貓科技 customization</Copyright>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
@@ -726,6 +727,9 @@
     <None Update="HighContrast.mpsystheme">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="FMT-SkyBlue.mpsystheme">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="appxmanifest.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -1200,5 +1204,7 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="plugins\example23-switch.resx" />
+    <EmbeddedResource Include="FMT\Assets\fmt-logo.png" LogicalName="MissionPlanner.FMT.Assets.fmt-logo.png" />
+    <EmbeddedResource Include="FMT\Assets\fmt-app-icon-source.png" LogicalName="MissionPlanner.FMT.Assets.fmt-app-icon-source.png" />
   </ItemGroup>
 </Project>

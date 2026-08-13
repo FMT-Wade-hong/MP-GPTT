@@ -118,9 +118,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="textBox1.Text" xml:space="preserve">
-    <value>加载标准机架类型的默认设置</value>
+    <value>載入標準機架類型的預設設定</value>
   </data>
   <data name="BUT_paramfileload.Text" xml:space="preserve">
-    <value>加载参数</value>
+    <value>載入參數</value>
   </data>
 </root>

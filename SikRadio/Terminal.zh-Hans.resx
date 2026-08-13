@@ -118,21 +118,22 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="textBox1.Text" xml:space="preserve">
-    <value>ATI - 显示电台版本
-ATI2 - 显示电路板类型 
-ATI3 - 显示电路板频率 
-ATI4 - 显示电路板版本 
-ATI5 - 显示所有可设置的EEPROM参数
-ATI6 - display TDM timing report 
-ATI7 - display RSSI signal report 
-ATO - 退出AT命令模式 
-ATSn? - 显示电台参数(编号'n') 
-ATSn=X - 设置电台参数(编号'n'至'X')
-ATZ - 重启电台 
-AT&amp;W - 将当前参数写入EEPROM 
-AT&amp;F - 恢复出厂默认设置 
-AT&amp;T=RSSI - 启用RSSI调试报告 
-AT&amp;T=TDM - 启用TDM调试报告 
-AT&amp;T - 禁用调试报告 </value>
+    <value>ATI - 顯示數傳版本 
+ATI2 - 顯示板子的類型
+ATI3 - 顯示板子的頻率
+ATI4 - 顯示板子的版本 
+ATI5 - 顯示所有使用者可設定的 EEPROM 參數 
+ATI6 - 播放 TDM timing report 
+ATI7 - 播放 RSSI signal report 
+ATO - 離開 AT 命令模式 
+ATSn? - display radio parameter number 'n' 
+ATSn=X - 將數傳參數由 'n' 改為 'X' 
+ATZ - 重啟數傳 
+AT&amp;W - 將參數寫入至 EEPROM 
+AT&amp;F - 重設所有參數至出廠預設
+AT&amp;T=RSSI - 啟用 RSSI 偵錯報告
+AT&amp;T=TDM - 啟用 TDM 偵錯報告 
+AT&amp;T - 停用 TDM 偵錯報告
+</value>
   </data>
 </root>

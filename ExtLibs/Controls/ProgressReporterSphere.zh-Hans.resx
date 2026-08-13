@@ -125,26 +125,26 @@
     <value>120, 16</value>
   </data>
   <data name="CHK_rotate.Text" xml:space="preserve">
-    <value>同每个数据点旋转</value>
+    <value>同每個資料點旋轉</value>
   </data>
   <data name="label1.Size" type="System.Drawing.Size, System.Drawing">
     <value>305, 72</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>以白点为瞄准目标。
-请将自动驾驶仪指向北方，然后绕俯仰轴旋转直至水平。
-然后
-将自动驾驶仪旋转90度，然后绕横滚轴旋转直至水平。
+    <value>以白點為瞄準目標。
+請將自動駕駛儀指向北方，然後繞俯仰軸旋轉直至水平。
+然後
+將自動駕駛儀旋轉90度，然後繞橫滾軸旋轉直至水平。
 
-这个方法应该会命中每一个白点。</value>
+這個方法應該會命中每一個白點。</value>
   </data>
   <data name="chk_auto.Size" type="System.Drawing.Size, System.Drawing">
     <value>96, 16</value>
   </data>
   <data name="chk_auto.Text" xml:space="preserve">
-    <value>使用自动确认</value>
+    <value>使用自動確認</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>进程</value>
+    <value>進程</value>
   </data>
 </root>

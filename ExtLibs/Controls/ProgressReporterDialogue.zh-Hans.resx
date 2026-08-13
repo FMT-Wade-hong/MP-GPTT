@@ -135,18 +135,18 @@
     <value>40, 13</value>
   </data>
   <data name="linkLabel1.Text" xml:space="preserve">
-    <value>详情...</value>
+    <value>詳情...</value>
   </data>
   <data name="btnClose.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
   <data name="btnClose.Text" xml:space="preserve">
-    <value>关闭</value>
+    <value>關閉</value>
   </data>
   <data name="imgWarning.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>进程</value>
+    <value>進程</value>
   </data>
 </root>

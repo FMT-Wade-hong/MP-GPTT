@@ -13,8 +13,10 @@ using MissionPlanner.Log;
 using MissionPlanner.Maps;
 using MissionPlanner.Utilities;
 using MissionPlanner.Warnings;
+using MissionPlanner.FMT;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -57,6 +59,8 @@ namespace MissionPlanner.GCSViews
         internal static GMapOverlay rallypointoverlay;
         internal static GMapOverlay tfrpolygons;
         internal GMapMarker CurrentGMapMarker;
+        private readonly GMapOverlay taiwanCaaOverlay = new GMapOverlay("Taiwan CAA Airspace");
+        private readonly HashSet<string> taiwanCaaZoneIds = new HashSet<string>();
 
         internal PointLatLng MouseDownStart;
         internal Point MouseDownStartLocal;
@@ -205,6 +209,10 @@ namespace MissionPlanner.GCSViews
             Terminate_Flight,
             Format_SD_Card,
         }
+
+        private BindingList<string> ActionList=new BindingList<string>(Enum.GetNames(typeof(actions)).ToList());
+         
+        private Dictionary<string, Action<string>> CustomActions = new Dictionary<string, Action<string>>();
 
         private Dictionary<int, string> NIC_table = new Dictionary<int, string>()
         {
@@ -361,7 +369,7 @@ namespace MissionPlanner.GCSViews
                 }
             }
 
-            CMB_action.DataSource = Enum.GetNames(typeof(actions));
+            CMB_action.DataSource = ActionList;
 
             CMB_modes.DataSource = ArduPilot.Common.getModesList(MainV2.comPort.MAV.cs.firmware);
             CMB_modes.ValueMember = "Key";
@@ -398,6 +406,8 @@ namespace MissionPlanner.GCSViews
 
             kmlpolygons = new GMapOverlay("kmlpolygons");
             gMapControl1.Overlays.Add(kmlpolygons);
+
+            gMapControl1.Overlays.Add(taiwanCaaOverlay);
 
             geofence = new GMapOverlay("geofence");
             gMapControl1.Overlays.Add(geofence);
@@ -1092,6 +1102,66 @@ namespace MissionPlanner.GCSViews
             }
         }
 
+        internal void ExecuteFmtArmDisarm()
+        {
+            BUT_ARM_Click(BUT_ARM, EventArgs.Empty);
+        }
+
+        internal void ExecuteFmtAirspeedZero()
+        {
+            if (MainV2.comPort?.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
+            {
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "請先連線飛控。"
+                        : "Please connect to the flight controller first.",
+                    "FMT Airspeed Zero", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (MainV2.comPort.MAV.cs.armed)
+            {
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "空速計歸零只能在飛機上鎖（未解鎖）時執行。"
+                        : "Airspeed zeroing is only allowed while the vehicle is disarmed.",
+                    "FMT Airspeed Zero", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmation = IsFmtTraditionalChineseUi
+                ? "請將飛機保持靜止並鬆散遮住空速管，避免風吹影響零點。\r\n\r\n確定要執行空速計歸零嗎？"
+                : "Keep the vehicle still and loosely cover the pitot tube so wind cannot affect the zero point.\r\n\r\nRun airspeed zeroing now?";
+            if (CustomMessageBox.Show(confirmation, "FMT Airspeed Zero", MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning) != (int)DialogResult.Yes)
+                return;
+
+            try
+            {
+                // MAV_CMD_PREFLIGHT_CALIBRATION param6=2 requests airspeed-only calibration.
+                var accepted = MainV2.comPort.doCommand(MAVLink.MAV_CMD.PREFLIGHT_CALIBRATION,
+                    0, 0, 0, 0, 0, 2, 0);
+                CustomMessageBox.Show(accepted
+                        ? (IsFmtTraditionalChineseUi
+                            ? "飛控已接受空速計歸零命令，請等待校正完成訊息。"
+                            : "The flight controller accepted the airspeed-zero command. Wait for the calibration-complete message.")
+                        : (IsFmtTraditionalChineseUi
+                            ? "飛控拒絕空速計歸零命令。"
+                            : "The flight controller rejected the airspeed-zero command."),
+                    "FMT Airspeed Zero", MessageBoxButtons.OK,
+                    accepted ? MessageBoxIcon.Information : MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                log.Error("FMT airspeed zero failed", ex);
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "空速計歸零失敗：" + ex.Message
+                        : "Airspeed zeroing failed: " + ex.Message,
+                    "FMT Airspeed Zero", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static bool IsFmtTraditionalChineseUi =>
+            CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
         private void but_bintolog_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog ofd = new OpenFileDialog())
@@ -1692,7 +1762,22 @@ namespace MissionPlanner.GCSViews
 
         private void BUTactiondo_Click(object sender, EventArgs e)
         {
-
+            // Custom action handling
+            {
+                Action<string> customAction;
+                if (CustomActions.TryGetValue(CMB_action.Text, out customAction) && customAction != null)
+                {
+                    try
+                    {
+                        customAction.Invoke(CMB_action.Text);
+                    }
+                    catch (Exception ex)
+                    {
+                        CustomMessageBox.Show(Strings.CommandFailed + "\n" + ex.ToString(), Strings.ERROR);
+                    }
+                    return;
+                }
+            }
 
             if (CMB_action.Text == actions.Format_SD_Card.ToString())
             {
@@ -3071,7 +3156,46 @@ namespace MissionPlanner.GCSViews
         {
             center.Position = point;
 
+            _ = UpdateTaiwanCaaAirspace(point);
+
             UpdateOverlayVisibility();
+        }
+
+        private async Task UpdateTaiwanCaaAirspace(PointLatLng point)
+        {
+            try
+            {
+                var zones = await TaiwanCaaAirspace.LoadNearbyAsync(point);
+                if (IsDisposed)
+                    return;
+
+                this.BeginInvokeIfRequired((Action)(() =>
+                {
+                    foreach (var zone in zones)
+                    {
+                        for (var index = 0; index < zone.Polygons.Count; index++)
+                        {
+                            var id = zone.Id + "-" + index;
+                            if (!taiwanCaaZoneIds.Add(id))
+                                continue;
+
+                            taiwanCaaOverlay.Polygons.Add(new GMapPolygon(zone.Polygons[index], id)
+                            {
+                                Tag = zone,
+                                Stroke = new Pen(zone.Color, 2),
+                                Fill = new SolidBrush(Color.FromArgb(48, zone.Color)),
+                                IsHitTestVisible = true
+                            });
+                        }
+                    }
+                    taiwanCaaOverlay.ForceUpdate();
+                    gMapControl1.Refresh();
+                }));
+            }
+            catch (Exception ex)
+            {
+                log.Warn("Unable to update Taiwan CAA airspace", ex);
+            }
         }
 
         private void gMapControl1_Resize(object sender, EventArgs e)
@@ -4378,12 +4502,7 @@ namespace MissionPlanner.GCSViews
             {
                 try
                 {
-                    StringBuilder message = new StringBuilder();
-                    MainV2.comPort.MAV.cs.messages.ForEach(x =>
-                    {
-                        message.Insert(0, x.Item1 + " : " + x.Item2 + "\r\n");
-                    });
-                    txt_messagebox.Text = message.ToString();
+                    messagesList1.UpdateMessages(MainV2.comPort.MAV.cs.messages);
 
                     messagecount = messagetime.toUnixTime();
                 }
@@ -6884,6 +7003,48 @@ namespace MissionPlanner.GCSViews
 
             // Pass `this` to keep the pop-out always on top
             form.Show(this);
+        }
+
+        public void RegisterCustomAction(string action, Action<string> handler, string after=null, string before=null)
+        {
+            if(ActionList.Contains(action))
+            {
+                throw new Exception($"Action {action} already exists");
+            }
+            int index = -1;
+            if(after!=null)
+            {
+                var afterIndex = ActionList.IndexOf(after);
+                if(afterIndex!=-1)
+                {
+                    index = afterIndex + 1;
+                }
+            }
+            if(before!=null)
+            {
+                var beforeIndex = ActionList.IndexOf(before);
+                if(beforeIndex!=-1)
+                {
+                    index = beforeIndex;
+                }
+            }
+            if(index!=-1)
+            {
+                ActionList.Insert(index, action);
+            } else
+            {
+                ActionList.Add(action);
+            }
+            CustomActions.Add(action, handler);
+        }
+
+        public bool UnregisterCustomAction(string action)
+        {
+            if (!CustomActions.Remove(action))
+            {
+                return false;
+            }
+            return ActionList.Remove(action);
         }
     }
 }

@@ -122,7 +122,7 @@
     <value>96, 16</value>
   </data>
   <data name="chk_rtcmmsg.Text" xml:space="preserve">
-    <value>注入消息类型</value>
+    <value>注入訊息類型</value>
   </data>
   <data name="lbl_svin.ToolTip" xml:space="preserve">
     <value>Survey in information
@@ -137,13 +137,13 @@ Acc: current accuracy of our survey in point
     <value>108, 16</value>
   </data>
   <data name="chk_autoconfig.Text" xml:space="preserve">
-    <value>自动配置接收器</value>
+    <value>自動配置接收器</value>
   </data>
   <data name="chk_autoconfig.ToolTip" xml:space="preserve">
-    <value>自动配置连接到所选端口的接收器以输出校正消息。</value>
+    <value>自動配置連線到所選端口的接收器以輸出校正訊息。</value>
   </data>
   <data name="groupBox_autoconfig.Text" xml:space="preserve">
-    <value>自动化配置</value>
+    <value>自動化配置</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="label21.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
@@ -202,52 +202,52 @@ Acc: current accuracy of our survey in point
     <value>180, 16</value>
   </data>
   <data name="chk_sendgga.Text" xml:space="preserve">
-    <value>发送NTRIP GGA? (VRS/Smart)</value>
+    <value>發送NTRIP GGA? (VRS/Smart)</value>
   </data>
   <data name="check_sendntripv1.Size" type="System.Drawing.Size, System.Drawing">
     <value>120, 16</value>
   </data>
   <data name="check_sendntripv1.Text" xml:space="preserve">
-    <value>发送NTRIP v1.0 ?</value>
+    <value>發送NTRIP v1.0 ?</value>
   </data>
   <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
     <value>77, 12</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>传入速率</value>
+    <value>傳入速率</value>
   </data>
 <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
 		<value>84, 12</value>
 </data>
   <data name="label4.Text" xml:space="preserve">
-    <value>输出速率</value>
+    <value>輸出速率</value>
   </data>
   <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
     <value>101, 12</value>
   </data>
   <data name="label5.Text" xml:space="preserve">
-    <value>RTCM 基准站位置 </value>
+    <value>RTCM 基準站位置 </value>
   </data>
   <data name="label6.Size" type="System.Drawing.Size, System.Drawing">
     <value>65, 12</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
-    <value>RTCM消息ID</value>
+    <value>RTCM訊息ID</value>
   </data>
   <data name="label11.Size" type="System.Drawing.Size, System.Drawing">
     <value>41, 12</value>
   </data>
   <data name="label11.Text" xml:space="preserve">
-    <value>基准站</value>
+    <value>基準站</value>
   </data>
   <data name="label13.Size" type="System.Drawing.Size, System.Drawing">
     <value>53, 12</value>
   </data>
   <data name="label13.Text" xml:space="preserve">
-    <value>格洛纳斯</value>
+    <value>格洛納斯</value>
   </data>
   <data name="groupBox2.Text" xml:space="preserve">
-    <value>RTCM数据时效</value>
+    <value>RTCM資料時效</value>
   </data>
   <data name="label16.Size" type="System.Drawing.Size, System.Drawing">
     <value>41, 12</value>
@@ -265,9 +265,9 @@ Acc: current accuracy of our survey in point
     <value>47, 16</value>
   </data>
   <data name="groupBox3.Text" xml:space="preserve">
-    <value>链路状态</value>
+    <value>鏈路狀態</value>
   </data>
   <data name="BUT_connect.Text" xml:space="preserve">
-    <value>连接</value>
+    <value>連線</value>
   </data>
 </root>

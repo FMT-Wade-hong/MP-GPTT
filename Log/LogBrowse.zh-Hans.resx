@@ -118,24 +118,24 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BUT_loadlog.Text" xml:space="preserve">
-    <value>加载日志</value>
+    <value>載入記錄</value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>日志浏览</value>
+    <value>記錄瀏覽</value>
   </data>
   <data name="BUT_Graphit_R.Text" xml:space="preserve">
-    <value>在右侧绘制这些数据</value>
+    <value>在右側繪製這些資料</value>
   </data>
   <data name="CHK_map.Text" xml:space="preserve">
-    <value>显示地图</value>
+    <value>顯示地圖</value>
   </data>
   <data name="BUT_removeitem.Text" xml:space="preserve">
-    <value>移除项目</value>
+    <value>移除項目</value>
   </data>
   <data name="BUT_Graphit.Text" xml:space="preserve">
-    <value>在左侧绘制这个数据</value>
+    <value>在左側繪製這個資料</value>
   </data>
   <data name="BUT_cleargraph.Text" xml:space="preserve">
-    <value>清除图表</value>
+    <value>清空曲線圖</value>
   </data>
 </root>

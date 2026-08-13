@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("MissionPlanner")]
+[assembly: InternalsVisibleTo("FMTPlanner")]
 [assembly: InternalsVisibleTo("MissionPlannerLib")]
 
 namespace MissionPlanner

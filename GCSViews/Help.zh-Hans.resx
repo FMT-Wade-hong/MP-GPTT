@@ -118,18 +118,18 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BUT_betaupdate.Text" xml:space="preserve">
-    <value>检查测试版升级</value>
+    <value>檢查開發版更新</value>
   </data>
   <data name="richTextBox1.Text" xml:space="preserve">
     <value />
   </data>
   <data name="CHK_showconsole.Text" xml:space="preserve">
-    <value>显示控制台窗口（需重启）</value>
+    <value>開啟命令模式(重新啟動)</value>
   </data>
   <data name="linkLabel1.Text" xml:space="preserve">
-    <value>更新日志</value>
+    <value>本次更新</value>
   </data>
   <data name="BUT_updatecheck.Text" xml:space="preserve">
-    <value>检查更新</value>
+    <value>檢查更新</value>
   </data>
 </root>

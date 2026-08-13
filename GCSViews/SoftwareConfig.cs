@@ -4,6 +4,7 @@ using MissionPlanner.Controls;
 using MissionPlanner.Controls.BackstageView;
 using MissionPlanner.GCSViews.ConfigurationView;
 using MissionPlanner.Utilities;
+using MissionPlanner.FMT;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -226,7 +227,7 @@ namespace MissionPlanner.GCSViews
                 if (MainV2.DisplayConfiguration.displayFullParamList)
                 {
                     if(!MainV2.comPort.BaseStream.IsOpen || gotAllParams)
-                        AddBackstageViewPage(typeof(ConfigRawParams), Strings.FullParameterList, null, false);
+                        AddBackstageViewPage(typeof(FmtProtectedParameters), Strings.FullParameterList, null, false);
                 }
                 if (MainV2.comPort.BaseStream.IsOpen)
                 {

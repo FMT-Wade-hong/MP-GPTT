@@ -122,37 +122,37 @@
     <value>31, 13</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>接口</value>
+    <value>介面</value>
   </data>
   <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>微调</value>
+    <value>微調</value>
   </data>
   <data name="label4.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
-    <value>范围</value>
+    <value>範圍</value>
   </data>
   <data name="label5.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
   </data>
   <data name="label5.Text" xml:space="preserve">
-    <value>范围</value>
+    <value>範圍</value>
   </data>
   <data name="label6.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
-    <value>微调</value>
+    <value>微調</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>平摇</value>
+    <value>平搖</value>
   </data>
   <data name="label7.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
@@ -164,25 +164,25 @@
     <value>50, 17</value>
   </data>
   <data name="CHK_revpan.Text" xml:space="preserve">
-    <value>反转</value>
+    <value>反向</value>
   </data>
   <data name="CHK_revtilt.Size" type="System.Drawing.Size, System.Drawing">
     <value>50, 17</value>
   </data>
   <data name="CHK_revtilt.Text" xml:space="preserve">
-    <value>反转</value>
+    <value>反向</value>
   </data>
   <data name="label8.Size" type="System.Drawing.Size, System.Drawing">
     <value>58, 13</value>
   </data>
   <data name="label8.Text" xml:space="preserve">
-    <value>PWM范围</value>
+    <value>PWM 範圍</value>
   </data>
   <data name="label9.Size" type="System.Drawing.Size, System.Drawing">
     <value>58, 13</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
-    <value>PWM范围</value>
+    <value>PWM 範圍</value>
   </data>
   <data name="label10.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
@@ -200,10 +200,10 @@
     <value>319, 13</value>
   </data>
   <data name="label12.Text" xml:space="preserve">
-    <value>这个界面使用不当会导致舵机损坏，请谨慎使用！！！</value>
+    <value>選錯介面可能會導致伺服機損壞, 請小心使用!!!</value>
   </data>
   <data name="BUT_connect.Text" xml:space="preserve">
-    <value>连接</value>
+    <value>連線</value>
   </data>
   <data name="LBL_pantrim.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
@@ -218,18 +218,18 @@
     <value>角度</value>
   </data>
   <data name="BUT_find.Text" xml:space="preserve">
-    <value>找到微调Pan（Sik Radio）</value>
+    <value>找到微調Pan（Sik Radio）</value>
   </data>
   <data name="label13.Size" type="System.Drawing.Size, System.Drawing">
     <value>70, 13</value>
   </data>
   <data name="label13.Text" xml:space="preserve">
-    <value>中点的PWM</value>
+    <value>中點的PWM</value>
   </data>
   <data name="label14.Size" type="System.Drawing.Size, System.Drawing">
     <value>70, 13</value>
   </data>
   <data name="label14.Text" xml:space="preserve">
-    <value>中点的PWM</value>
+    <value>中點的PWM</value>
   </data>
 </root>

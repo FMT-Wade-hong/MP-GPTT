@@ -125,23 +125,23 @@
     <value>41, 12</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>油门 %</value>
+    <value>油門 %</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
     <value>161, 48</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>注意：请压住您的无人机
-这将测试电机是否工作。
-测试将于右前方的电机开始（Motor A），
-编号将按顺时针方向旋转。</value>
+    <value>注意：請壓住您的無人機
+這將測試電機是否工作。
+測試將于右前方的電機開始（Motor A），
+編號將按順時針方向旋轉。</value>
   </data>
   <data name="linkLabel1.Size" type="System.Drawing.Size, System.Drawing">
     <value>173, 24</value>
   </data>
   <data name="linkLabel1.Text" xml:space="preserve">
-    <value>请点击此处查看您的电机序号，
-滚动到页面底部</value>
+    <value>請點擊此處檢視您的電機序號，
+滾動到頁面底部</value>
   </data>
   <data name="NUM_duration.Location" type="System.Drawing.Point, System.Drawing">
     <value>254, 3</value>
@@ -150,6 +150,6 @@
     <value>171, 5</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>持续时间 (s)</value>
+    <value>持續時間 (s)</value>
   </data>
 </root>

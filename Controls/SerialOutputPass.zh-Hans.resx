@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BUT_connect.Text" xml:space="preserve">
-    <value>连接</value>
+    <value>連線</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
@@ -198,6 +198,6 @@
 </value>
   </data>
   <data name="$this.Text" xml:space="preserve">
-    <value>串口输出 - Mavlink</value>
+    <value>串口輸出 - Mavlink</value>
   </data>
 </root>

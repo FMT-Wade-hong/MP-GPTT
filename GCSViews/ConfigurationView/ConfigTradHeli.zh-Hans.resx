@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BUT_HS4save.Text" xml:space="preserve">
-    <value>手动</value>
+    <value>手動</value>
   </data>
   <data name="H_SV3_POS.Text" xml:space="preserve">
     <value>180</value>
   </data>
   <data name="label17.Text" xml:space="preserve">
-    <value>十字盘舵机位置</value>
+    <value>十字盤舵機位置</value>
   </data>
   <data name="label18.Text" xml:space="preserve">
     <value>1</value>
@@ -139,7 +139,7 @@
     <value>上</value>
   </data>
   <data name="label22.Text" xml:space="preserve">
-    <value>十字盘行程</value>
+    <value>十字盤行程</value>
   </data>
   <data name="label23.Text" xml:space="preserve">
     <value>尾舵行程</value>
@@ -160,7 +160,7 @@
     <value>最大Pitch</value>
   </data>
   <data name="groupBox8.Text" xml:space="preserve">
-    <value>日本手设定点</value>
+    <value>日本手設定點</value>
   </data>
   <data name="groupBox9.Text" xml:space="preserve">
     <value>旋翼速度控制</value>
@@ -169,7 +169,7 @@
     <value>最小</value>
   </data>
   <data name="groupBox6.Text" xml:space="preserve">
-    <value>自稳最小/最大总距</value>
+    <value>自穩最小/最大總距</value>
   </data>
   <data name="H_GYR_GAIN.Text" xml:space="preserve">
     <value>1000</value>
@@ -181,7 +181,7 @@
     <value>RSC爬升率</value>
   </data>
   <data name="groupBox4.Text" xml:space="preserve">
-    <value>总距补偿</value>
+    <value>總距補償</value>
   </data>
   <data name="HS4_MIN.Text" xml:space="preserve">
     <value>1500</value>
@@ -190,13 +190,13 @@
     <value>上 %</value>
   </data>
   <data name="groupBox5.Text" xml:space="preserve">
-    <value>十字盘类型</value>
+    <value>十字盤類型</value>
   </data>
   <data name="label5.Text" xml:space="preserve">
     <value>秒</value>
   </data>
   <data name="groupBox3.Text" xml:space="preserve">
-    <value>尾旋翼类型</value>
+    <value>尾旋翼類型</value>
   </data>
   <data name="HS4_MAX.Text" xml:space="preserve">
     <value>1500</value>
@@ -205,28 +205,28 @@
     <value>零</value>
   </data>
   <data name="groupBox10.Text" xml:space="preserve">
-    <value>着陆最小总距</value>
+    <value>著陸最小總距</value>
   </data>
   <data name="label36.Text" xml:space="preserve">
-    <value>舵机</value>
+    <value>舵機</value>
   </data>
   <data name="H_SV2_POS.Text" xml:space="preserve">
     <value>60</value>
   </data>
   <data name="label38.Text" xml:space="preserve">
-    <value>反转</value>
+    <value>反轉</value>
   </data>
   <data name="label37.Text" xml:space="preserve">
     <value>位置</value>
   </data>
   <data name="fbl_modeFBL.Text" xml:space="preserve">
-    <value>无副翼</value>
+    <value>無副翼</value>
   </data>
   <data name="label39.Text" xml:space="preserve">
-    <value>微调</value>
+    <value>微調</value>
   </data>
   <data name="BUT_reset_swash.Text" xml:space="preserve">
-    <value>重置十字盘</value>
+    <value>重置十字盤</value>
   </data>
   <data name="H_COL_MAX.Text" xml:space="preserve">
     <value>1500</value>
@@ -250,16 +250,16 @@
     <value>增益</value>
   </data>
   <data name="label44.Text" xml:space="preserve">
-    <value>微调</value>
+    <value>微調</value>
   </data>
   <data name="BUT_swash_manual.Text" xml:space="preserve">
-    <value>手动</value>
+    <value>手動</value>
   </data>
   <data name="label42.Text" xml:space="preserve">
     <value>尾舵</value>
   </data>
   <data name="label43.Text" xml:space="preserve">
-    <value>反转</value>
+    <value>反轉</value>
   </data>
   <data name="label40.Text" xml:space="preserve">
     <value>最小</value>

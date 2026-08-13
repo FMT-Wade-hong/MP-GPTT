@@ -17,6 +17,7 @@ namespace MissionPlanner.GCSViews
     {
         internal static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static string lastpagename = "";
+        private static bool ShowFmtOptionalHardware => false;
 
         [Flags]
         public enum pageOptions
@@ -240,6 +241,10 @@ namespace MissionPlanner.GCSViews
             if (MainV2.DisplayConfiguration.displayHWIDs)
                 AddBackstageViewPage(typeof(ConfigHWIDs), "HW ID", isConnected && gotAllParams, mand);
 
+            // FMTPlanner intentionally hides the Optional Hardware container and every page below it.
+            // The underlying drivers remain compiled because other flight functions still depend on them.
+            if (ShowFmtOptionalHardware)
+            {
             var opt = AddBackstageViewPage(typeof(ConfigOptional), rm.GetString("backstageViewPageopt.Text"));
             if (MainV2.DisplayConfiguration.displayRTKInject)
             {
@@ -335,6 +340,7 @@ namespace MissionPlanner.GCSViews
             if (MainV2.DisplayConfiguration.displayFFTSetup)
             {
                 AddBackstageViewPage(typeof(ConfigFFT), "FFT Setup", isConnected && gotAllParams, opt);
+            }
             }
 
             if (MainV2.DisplayConfiguration.isAdvancedMode)

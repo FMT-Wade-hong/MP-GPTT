@@ -121,7 +121,7 @@
     <value />
   </data>
   <data name="label5.Text" xml:space="preserve">
-    <value>旋转速率</value>
+    <value>旋轉速率</value>
   </data>
   <data name="label5.ToolTip" xml:space="preserve">
     <value />
@@ -161,7 +161,7 @@
     <value />
   </data>
   <data name="groupBox3.Text" xml:space="preserve">
-    <value>油门 0-100%</value>
+    <value>油門 0-100%</value>
   </data>
   <data name="groupBox3.ToolTip" xml:space="preserve">
     <value />
@@ -236,13 +236,13 @@
     <value />
   </data>
   <data name="label37.Text" xml:space="preserve">
-    <value>转向最大</value>
+    <value>轉向最大</value>
   </data>
   <data name="label37.ToolTip" xml:space="preserve">
     <value />
   </data>
   <data name="groupBox2.Text" xml:space="preserve">
-    <value>导航角度</value>
+    <value>導航角度</value>
   </data>
   <data name="groupBox2.ToolTip" xml:space="preserve">
     <value />
@@ -326,7 +326,7 @@
     <value />
   </data>
   <data name="groupBox13.Text" xml:space="preserve">
-    <value>导航 Pitch 高度 Pid</value>
+    <value>導航 Pitch 高度 Pid</value>
   </data>
   <data name="groupBox13.ToolTip" xml:space="preserve">
     <value />
@@ -356,7 +356,7 @@
     <value />
   </data>
   <data name="groupBox12.Text" xml:space="preserve">
-    <value>导航Pitch AS Pid</value>
+    <value>導航Pitch AS Pid</value>
   </data>
   <data name="groupBox12.ToolTip" xml:space="preserve">
     <value />
@@ -365,7 +365,7 @@
     <value />
   </data>
   <data name="label57.Text" xml:space="preserve">
-    <value>积分器最大</value>
+    <value>積分器最大</value>
   </data>
   <data name="label57.ToolTip" xml:space="preserve">
     <value />
@@ -383,7 +383,7 @@
     <value />
   </data>
   <data name="label59.Text" xml:space="preserve">
-    <value>积分</value>
+    <value>積分</value>
   </data>
   <data name="label59.ToolTip" xml:space="preserve">
     <value />
@@ -398,7 +398,7 @@
     <value />
   </data>
   <data name="groupBox10.Text" xml:space="preserve">
-    <value>舵机 Yaw</value>
+    <value>舵機 Yaw</value>
   </data>
   <data name="groupBox10.ToolTip" xml:space="preserve">
     <value />
@@ -428,7 +428,7 @@
     <value />
   </data>
   <data name="groupBox9.Text" xml:space="preserve">
-    <value>舵机Pitch Pid</value>
+    <value>舵機Pitch Pid</value>
   </data>
   <data name="groupBox9.ToolTip" xml:space="preserve">
     <value />
@@ -458,19 +458,19 @@
     <value />
   </data>
   <data name="groupBox8.Text" xml:space="preserve">
-    <value>舵机Roll Pid</value>
+    <value>舵機Roll Pid</value>
   </data>
   <data name="groupBox8.ToolTip" xml:space="preserve">
     <value />
   </data>
   <data name="BUT_writePIDS.Text" xml:space="preserve">
-    <value>写入参数</value>
+    <value>寫入參數</value>
   </data>
   <data name="BUT_writePIDS.ToolTip" xml:space="preserve">
     <value />
   </data>
   <data name="BUT_rerequestparams.Text" xml:space="preserve">
-    <value>刷新参数</value>
+    <value>更新參數</value>
   </data>
   <data name="BUT_rerequestparams.ToolTip" xml:space="preserve">
     <value />
@@ -494,7 +494,7 @@
     <value />
   </data>
   <data name="groupBox4.Text" xml:space="preserve">
-    <value>L1 控制 - 转向控制</value>
+    <value>L1 控制 - 轉向控制</value>
   </data>
   <data name="groupBox4.ToolTip" xml:space="preserve">
     <value />
@@ -512,7 +512,7 @@
     <value />
   </data>
   <data name="label14.Text" xml:space="preserve">
-    <value>时间常数</value>
+    <value>時間常數</value>
   </data>
   <data name="label14.ToolTip" xml:space="preserve">
     <value />
@@ -548,7 +548,7 @@
     <value />
   </data>
   <data name="BUT_refreshpart.Text" xml:space="preserve">
-    <value>刷新屏幕</value>
+    <value>更新畫面</value>
   </data>
   <data name="BUT_refreshpart.ToolTip" xml:space="preserve">
     <value />

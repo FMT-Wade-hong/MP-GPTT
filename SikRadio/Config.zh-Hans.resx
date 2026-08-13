@@ -122,57 +122,56 @@
     <value>43, 13</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>波特率</value>
+    <value>鮑率</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
     <value>31, 13</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>端口</value>
+    <value>通訊埠</value>
   </data>
   <data name="label3.Size" type="System.Drawing.Size, System.Drawing">
     <value>141, 39</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>1. 请为你的SikRadio选择
-    串口和波特率
-2. 然后点击加载设置</value>
+    <value>1. 請選擇 Sik 數傳所使用的通訊埠及鮑率。
+2. 然後點擊載入設定。</value>
   </data>
   <data name="groupBox1.Text" xml:space="preserve">
-    <value>串口</value>
+    <value>通訊埠</value>
   </data>
   <data name="groupBox2.Text" xml:space="preserve">
-    <value>设置</value>
+    <value>設定</value>
   </data>
   <data name="settingsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>45, 20</value>
   </data>
   <data name="settingsToolStripMenuItem.Text" xml:space="preserve">
-    <value>设置</value>
+    <value>設定</value>
   </data>
   <data name="terminalToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>45, 20</value>
   </data>
   <data name="terminalToolStripMenuItem.Text" xml:space="preserve">
-    <value>终端</value>
+    <value>命令模式</value>
   </data>
   <data name="helpToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>152, 22</value>
   </data>
   <data name="helpToolStripMenuItem.Text" xml:space="preserve">
-    <value>帮助</value>
+    <value>幫助</value>
   </data>
   <data name="projectPageToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>152, 22</value>
   </data>
   <data name="projectPageToolStripMenuItem.Text" xml:space="preserve">
-    <value>项目主页</value>
+    <value>專案頁面</value>
   </data>
   <data name="aboutToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>45, 20</value>
   </data>
   <data name="aboutToolStripMenuItem.Text" xml:space="preserve">
-    <value>关于</value>
+    <value>關於</value>
   </data>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>

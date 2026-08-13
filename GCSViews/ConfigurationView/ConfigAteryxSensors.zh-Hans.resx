@@ -118,13 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BUT_zero_press.ToolTip" xml:space="preserve">
-    <value>现在执行加速度计校准。</value>
+    <value>加速度計校準。</value>
   </data>
   <data name="BUT_zero_att.ToolTip" xml:space="preserve">
-    <value>现在执行加速度计校准。</value>
+    <value>加速度計校準。</value>
   </data>
   <data name="BUT_zero_press.Text" xml:space="preserve">
-    <value>零气压</value>
+    <value>零氣壓</value>
   </data>
   <data name="BUT_zero_att.Text" xml:space="preserve">
     <value>零高度</value>

@@ -581,6 +581,12 @@ namespace MissionPlanner
 
         public GCSViews.FlightPlanner FlightPlanner;
         GCSViews.SITL Simulation;
+        private ToolStripButton MenuFeiMao;
+        private ToolStripButton MenuFmtArmDisarm;
+        private ToolStripButton MenuFmtAirspeedZero;
+        private ToolStripControlHost MenuFmtGpsStatus;
+        private Label FmtGpsPrimaryLabel;
+        private Label FmtGpsDopLabel;
 
         private Form connectionStatsForm;
         private ConnectionStats _connectionStats;
@@ -700,6 +706,7 @@ namespace MissionPlanner
             }
 
             InitializeComponent();
+            ConfigureFmtMainMenu();
 
             //Init Theme table and load BurntKermit as a default
             ThemeManager.thmColor = new ThemeColorTable(); //Init colortable
@@ -709,13 +716,7 @@ namespace MissionPlanner
 
 
 
-            if (Settings.Instance["theme"] == null)
-            {
-                if (File.Exists($"{running_directory}custom.mpsystheme"))
-                    Settings.Instance["theme"] = "custom.mpsystheme";
-                else
-                    Settings.Instance["theme"] = "BurntKermit.mpsystheme";
-            }
+            Settings.Instance["theme"] = FMT.FmtAuthentication.ThemeName;
 
             ThemeManager.LoadTheme(Settings.Instance["theme"]);
 
@@ -868,14 +869,11 @@ namespace MissionPlanner
                 log.Info("Create FP");
                 FlightPlanner = new GCSViews.FlightPlanner();
                 //Configuration = new GCSViews.ConfigurationView.Setup();
-                log.Info("Create SIM");
-                Simulation = new GCSViews.SITL();
                 //Firmware = new GCSViews.Firmware();
                 //Terminal = new GCSViews.Terminal();
 
                 FlightData.Width = MyView.Width;
                 FlightPlanner.Width = MyView.Width;
-                Simulation.Width = MyView.Width;
             }
             catch (ArgumentException e)
             {
@@ -1736,7 +1734,7 @@ namespace MissionPlanner
                     Settings.Instance[_connectionControl.CMB_serialport.Text.Replace(" ","_") + "_BAUD"] =
                         _connectionControl.CMB_baudrate.Text;
 
-                    this.Text = titlebar + " " + comPort.MAV.VersionString + " on " + comPort.MAV.SerialString;
+                    this.Text = titlebar;
 
                     // refresh config window if needed
                     if (MyView.current != null && showui)
@@ -2152,7 +2150,7 @@ namespace MissionPlanner
             log.Info("closing sim");
             try
             {
-                Simulation.Dispose();
+                Simulation?.Dispose();
             }
             catch
             {
@@ -2458,7 +2456,7 @@ namespace MissionPlanner
         /// </summary>
         private void UpdateConnectIcon()
         {
-            if ((DateTime.UtcNow - connectButtonUpdate).Milliseconds > 500)
+            if ((DateTime.UtcNow - connectButtonUpdate).TotalMilliseconds > 500)
             {
                 //                        Console.WriteLine(DateTime.Now.Millisecond);
                 if (comPort.BaseStream.IsOpen)
@@ -2498,6 +2496,7 @@ namespace MissionPlanner
                 }
 
                 connectButtonUpdate = DateTime.UtcNow;
+                UpdateFmtQuickActionButtons();
             }
         }
 
@@ -3178,8 +3177,6 @@ namespace MissionPlanner
             MyView.AddScreen(new MainSwitcher.Screen("FlightPlanner", FlightPlanner, true));
             MyView.AddScreen(new MainSwitcher.Screen("HWConfig", typeof(GCSViews.InitialSetup), false));
             MyView.AddScreen(new MainSwitcher.Screen("SWConfig", typeof(GCSViews.SoftwareConfig), false));
-            MyView.AddScreen(new MainSwitcher.Screen("Simulation", Simulation, true));
-            MyView.AddScreen(new MainSwitcher.Screen("Help", typeof(GCSViews.Help), false));
 
             try
             {
@@ -4627,6 +4624,19 @@ namespace MissionPlanner
         {
             foreach (ToolStripItem item in MainMenu.Items)
             {
+                if (item == MenuFmtArmDisarm || item == MenuFmtAirspeedZero)
+                {
+                    ApplyFmtQuickActionButtonStyle(item);
+                    continue;
+                }
+
+                if (item == MenuFmtGpsStatus)
+                {
+                    item.BackgroundImage = null;
+                    item.BackColor = Color.FromArgb(24, 24, 24);
+                    continue;
+                }
+
                 if (e.ClickedItem == item)
                 {
                     item.BackColor = ThemeManager.ControlBGColor;
@@ -4673,6 +4683,249 @@ namespace MissionPlanner
         private void connectionOptionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             new ConnectionOptions().Show(this);
+        }
+
+        private void ConfigureFmtMainMenu()
+        {
+            MainMenu.Items.Remove(MenuSimulation);
+            MainMenu.Items.Remove(MenuHelp);
+
+            MenuFmtArmDisarm = new ToolStripButton
+            {
+                Name = "MenuFmtArmDisarm",
+                Text = IsFmtTraditionalChineseUi ? "解鎖" : "ARM",
+                Alignment = ToolStripItemAlignment.Left,
+                DisplayStyle = ToolStripItemDisplayStyle.Text,
+                AutoSize = false,
+                Size = new Size(92, 35),
+                Margin = new Padding(8, 0, 4, 0),
+                Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
+                ToolTipText = IsFmtTraditionalChineseUi
+                    ? "連動飛行資料動作頁的解鎖／上鎖功能"
+                    : "Arm or disarm using the Flight Data action"
+            };
+            MenuFmtArmDisarm.Click += MenuFmtArmDisarm_Click;
+
+            MenuFmtAirspeedZero = new ToolStripButton
+            {
+                Name = "MenuFmtAirspeedZero",
+                Text = IsFmtTraditionalChineseUi ? "空速計歸零" : "ZERO AIRSPEED",
+                Alignment = ToolStripItemAlignment.Left,
+                DisplayStyle = ToolStripItemDisplayStyle.Text,
+                AutoSize = false,
+                Size = new Size(112, 35),
+                Margin = new Padding(0, 0, 4, 0),
+                Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
+                ToolTipText = IsFmtTraditionalChineseUi
+                    ? "未解鎖時執行空速感測器零點校正"
+                    : "Zero the airspeed sensor while disarmed"
+            };
+            MenuFmtAirspeedZero.Click += MenuFmtAirspeedZero_Click;
+
+            var quickActionIndex = MainMenu.Items.IndexOf(MenuConfigTune) + 1;
+            MainMenu.Items.Insert(quickActionIndex, MenuFmtArmDisarm);
+            MainMenu.Items.Insert(quickActionIndex + 1, MenuFmtAirspeedZero);
+            ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
+            ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
+            UpdateFmtQuickActionButtons();
+
+            const string resourceName = "MissionPlanner.FMT.Assets.fmt-app-icon-source.png";
+            Image logo = null;
+            using (var stream = typeof(MainV2).Assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream != null)
+                {
+                    using (var source = Image.FromStream(stream))
+                        logo = new Bitmap(source, new Size(72, 31));
+                }
+            }
+
+            MenuFeiMao = new ToolStripButton
+            {
+                Name = "MenuFeiMao",
+                Text = "FMT",
+                Alignment = ToolStripItemAlignment.Right,
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                Image = logo,
+                ImageScaling = ToolStripItemImageScaling.None,
+                AutoSize = false,
+                Size = new Size(78, 35),
+                Margin = Padding.Empty,
+                ToolTipText = "FMT飛貓科技 - www.feimaotec.com"
+            };
+            MenuFeiMao.Click += (clickSender, args) =>
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo("https://www.feimaotec.com")
+                    {
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    log.Warn("Unable to open the FMT website", ex);
+                }
+            };
+            MainMenu.Items.Add(MenuFeiMao);
+
+            var gpsStatusPanel = new Panel
+            {
+                Name = "FmtGpsStatusPanel",
+                BackColor = Color.FromArgb(24, 24, 24),
+                Size = new Size(164, 35),
+                Margin = Padding.Empty
+            };
+            FmtGpsPrimaryLabel = new Label
+            {
+                Name = "FmtGpsPrimaryLabel",
+                AutoSize = false,
+                Location = new Point(5, 1),
+                Size = new Size(154, 17),
+                BackColor = Color.Transparent,
+                ForeColor = Color.Gray,
+                Font = new Font(SystemFonts.MenuFont.FontFamily, 8.25f, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = "Sats: --  Disconnected"
+            };
+            FmtGpsDopLabel = new Label
+            {
+                Name = "FmtGpsDopLabel",
+                AutoSize = false,
+                Location = new Point(5, 17),
+                Size = new Size(154, 16),
+                BackColor = Color.Transparent,
+                ForeColor = Color.Gray,
+                Font = new Font(SystemFonts.MenuFont.FontFamily, 8.0f, FontStyle.Regular),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = "H: --  |  V: --"
+            };
+            gpsStatusPanel.Controls.Add(FmtGpsPrimaryLabel);
+            gpsStatusPanel.Controls.Add(FmtGpsDopLabel);
+
+            MenuFmtGpsStatus = new ToolStripControlHost(gpsStatusPanel)
+            {
+                Name = "MenuFmtGpsStatus",
+                Alignment = ToolStripItemAlignment.Right,
+                AutoSize = false,
+                Size = new Size(164, 35),
+                Margin = new Padding(2, 0, 2, 0),
+                Padding = Padding.Empty,
+                BackColor = Color.FromArgb(24, 24, 24),
+                ToolTipText = "GPS satellites, fix status, HDOP and VDOP"
+            };
+            MainMenu.Items.Add(MenuFmtGpsStatus);
+            UpdateFmtQuickActionButtons();
+        }
+
+        private static bool IsFmtTraditionalChineseUi =>
+            CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+        private void ApplyFmtQuickActionButtonStyle(ToolStripItem item)
+        {
+            if (item == null)
+                return;
+
+            item.BackgroundImage = null;
+            item.ForeColor = Color.White;
+            item.BackColor = item == MenuFmtArmDisarm
+                ? Color.FromArgb(196, 32, 32)
+                : Color.FromArgb(41, 171, 226);
+        }
+
+        private void UpdateFmtQuickActionButtons()
+        {
+            if (MenuFmtArmDisarm == null || MenuFmtAirspeedZero == null)
+                return;
+
+            var connected = comPort?.BaseStream != null && comPort.BaseStream.IsOpen;
+            var armed = connected && comPort.MAV.cs.armed;
+            var gpsStatus = connected ? comPort.MAV.cs.gpsstatus : 0;
+            var satCount = connected ? comPort.MAV.cs.satcount : 0;
+            var hdop = connected ? comPort.MAV.cs.gpshdop : 0;
+            var vdop = connected ? comPort.MAV.cs.gpsvdop : 0;
+            this.BeginInvokeIfRequired((Action)(() =>
+            {
+                MenuFmtArmDisarm.Text = IsFmtTraditionalChineseUi
+                    ? (armed ? "上鎖" : "解鎖")
+                    : (armed ? "DISARM" : "ARM");
+                MenuFmtArmDisarm.Enabled = connected && !comPort.ReadOnly;
+                MenuFmtAirspeedZero.Enabled = connected && !armed && !comPort.ReadOnly;
+                ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
+                ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
+                UpdateFmtGpsStatus(connected, gpsStatus, satCount, hdop, vdop);
+            }));
+        }
+
+        private void UpdateFmtGpsStatus(bool connected, float gpsStatus, float satCount, float hdop, float vdop)
+        {
+            if (FmtGpsPrimaryLabel == null || FmtGpsDopLabel == null)
+                return;
+
+            if (!connected)
+            {
+                FmtGpsPrimaryLabel.Text = "Sats: --  Disconnected";
+                FmtGpsDopLabel.Text = "H: --  |  V: --";
+                FmtGpsPrimaryLabel.ForeColor = Color.Gray;
+                FmtGpsDopLabel.ForeColor = Color.Gray;
+                return;
+            }
+
+            var fixLabel = GetFmtGpsFixLabel(gpsStatus);
+            var fixColor = GetFmtGpsFixColor(gpsStatus);
+            FmtGpsPrimaryLabel.Text = string.Format(CultureInfo.InvariantCulture,
+                "Sats: {0:0}  {1}", Math.Max(0, satCount), fixLabel);
+            FmtGpsDopLabel.Text = string.Format(CultureInfo.InvariantCulture,
+                "H: {0}  |  V: {1}", FormatFmtDop(hdop), FormatFmtDop(vdop));
+            FmtGpsPrimaryLabel.ForeColor = fixColor;
+            FmtGpsDopLabel.ForeColor = gpsStatus >= 3 ? Color.LightGreen : fixColor;
+        }
+
+        internal static string GetFmtGpsFixLabel(float gpsStatus)
+        {
+            switch ((int)Math.Round(gpsStatus))
+            {
+                case 0: return "No GPS";
+                case 1: return "No Fix";
+                case 2: return "2D Fix";
+                case 3: return "3D Fix";
+                case 4: return "DGPS";
+                case 5: return "RTK Float";
+                case 6: return "RTK Fixed";
+                case 7: return "Static";
+                case 8: return "PPP";
+                default: return "Unknown";
+            }
+        }
+
+        private static Color GetFmtGpsFixColor(float gpsStatus)
+        {
+            if (gpsStatus >= 6)
+                return Color.Lime;
+            if (gpsStatus >= 3)
+                return Color.LimeGreen;
+            if (gpsStatus >= 2)
+                return Color.Gold;
+            return Color.OrangeRed;
+        }
+
+        private static string FormatFmtDop(float value)
+        {
+            return value > 0 && !float.IsNaN(value) && !float.IsInfinity(value)
+                ? value.ToString("0.0", CultureInfo.InvariantCulture)
+                : "--";
+        }
+
+        private void MenuFmtArmDisarm_Click(object sender, EventArgs e)
+        {
+            FlightData?.ExecuteFmtArmDisarm();
+            UpdateFmtQuickActionButtons();
+        }
+
+        private void MenuFmtAirspeedZero_Click(object sender, EventArgs e)
+        {
+            FlightData?.ExecuteFmtAirspeedZero();
+            UpdateFmtQuickActionButtons();
         }
 
         private void MenuArduPilot_Click(object sender, EventArgs e)

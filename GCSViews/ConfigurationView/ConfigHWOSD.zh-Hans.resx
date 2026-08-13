@@ -118,12 +118,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BUT_osdrates.Text" xml:space="preserve">
-    <value>启用遥测</value>
+    <value>啟用數傳</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
     <value>OSD</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>你仅需要在OSD有不更新的问题的时候使用这个</value>
+    <value>如果你的 OSD 無法顯示飛行資訊，請按下欲顆按鈕</value>
   </data>
 </root>

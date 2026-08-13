@@ -249,7 +249,12 @@ namespace MissionPlanner
                 {
                     // trying to set it true twice
                     log.Error(new System.Diagnostics.StackTrace().ToString());
-                    Debugger.Break();
+
+                    // Debugger.Break terminates a production build with CLR20r3 when no
+                    // just-in-time debugger is installed. Preserve the diagnostic break
+                    // for developers without crashing an operator's live session.
+                    if (Debugger.IsAttached)
+                        Debugger.Break();
                 }
 
                 if (value == true)
@@ -521,6 +526,9 @@ namespace MissionPlanner
                         if (MAVlist[tuple.Item1, tuple.Item2].Camera == null)
                             return;
 
+                        while(giveComport)
+                            await Task.Delay(100);
+
                         await MAVlist[tuple.Item1, tuple.Item2]
                             .Camera.StartID(MAVlist[tuple.Item1, tuple.Item2])
                             .ConfigureAwait(false);
@@ -549,7 +557,7 @@ namespace MissionPlanner
                         await Task.Delay(2000);
 
                         MAVlist[tuple.Item1, tuple.Item2]
-                            .Gimbal.Discover(this);
+                            .Gimbal?.Discover(this);
                     }
                     catch (Exception e)
                     {
@@ -576,7 +584,7 @@ namespace MissionPlanner
                         await Task.Delay(2000);
 
                         MAVlist[tuple.Item1, tuple.Item2]
-                            .GimbalManager.Discover();
+                            .GimbalManager?.Discover();
                     }
                     catch (Exception e)
                     {
@@ -5380,7 +5388,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                             logdata = logdata.Substring(0, ind);
                         log.Info(DateTime.Now + " " + sev + " " + logdata);
 
-                        MAVlist[sysid, compid].cs.messages.Add((DateTime.Now, logdata));
+                        MAVlist[sysid, compid].cs.messages.Add((DateTime.Now, logdata, sev));
 
                         // cap list at 1000 element
                         while (MAVlist[sysid, compid].cs.messages.Count > 1000)
@@ -5389,7 +5397,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                         // gymbals etc are a child/slave to the main sysid, this displays the children messages under the current displayed vehicle
                         if (sysid == sysidcurrent && compid != compidcurrent)
                             MAVlist[sysidcurrent, compidcurrent].cs.messages
-                                .Add((DateTime.Now, compid + " : " + logdata));
+                                .Add((DateTime.Now, compid + " : " + logdata, sev));
 
                         bool printit = false;
 
