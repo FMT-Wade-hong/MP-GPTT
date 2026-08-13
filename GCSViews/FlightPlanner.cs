@@ -131,6 +131,9 @@ namespace MissionPlanner.GCSViews
         private WPOverlay wpOverlay;
         private readonly GMapOverlay taiwanCaaOverlay = new GMapOverlay("Taiwan CAA Airspace");
         private readonly HashSet<string> taiwanCaaZoneIds = new HashSet<string>();
+        private CancellationTokenSource mapContextRefreshCancellation;
+        internal MyButton BUT_fmtAltitudeCheck;
+        internal MyButton BUT_fmtAirspaceCheck;
         private bool polygongridmode;
         private MissionPlanner.Controls.Icon.Polygon polyicon = new MissionPlanner.Controls.Icon.Polygon();
         private MissionPlanner.Controls.Icon.Zoom zoomicon = new MissionPlanner.Controls.Icon.Zoom();
@@ -148,7 +151,7 @@ namespace MissionPlanner.GCSViews
         {
             instance = this;
 
-
+            ConfigureFmtPlannerActions();
 
             // config map
             MainMap.CacheLocation = Settings.GetDataDirectory() +
@@ -294,6 +297,37 @@ namespace MissionPlanner.GCSViews
 
             timer.Start();
             */
+        }
+
+        private void ConfigureFmtPlannerActions()
+        {
+            var traditionalChinese = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+            BUT_fmtAltitudeCheck = new MyButton
+            {
+                Name = "BUT_fmtAltitudeCheck",
+                Text = traditionalChinese ? "高度檢查" : "Altitude Check",
+                Location = new Point(3, 32),
+                Size = new Size(115, 23),
+                UseVisualStyleBackColor = true
+            };
+            BUT_fmtAirspaceCheck = new MyButton
+            {
+                Name = "BUT_fmtAirspaceCheck",
+                Text = traditionalChinese ? "限禁航區檢查" : "Airspace Check",
+                Location = new Point(3, 61),
+                Size = new Size(115, 23),
+                UseVisualStyleBackColor = true
+            };
+            BUT_fmtAltitudeCheck.Click += BUT_fmtAltitudeCheck_Click;
+            BUT_fmtAirspaceCheck.Click += BUT_fmtAirspaceCheck_Click;
+
+            BUT_write.Location = new Point(3, 90);
+            but_writewpfast.Location = new Point(3, 119);
+            panel5.Height = 148;
+            panel5.Controls.Add(BUT_fmtAltitudeCheck);
+            panel5.Controls.Add(BUT_fmtAirspaceCheck);
+            BUT_fmtAltitudeCheck.BringToFront();
+            BUT_fmtAirspaceCheck.BringToFront();
         }
 
         public static FlightPlanner instance { get; set; }
@@ -7501,22 +7535,41 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
 
                     PointLatLng pnew = MainMap.FromLocalToLatLng(e.X, e.Y);
 
-                    // adjust polyline point while we drag
+                    // Keep the waypoint marker and the visible route attached to the mouse.
                     try
                     {
-                        if (CurrentGMapMarker != null && CurrentGMapMarker.Tag is int)
+                        var oldPosition = CurentRectMarker.Position;
+                        var waypointTag = CurentRectMarker.InnerMarker == null
+                            ? null
+                            : Convert.ToString(CurentRectMarker.InnerMarker.Tag, CultureInfo.InvariantCulture);
+
+                        if (wpOverlay != null && !string.IsNullOrEmpty(waypointTag))
                         {
-                            int? pIndex = (int?) CurentRectMarker.Tag;
-                            if (pIndex.HasValue)
+                            var missionPoint = wpOverlay.pointlist.FirstOrDefault(candidate =>
+                                candidate != null && string.Equals(candidate.Tag, waypointTag,
+                                    StringComparison.Ordinal));
+                            if (missionPoint != null)
                             {
-                                if (pIndex < wppolygon.Points.Count)
+                                missionPoint.Lat = pnew.Lat;
+                                missionPoint.Lng = pnew.Lng;
+                            }
+
+                            foreach (var route in wpOverlay.overlay.Routes)
+                            {
+                                var changed = false;
+                                for (var routeIndex = 0; routeIndex < route.Points.Count; routeIndex++)
                                 {
-                                    wppolygon.Points[pIndex.Value] = pnew;
-                                    lock (thisLock)
+                                    var routePoint = route.Points[routeIndex];
+                                    if (Math.Abs(routePoint.Lat - oldPosition.Lat) < 0.0000001 &&
+                                        Math.Abs(routePoint.Lng - oldPosition.Lng) < 0.0000001)
                                     {
-                                        MainMap.UpdatePolygonLocalPosition(wppolygon);
+                                        route.Points[routeIndex] = pnew;
+                                        changed = true;
                                     }
                                 }
+
+                                if (changed)
+                                    MainMap.UpdateRouteLocalPosition(route);
                             }
                         }
                     }
@@ -7537,6 +7590,11 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                     {
                         CurentRectMarker.InnerMarker.Position = pnew;
                     }
+
+                    MainMap.UpdateMarkerLocalPosition(CurentRectMarker);
+                    if (CurentRectMarker.InnerMarker != null)
+                        MainMap.UpdateMarkerLocalPosition(CurentRectMarker.InnerMarker);
+                    MainMap.Invalidate(false);
                 }
                 else if (CurrentPOIMarker != null)
                 {
@@ -7942,6 +8000,248 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
             }
         }
 
+        private void BUT_fmtAltitudeCheck_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                writeKML();
+                var chartPoints = pointlist
+                    .Where(point => point != null &&
+                                    (point.Tag == null || !point.Tag.Contains("ROI")))
+                    .Select(CloneMissionPoint)
+                    .ToList();
+                var waypoints = chartPoints.Where(point =>
+                {
+                    int number;
+                    return int.TryParse(point.Tag, out number);
+                }).ToList();
+
+                if (waypoints.Count < 2)
+                {
+                    CustomMessageBox.Show(IsTraditionalChineseUi
+                            ? "請先規劃至少兩個航點。"
+                            : "Please plan at least two waypoints first.",
+                        "FMT Height Check", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                const double minimumClearanceMeters = 30.0;
+                const double taiwanGeneralCeilingMeters = 120.0;
+                var warnings = new List<string>();
+                foreach (var waypoint in waypoints)
+                {
+                    var terrain = srtm.getAltitude(waypoint.Lat, waypoint.Lng);
+                    if (terrain.currenttype == srtm.tiletype.invalid)
+                    {
+                        warnings.Add("WP" + waypoint.Tag + ": terrain data unavailable");
+                        continue;
+                    }
+
+                    var clearance = waypoint.Alt - terrain.alt;
+                    if (clearance < minimumClearanceMeters)
+                        warnings.Add("WP" + waypoint.Tag + ": " + clearance.ToString("0", CultureInfo.InvariantCulture) +
+                                     " m terrain clearance (minimum check: 30 m)");
+                    if (clearance > taiwanGeneralCeilingMeters)
+                        warnings.Add("WP" + waypoint.Tag + ": " + clearance.ToString("0", CultureInfo.InvariantCulture) +
+                                     " m AGL (Taiwan general ceiling check: 120 m)");
+                }
+
+                if (warnings.Count > 0)
+                {
+                    CustomMessageBox.Show(
+                        (IsTraditionalChineseUi ? "高度檢查警告：\r\n" : "Height check warnings:\r\n") +
+                        string.Join("\r\n", warnings.Take(20)) +
+                        (warnings.Count > 20 ? "\r\n..." : string.Empty),
+                        "FMT Height Check", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+
+                var homeAltitude = chartPoints.FirstOrDefault(point => point.Tag == "H")?.Alt ??
+                                   MainV2.comPort.MAV.cs.HomeAlt;
+                Form profile = new ElevationProfile(chartPoints, homeAltitude, currentaltmode)
+                {
+                    Text = IsTraditionalChineseUi ? "FMT 高度與地形曲線" : "FMT Altitude and Terrain Profile"
+                };
+                ThemeManager.ApplyThemeTo(profile);
+                profile.ShowDialog(FindForm());
+            }
+            catch (Exception ex)
+            {
+                log.Error("FMT height check failed", ex);
+                CustomMessageBox.Show((IsTraditionalChineseUi ? "高度檢查失敗：" : "Height check failed: ") + ex.Message,
+                    "FMT Height Check", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void BUT_fmtAirspaceCheck_Click(object sender, EventArgs e)
+        {
+            BUT_fmtAirspaceCheck.Enabled = false;
+            try
+            {
+                writeKML();
+                var route = pointlist.Where(point =>
+                {
+                    int number;
+                    return point != null && int.TryParse(point.Tag, out number);
+                }).Select(CloneMissionPoint).ToList();
+
+                if (route.Count < 2)
+                {
+                    CustomMessageBox.Show(IsTraditionalChineseUi
+                            ? "請先規劃至少兩個航點。"
+                            : "Please plan at least two waypoints first.",
+                        "FMT Airspace Check", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var lookupPoints = new List<PointLatLng>();
+                for (var index = 0; index < route.Count - 1; index++)
+                {
+                    var from = route[index];
+                    var to = route[index + 1];
+                    var samples = Math.Max(1, (int)Math.Ceiling(from.GetDistance(to) / 20000.0));
+                    for (var sample = 0; sample <= samples; sample++)
+                    {
+                        var ratio = sample / (double)samples;
+                        lookupPoints.Add(new PointLatLng(
+                            from.Lat + ((to.Lat - from.Lat) * ratio),
+                            from.Lng + ((to.Lng - from.Lng) * ratio)));
+                    }
+                }
+
+                var zoneSets = await Task.WhenAll(lookupPoints
+                    .GroupBy(point => Math.Round(point.Lat, 4).ToString(CultureInfo.InvariantCulture) + "," +
+                                      Math.Round(point.Lng, 4).ToString(CultureInfo.InvariantCulture))
+                    .Select(group => TaiwanCaaAirspace.LoadNearbyAsync(group.First())));
+                var zones = zoneSets.SelectMany(set => set)
+                    .GroupBy(zone => zone.Id)
+                    .Select(group => group.First())
+                    .ToList();
+                var crossings = new List<string>();
+
+                for (var index = 0; index < route.Count - 1; index++)
+                {
+                    var from = new PointLatLng(route[index].Lat, route[index].Lng);
+                    var to = new PointLatLng(route[index + 1].Lat, route[index + 1].Lng);
+                    foreach (var zone in zones)
+                    {
+                        if (!zone.Polygons.Any(polygon => RouteSegmentIntersectsPolygon(from, to, polygon)))
+                            continue;
+
+                        var kind = zone.Color.ToArgb() == Color.Red.ToArgb()
+                            ? (IsTraditionalChineseUi ? "禁航區（紅色）" : "Prohibited area (red)")
+                            : (IsTraditionalChineseUi ? "限航區（黃色）" : "Restricted area (yellow)");
+                        var name = string.IsNullOrWhiteSpace(zone.Name) ? zone.Id : zone.Name;
+                        crossings.Add("WP" + route[index].Tag + "–WP" + route[index + 1].Tag +
+                                      ": " + kind + " - " + name);
+                    }
+                }
+
+                crossings = crossings.Distinct().ToList();
+                if (crossings.Count == 0)
+                {
+                    CustomMessageBox.Show(IsTraditionalChineseUi
+                            ? "未發現任務航線跨越目前民航局資料中的紅色禁航區或黃色限航區。"
+                            : "No mission segment crosses a prohibited or restricted area in the current Taiwan CAA data.",
+                        "FMT Airspace Check", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    CustomMessageBox.Show(
+                        (IsTraditionalChineseUi ? "航線檢查警告：\r\n" : "Airspace check warnings:\r\n") +
+                        string.Join("\r\n", crossings.Take(30)) +
+                        (crossings.Count > 30 ? "\r\n..." : string.Empty),
+                        "FMT Airspace Check", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error("FMT airspace check failed", ex);
+                CustomMessageBox.Show((IsTraditionalChineseUi ? "限禁航區檢查失敗：" : "Airspace check failed: ") + ex.Message,
+                    "FMT Airspace Check", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                BUT_fmtAirspaceCheck.Enabled = true;
+            }
+        }
+
+        private static bool IsTraditionalChineseUi =>
+            CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+        private static PointLatLngAlt CloneMissionPoint(PointLatLngAlt point)
+        {
+            return new PointLatLngAlt(point.Lat, point.Lng, point.Alt, point.Tag)
+            {
+                Tag2 = point.Tag2,
+                color = point.color
+            };
+        }
+
+        internal static bool RouteSegmentIntersectsPolygon(PointLatLng from, PointLatLng to,
+            IList<PointLatLng> polygon)
+        {
+            if (polygon == null || polygon.Count < 3)
+                return false;
+            if (PointInsidePolygon(from, polygon) || PointInsidePolygon(to, polygon))
+                return true;
+
+            for (var index = 0; index < polygon.Count; index++)
+            {
+                var edgeStart = polygon[index];
+                var edgeEnd = polygon[(index + 1) % polygon.Count];
+                if (SegmentsIntersect(from, to, edgeStart, edgeEnd))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool PointInsidePolygon(PointLatLng point, IList<PointLatLng> polygon)
+        {
+            var inside = false;
+            for (int current = 0, previous = polygon.Count - 1; current < polygon.Count; previous = current++)
+            {
+                var a = polygon[current];
+                var b = polygon[previous];
+                if (((a.Lat > point.Lat) != (b.Lat > point.Lat)) &&
+                    point.Lng < (b.Lng - a.Lng) * (point.Lat - a.Lat) / (b.Lat - a.Lat) + a.Lng)
+                    inside = !inside;
+            }
+
+            return inside;
+        }
+
+        private static bool SegmentsIntersect(PointLatLng a, PointLatLng b, PointLatLng c, PointLatLng d)
+        {
+            const double epsilon = 1e-12;
+            var o1 = Orientation(a, b, c);
+            var o2 = Orientation(a, b, d);
+            var o3 = Orientation(c, d, a);
+            var o4 = Orientation(c, d, b);
+
+            if (((o1 > epsilon && o2 < -epsilon) || (o1 < -epsilon && o2 > epsilon)) &&
+                ((o3 > epsilon && o4 < -epsilon) || (o3 < -epsilon && o4 > epsilon)))
+                return true;
+
+            return Math.Abs(o1) <= epsilon && PointOnSegment(a, c, b) ||
+                   Math.Abs(o2) <= epsilon && PointOnSegment(a, d, b) ||
+                   Math.Abs(o3) <= epsilon && PointOnSegment(c, a, d) ||
+                   Math.Abs(o4) <= epsilon && PointOnSegment(c, b, d);
+        }
+
+        private static double Orientation(PointLatLng a, PointLatLng b, PointLatLng c)
+        {
+            return (b.Lng - a.Lng) * (c.Lat - a.Lat) - (b.Lat - a.Lat) * (c.Lng - a.Lng);
+        }
+
+        private static bool PointOnSegment(PointLatLng a, PointLatLng point, PointLatLng b)
+        {
+            return point.Lng <= Math.Max(a.Lng, b.Lng) + 1e-12 &&
+                   point.Lng >= Math.Min(a.Lng, b.Lng) - 1e-12 &&
+                   point.Lat <= Math.Max(a.Lat, b.Lat) + 1e-12 &&
+                   point.Lat >= Math.Min(a.Lat, b.Lat) - 1e-12;
+        }
+
         private async Task UpdateTaiwanCaaAirspace(PointLatLng point)
         {
             try
@@ -8004,23 +8304,52 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
 
             center.Position = point;
 
-            _ = UpdateTaiwanCaaAirspace(point);
-
             coords1.Lat = point.Lat;
             coords1.Lng = point.Lng;
 
-            // always show on planner view
-            //if (MainV2.ShowAirports)
+            var nextRefresh = new CancellationTokenSource();
+            var previousRefresh = Interlocked.Exchange(ref mapContextRefreshCancellation, nextRefresh);
+            if (previousRefresh != null)
             {
-                airportsoverlay.Clear();
-                foreach (var item in Airports.getAirports(MainMap.Position))
+                previousRefresh.Cancel();
+                previousRefresh.Dispose();
+            }
+
+            _ = RefreshMapContextAfterDragAsync(point, nextRefresh.Token);
+        }
+
+        private async Task RefreshMapContextAfterDragAsync(PointLatLng point, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(300, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                await UpdateTaiwanCaaAirspace(point);
+                cancellationToken.ThrowIfCancellationRequested();
+
+                this.BeginInvokeIfRequired((Action)(() =>
                 {
-                    airportsoverlay.Markers.Add(new GMapMarkerAirport(item)
+                    if (cancellationToken.IsCancellationRequested || IsDisposed)
+                        return;
+
+                    airportsoverlay.Clear();
+                    foreach (var item in Airports.getAirports(point))
                     {
-                        ToolTipText = item.Tag,
-                        ToolTipMode = MarkerTooltipMode.OnMouseOver
-                    });
-                }
+                        airportsoverlay.Markers.Add(new GMapMarkerAirport(item)
+                        {
+                            ToolTipText = item.Tag,
+                            ToolTipMode = MarkerTooltipMode.OnMouseOver
+                        });
+                    }
+                }));
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected while the user is still dragging the map.
+            }
+            catch (Exception ex)
+            {
+                log.Warn("Unable to refresh planner map context", ex);
             }
         }
 

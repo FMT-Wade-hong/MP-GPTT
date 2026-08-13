@@ -37,16 +37,23 @@ jobs:
           Get-ChildItem bin\Release\net461\plugins -File -ErrorAction SilentlyContinue |
             Remove-Item -Force
 
-      - name: Package single-file portable launcher
+      - name: Package portable ZIP
         shell: pwsh
         run: |
-          .\FMT\Build-FMTPlannerPackage.ps1
-          Get-FileHash bin\Package\FMTPlanner.exe -Algorithm SHA256 | Format-List
+          $releaseVersion = if ($env:GITHUB_REF -like 'refs/tags/FMTPlanner-v*') {
+            $env:GITHUB_REF_NAME -replace '^FMTPlanner-v', ''
+          } else {
+            (Get-Content .\FMT\VERSION -Raw).Trim()
+          }
+          .\FMT\Build-FMTPlannerPackage.ps1 -ReleaseVersion $releaseVersion
+          $packagePath = "bin\Package\FMTPlanner-V$releaseVersion.zip"
+          "FMT_PACKAGE=$packagePath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Get-FileHash $packagePath -Algorithm SHA256 | Format-List
           
       - uses: actions/upload-artifact@v4
         with:
-          name: FMTPlanner-Windows-Portable
-          path: bin\Package\FMTPlanner.exe
+          name: FMTPlanner-Windows-Portable-ZIP
+          path: ${{ env.FMT_PACKAGE }}
 
       - name: Publish tagged GitHub release
         uses: softprops/action-gh-release@v2
@@ -54,7 +61,7 @@ jobs:
         with:
           name: ${{ github.ref_name }}
           body_path: CHANGELOG-FMT.md
-          files: bin/Package/FMTPlanner.exe
+          files: ${{ env.FMT_PACKAGE }}
           fail_on_unmatched_files: true
 
 

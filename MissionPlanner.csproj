@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
+    <AssemblyName>FMTPlanner</AssemblyName>
     <ApplicationIcon>mpdesktop.ico</ApplicationIcon>
     <OutputType>WinExe</OutputType>
     <StartupObject>MissionPlanner.Program</StartupObject>
@@ -1204,5 +1205,6 @@
   <ItemGroup>
     <EmbeddedResource Include="plugins\example23-switch.resx" />
     <EmbeddedResource Include="FMT\Assets\fmt-logo.png" LogicalName="MissionPlanner.FMT.Assets.fmt-logo.png" />
+    <EmbeddedResource Include="FMT\Assets\fmt-app-icon-source.png" LogicalName="MissionPlanner.FMT.Assets.fmt-app-icon-source.png" />
   </ItemGroup>
 </Project>

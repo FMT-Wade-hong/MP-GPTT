@@ -581,6 +581,7 @@ namespace MissionPlanner
 
         public GCSViews.FlightPlanner FlightPlanner;
         GCSViews.SITL Simulation;
+        private ToolStripButton MenuFeiMao;
 
         private Form connectionStatsForm;
         private ConnectionStats _connectionStats;
@@ -700,6 +701,7 @@ namespace MissionPlanner
             }
 
             InitializeComponent();
+            ConfigureFmtMainMenu();
 
             //Init Theme table and load BurntKermit as a default
             ThemeManager.thmColor = new ThemeColorTable(); //Init colortable
@@ -868,14 +870,11 @@ namespace MissionPlanner
                 log.Info("Create FP");
                 FlightPlanner = new GCSViews.FlightPlanner();
                 //Configuration = new GCSViews.ConfigurationView.Setup();
-                log.Info("Create SIM");
-                Simulation = new GCSViews.SITL();
                 //Firmware = new GCSViews.Firmware();
                 //Terminal = new GCSViews.Terminal();
 
                 FlightData.Width = MyView.Width;
                 FlightPlanner.Width = MyView.Width;
-                Simulation.Width = MyView.Width;
             }
             catch (ArgumentException e)
             {
@@ -2152,7 +2151,7 @@ namespace MissionPlanner
             log.Info("closing sim");
             try
             {
-                Simulation.Dispose();
+                Simulation?.Dispose();
             }
             catch
             {
@@ -3178,8 +3177,6 @@ namespace MissionPlanner
             MyView.AddScreen(new MainSwitcher.Screen("FlightPlanner", FlightPlanner, true));
             MyView.AddScreen(new MainSwitcher.Screen("HWConfig", typeof(GCSViews.InitialSetup), false));
             MyView.AddScreen(new MainSwitcher.Screen("SWConfig", typeof(GCSViews.SoftwareConfig), false));
-            MyView.AddScreen(new MainSwitcher.Screen("Simulation", Simulation, true));
-            MyView.AddScreen(new MainSwitcher.Screen("Help", typeof(GCSViews.Help), false));
 
             try
             {
@@ -4673,6 +4670,52 @@ namespace MissionPlanner
         private void connectionOptionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             new ConnectionOptions().Show(this);
+        }
+
+        private void ConfigureFmtMainMenu()
+        {
+            MainMenu.Items.Remove(MenuSimulation);
+            MainMenu.Items.Remove(MenuHelp);
+
+            const string resourceName = "MissionPlanner.FMT.Assets.fmt-app-icon-source.png";
+            Image logo = null;
+            using (var stream = typeof(MainV2).Assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream != null)
+                {
+                    using (var source = Image.FromStream(stream))
+                        logo = new Bitmap(source, new Size(72, 31));
+                }
+            }
+
+            MenuFeiMao = new ToolStripButton
+            {
+                Name = "MenuFeiMao",
+                Text = "FMT",
+                Alignment = ToolStripItemAlignment.Right,
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                Image = logo,
+                ImageScaling = ToolStripItemImageScaling.None,
+                AutoSize = false,
+                Size = new Size(78, 35),
+                Margin = Padding.Empty,
+                ToolTipText = "FMT飛貓科技 - www.feimaotec.com"
+            };
+            MenuFeiMao.Click += (clickSender, args) =>
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo("https://www.feimaotec.com")
+                    {
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    log.Warn("Unable to open the FMT website", ex);
+                }
+            };
+            MainMenu.Items.Add(MenuFeiMao);
         }
 
         private void MenuArduPilot_Click(object sender, EventArgs e)

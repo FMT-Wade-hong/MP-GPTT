@@ -38,6 +38,8 @@ CAA GIS information is a planning reference only. The official announcement and 
 
 Open `MissionPlanner.sln` in Visual Studio 2022 and build `Debug` or `Release`.
 
-After a Release build, run `FMT/Build-FMTPlannerPackage.ps1` to produce the single-file portable launcher at `bin/Package/FMTPlanner.exe`. The launcher embeds the complete application, extracts its versioned payload to `%LOCALAPPDATA%/FMT/FMTPlanner` on first use, and starts the Windows GUI without a command-prompt window.
+After a Release build, run `FMT/Build-FMTPlannerPackage.ps1` to produce the versioned portable ZIP, for example `bin/Package/FMTPlanner-V1.0.2.zip`. The version comes from `FMT/VERSION` unless `-ReleaseVersion X.X.X` is supplied. Extract the ZIP and run `FMTPlanner.exe`. The package deliberately avoids self-extracting launchers because McAfee Real Protect classifies their extract-and-launch behavior as suspicious until the publisher has trusted code-signing reputation.
 
-GitHub Actions builds the solution on push, pull request, or manual dispatch and publishes `FMTPlanner-Windows-Portable` plus the debug artifact. Tags matching `FMTPlanner-v*` automatically create a GitHub Release containing `FMTPlanner.exe`.
+A locally generated self-signed certificate can verify whether a file changed, but it does not establish public publisher trust on other computers. Public releases should remain ZIP packages until FMT has a trusted code-signing certificate; future signed builds should use an RFC 3161 timestamp server.
+
+GitHub Actions builds the solution on push, pull request, or manual dispatch and publishes `FMTPlanner-Windows-Portable-ZIP` plus the debug artifact. Tags matching `FMTPlanner-v*` automatically create a GitHub Release containing the matching versioned ZIP.

@@ -1,5 +1,35 @@
 # FMTPlanner release history
 
+## FMTPlanner v1.0.2 — 2026-08-13
+
+### Stability and map interaction
+
+- Fixed a `KeyNotFoundException` when executing a built-in action from the Flight Data Actions tab. Built-in actions now bypass the custom-action dictionary and continue through the normal MAVLink command path.
+- Restored the clickable **Ready to Arm / Not Ready to Arm** HUD status and its pre-arm reason dialog.
+- Fixed waypoint dragging so the marker and route line follow the mouse continuously before the grid value is committed.
+- Debounced Taiwan CAA and airport refresh work during map dragging to reduce repeated loading and log noise.
+
+### Mission checks
+
+- Added **Altitude Check** above Upload. It warns for less than 30 m terrain clearance or more than Taiwan's 120 m general AGL ceiling, then displays the mission altitude and terrain profile.
+- Added **Airspace Check** above Upload. It detects mission segments that enter or cross Taiwan CAA prohibited (red) or restricted (yellow) polygons and lists the affected WP segments.
+- Both checks are advisory and do not silently block mission upload.
+
+### FMT interface
+
+- Added the FMT logo to the left of the ArduPilot logo; clicking it opens `https://www.feimaotec.com`.
+- Removed the Simulator and Help/About screens from the main interface.
+- Removed the Optional Hardware page tree from Initial Setup while retaining shared drivers required by other flight functions.
+- Renamed the application binary to `FMTPlanner.exe` and added versioned portable filenames.
+- Changed the public package to `FMTPlanner-V1.0.2.zip`. The self-extracting EXE was withheld after McAfee Real Protect quarantined its extract-and-launch behavior; the ZIP runs the application directly after extraction.
+
+### Validation
+
+- Full `MissionPlanner.sln` Release build completed successfully.
+- Added automated verification for compiled button handlers, Ready-to-Arm hit testing, waypoint drag updates, airspace geometry, removed screens, embedded logos, GUI subsystem, and package naming.
+- V1.0.2 verification suite: 31 checks passed, 0 failed.
+- With McAfee protection enabled, the extracted `FMTPlanner.exe` opened its main window and produced 0 new McAfee detections during the startup smoke test.
+
 ## FMTPlanner v1.0.1 — 2026-08-12
 
 ### Stability

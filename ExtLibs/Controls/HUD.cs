@@ -3360,7 +3360,22 @@ namespace MissionPlanner.Controls
 
                 if (displayprearm && status == false)
                 {
-                    drawstring(prearmstatus ? HUDT.ReadyToArm : HUDT.NotReadyToArm, font, fontsize, prearmstatus ? _whiteBrush : (SolidBrush) Brushes.Red, graphicsObject.Width / 2, graphicsObject.Height - (fontsize * 4), true);
+                    var prearmText = prearmstatus ? HUDT.ReadyToArm : HUDT.NotReadyToArm;
+                    var prearmCenterX = graphicsObject.Width / 2f;
+                    var prearmCenterY = graphicsObject.Height - (fontsize * 4);
+                    var prearmWidth = Math.Max(fontsize * 8f, prearmText.Length * fontsize * 0.72f);
+                    prearmhitzone = Rectangle.Round(new RectangleF(
+                        prearmCenterX - (prearmWidth / 2f),
+                        prearmCenterY - (fontsize * 0.5f),
+                        prearmWidth,
+                        fontsize * 2f));
+                    drawstring(prearmText, font, fontsize,
+                        prearmstatus ? _whiteBrush : (SolidBrush) Brushes.Red,
+                        prearmCenterX, prearmCenterY, true);
+                }
+                else
+                {
+                    prearmhitzone = Rectangle.Empty;
                 }
 
                 // draw mode

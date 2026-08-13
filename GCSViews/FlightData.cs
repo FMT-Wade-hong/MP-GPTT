@@ -1686,8 +1686,8 @@ namespace MissionPlanner.GCSViews
         {
             // Custom action handling
             {
-                var customAction = CustomActions[CMB_action.Text];
-                if(customAction!=null)
+                Action<string> customAction;
+                if (CustomActions.TryGetValue(CMB_action.Text, out customAction) && customAction != null)
                 {
                     try
                     {
