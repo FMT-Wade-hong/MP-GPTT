@@ -14,6 +14,7 @@ namespace MissionPlanner.FMT
 
         internal FmtLoginForm()
         {
+            FmtBranding.ApplyApplicationIcon(this);
             Text = FmtAuthentication.ProductTitle + " Login";
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;

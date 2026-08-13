@@ -223,15 +223,9 @@ namespace MissionPlanner
             if (File.Exists(Settings.GetRunningDirectory() + "logo2.png"))
                 Logo2 = new Bitmap(Settings.GetRunningDirectory() + "logo2.png");
 
-            if (File.Exists(Settings.GetRunningDirectory() + "icon.png"))
-            {
-                // 128*128
-                IconFile = new Bitmap(Settings.GetRunningDirectory() + "icon.png");
-            }
-            else
-            {
-                IconFile = MissionPlanner.Properties.Resources.mpdesktop.ToBitmap();
-            }
+            // FMT branding is fixed for the executable, splash, login, and taskbar.
+            // Do not allow an external icon.png to replace the application identity.
+            IconFile = MissionPlanner.Properties.Resources.mpdesktop.ToBitmap();
 
             if (File.Exists(Settings.GetRunningDirectory() + "splashbg.png")) // 600*375
                 SplashBG = new Bitmap(Settings.GetRunningDirectory() + "splashbg.png");
@@ -273,8 +267,7 @@ namespace MissionPlanner
             }
 
             Console.WriteLine("IconFile");
-            if (IconFile != null)
-                Splash.Icon = Icon.FromHandle(((Bitmap) IconFile).GetHicon());
+            FMT.FmtBranding.ApplyApplicationIcon(Splash);
 
             Splash.Text = name;
             Console.WriteLine("Splash.Show()");

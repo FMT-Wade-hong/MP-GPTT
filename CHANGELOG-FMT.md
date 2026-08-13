@@ -18,6 +18,11 @@
 
 - Added a white satellite icon to the left of the two-line satellite, fix, HDOP, and VDOP display.
 
+### Windows application icon
+
+- Fixed the running taskbar and window icon so the splash screen, login, main window, and FMT parameter dialogs consistently use the embedded FMT icon.
+- Disabled the legacy external `icon.png` override so a file beside the executable cannot replace FMT branding at runtime.
+
 ## FMTPlanner v1.0.3 — 2026-08-13
 
 ### Airspace safety checks

@@ -92,6 +92,9 @@ $source = Get-Content -LiteralPath (Join-Path $projectRoot 'GCSViews\FlightPlann
 $programSource = Get-Content -LiteralPath (Join-Path $projectRoot 'Program.cs') -Raw -Encoding UTF8
 $mainSource = Get-Content -LiteralPath (Join-Path $projectRoot 'MainV2.cs') -Raw -Encoding UTF8
 $authenticationSource = Get-Content -LiteralPath (Join-Path $projectRoot 'FMT\FmtAuthentication.cs') -Raw -Encoding UTF8
+$brandingSource = Get-Content -LiteralPath (Join-Path $projectRoot 'FMT\FmtBranding.cs') -Raw -Encoding UTF8
+$loginSource = Get-Content -LiteralPath (Join-Path $projectRoot 'FMT\FmtLoginForm.cs') -Raw -Encoding UTF8
+$parameterAccessSource = Get-Content -LiteralPath (Join-Path $projectRoot 'FMT\FmtParameterAccessForm.cs') -Raw -Encoding UTF8
 $plannerConfigSource = Get-Content -LiteralPath (Join-Path $projectRoot 'GCSViews\ConfigurationView\ConfigPlanner.cs') -Raw -Encoding UTF8
 $flightDataSource = Get-Content -LiteralPath (Join-Path $projectRoot 'GCSViews\FlightData.cs') -Raw -Encoding UTF8
 $currentStateSource = Get-Content -LiteralPath (Join-Path $projectRoot 'ExtLibs\ArduPilot\CurrentState.cs') -Raw -Encoding UTF8
@@ -102,6 +105,11 @@ Test-FmtCondition 'Home required for complete check' ($source.Contains('Please s
 Test-FmtCondition 'FMT product title version' ($authenticationSource.Contains('ProductTitle = ProductName + " V" + ProductVersion')) 'title uses FMT release version'
 Test-FmtCondition 'Splash hides upstream build version' ($programSource.Contains('Splash.Text = name;') -and -not $programSource.Contains('Application.ProductVersion + " build "')) 'only FMT title is displayed'
 Test-FmtCondition 'Connected title remains FMT version' ($mainSource.Contains('this.Text = titlebar;') -and -not $mainSource.Contains('this.Text = titlebar + " " + comPort.MAV.VersionString')) 'flight-controller version is not appended'
+Test-FmtCondition 'FMT executable icon configured' ((Get-Content -LiteralPath (Join-Path $projectRoot 'MissionPlanner.csproj') -Raw -Encoding UTF8).Contains('<ApplicationIcon>mpdesktop.ico</ApplicationIcon>')) 'Windows executable uses the generated FMT ICO'
+Test-FmtCondition 'FMT runtime icon is fixed' ($brandingSource.Contains('Resources.mpdesktop.Clone()') -and -not $programSource.Contains('Settings.GetRunningDirectory() + "icon.png"')) 'external icon.png cannot replace FMT branding'
+Test-FmtCondition 'FMT login icon applied' ($loginSource.Contains('FmtBranding.ApplyApplicationIcon(this);')) 'login and taskbar use the embedded FMT icon'
+Test-FmtCondition 'FMT main window icon applied' ($mainSource.Contains('FMT.FmtBranding.ApplyApplicationIcon(this);')) 'main window uses the embedded FMT icon'
+Test-FmtCondition 'FMT parameter dialog icons applied' (([regex]::Matches($parameterAccessSource, 'FmtBranding\.ApplyApplicationIcon\(this\);')).Count -eq 2) 'parameter access dialogs use the embedded FMT icon'
 Test-FmtCondition 'FMT theme forced at startup' ($authenticationSource.Contains('Settings.Instance["theme"] = ThemeName;') -and $mainSource.Contains('Settings.Instance["theme"] = FMT.FmtAuthentication.ThemeName;')) 'stored themes cannot override FMT branding'
 Test-FmtCondition 'Only FMT theme is listed' ($plannerConfigSource.Contains('CMB_theme.DataSource = new[] { FMT.FmtAuthentication.ThemeName };')) 'theme selector has one entry'
 Test-FmtCondition 'Custom theme editor hidden' ($plannerConfigSource.Contains('BUT_themecustom.Visible = false;') -and -not $plannerConfigSource.Contains('ThemeManager.StartThemeEditor();')) 'custom entry is unavailable'

@@ -12,6 +12,7 @@ namespace MissionPlanner.FMT
 
         internal FmtParameterAccessForm()
         {
+            FmtBranding.ApplyApplicationIcon(this);
             Text = "Protected Parameter Access";
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -101,6 +102,7 @@ namespace MissionPlanner.FMT
 
         internal FmtChangeParameterPasswordForm()
         {
+            FmtBranding.ApplyApplicationIcon(this);
             Text = "Change Parameter Password";
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
