@@ -1,147 +1,102 @@
-# MissionPlanner
+# FeiMaoTecPlanner V1.0.4
 
-![Dot Net](https://github.com/ardupilot/missionplanner/actions/workflows/main.yml/badge.svg) ![Android](https://github.com/ardupilot/missionplanner/actions/workflows/android.yml/badge.svg) ![OSX/IOS](https://github.com/ardupilot/missionplanner/actions/workflows/mac.yml/badge.svg)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.4/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
+</p>
 
-Website : http://ardupilot.org/planner/
+<p align="center">
+  <strong>FMT 飛貓科技客製化 Mission Planner 地面站</strong><br>
+  多旋翼、定翼機及 VTOL／QuadPlane 共用操作環境
+</p>
 
-Forum : http://discuss.ardupilot.org/c/ground-control-software/mission-planner
+<p align="center">
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.4/FMTPlanner-V1.0.4.zip"><strong>下載 FMTPlanner V1.0.4</strong></a>
+  ·
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.4/README-FMT.md">繁體中文圖文操作手冊</a>
+  ·
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.4">版本發布頁</a>
+</p>
 
-Download latest stable version : http://firmware.ardupilot.org/Tools/MissionPlanner/MissionPlanner-latest.msi
+![Version](https://img.shields.io/badge/version-V1.0.4-22a9dc)
+![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
+![Package](https://img.shields.io/badge/package-portable%20ZIP-35a853)
+![Language](https://img.shields.io/badge/UI-English%20%7C%20繁體中文-f0ad00)
 
-Changelog : https://github.com/ArduPilot/MissionPlanner/blob/master/ChangeLog.txt
+## 軟體資訊
 
-License : https://github.com/ArduPilot/MissionPlanner/blob/master/COPYING.txt
-
-
-## How to compile
-
-### On Windows (Recommended)
-
-#### 1. Install software
-
-##### Main requirements
-
-Currently, Mission Planner needs:
-
-Visual Studio 2022
-
-##### IDE
-
-### Visual Studio Community
-To compile Mission Planner, we recommend using Visual Studio. You can download Visual Studio Community from the [Visual Studio Download page](https://visualstudio.microsoft.com/downloads/ "Visual Studio Download page").
-
-Visual Studio is a comprehensive suite with built-in Git support, but it can be overwhelming due to its complexity. To streamline the installation process, you can customize your installation by selecting the relevant "Workloads" and "Individual components" based on your software development needs.
-
-To simplify this selection process, we have provided a configuration file that specifies the components required for MissionPlanner development. Here's how you can use it:
-
-1. Go to "More" in the Visual Studio installer.
-2. Select "Import configuration."
-3. Use the following file: [vs2022.vsconfig](https://raw.githubusercontent.com/ArduPilot/MissionPlanner/master/vs2022.vsconfig "vs2022.vsconfig").
-
-By following these steps, you'll have the necessary components installed and ready for Mission Planner development.
-
-###### VSCode
-Currently VSCode with C# plugin is able to parse the code but cannot build.
-
-#### 2. Get the code
-
-If you get Visual Studio Community, you should be able to use Git from the IDE. 
-Clone `https://github.com/ArduPilot/MissionPlanner.git` to get the full code.
-
-In case you didn't install an IDE, you will need to manually install Git. Please follow instruction in https://ardupilot.org/dev/docs/where-to-get-the-code.html#downloading-the-code-using-git
-
-Open a git bash terminal in the MissionPlanner directory and type, "git submodule update --init" to download all submodules
-
-#### 3. Build
-
-To build the code:
-- Open MissionPlanner.sln with Visual Studio
-- From the Build menu, select "Build MissionPlanner"
-
-### On other systems
-Building Mission Planner on other systems isn't support currently.
-
-## Launching Mission Planner on other system
-
-Mission Planner is available for Android via the Play Store. https://play.google.com/store/apps/details?id=com.michaeloborne.MissionPlanner
-Mission Planner can be used with Mono on Linux systems. Be aware that not all functions are available on Linux.
-Native MacOS and iOS support is experimental and not recommended for inexperienced users. https://github.com/ArduPilot/MissionPlanner/releases/tag/osxlatest 
-For MacOS users it is recommended to use Mission Planner for Windows via Boot Camp or Parallels (or equivalent).
-
-### On Linux
-
-#### Requirements
-
-Those instructions were tested on Ubuntu 20.04.
-Please install Mono, either :
-- `sudo apt install mono-complete mono-runtime libmono-system-windows-forms4.0-cil libmono-system-core4.0-cil libmono-winforms4.0-cil libmono-corlib4.0-cil libmono-system-management4.0-cil libmono-system-xml-linq4.0-cil`
-
-#### Launching
-
-- Get the lastest zipped version of Mission Planner here : https://firmware.ardupilot.org/Tools/MissionPlanner/MissionPlanner-latest.zip
-- Unzip in the directory you want
-- Go into the directory
-- run with `mono MissionPlanner.exe`
-
-You can debug Mission Planner on Mono with `MONO_LOG_LEVEL=debug mono MissionPlanner.exe`
-
-### External Services Used
-
-| Source | Use | How to disable | Custodian |
-|---|---|---|---|
-| https://firmware.oborne.me  | used as a global cdn for checking for MP update check - checked once per day at startup | edit missionplanner.exe.config | Michael Oborne |
-| https://firmware.ardupilot.org  | used for updates to stable, firmware metadata, firmware, user alerts, gstreamer, SRTM, SITL | updates to stable (edit missionplanner.exe.config) - all others Not possible | Ardupilot Team |
-| https://github.com/ | used for updates to beta | edit missionplanner.exe.config | Michael Oborne |
-| https://raw.githubusercontent.com | old param metadata, sitl config files | Not possible | Ardupilot Team |
-| https://api.github.com/ | ardupilot preload param files | Not possible | Ardupilot Team |
-| https://raw.oborne.me/  | used as glocal cdn for parameter metadata generator, no longer primary source | only used at user request to regenerate, edit missionplanner.exe.config | Michael Oborne |
-| https://maps.google.com  | used for elevation api - removed due to abuse | N/A | N/A |
-| https://discuss.cubepilot.org/ | use for SB2 reporting - only on affected boards when user enters details | only used at user request | CubePilot |
-| https://altitudeangel.com  | utm data - user enabled | only used at user request | Altitude Angel |
-| https://autotest.ardupilot.org  | dataflash log meta data, parameter metadata | Not Possible | Ardupilot Team |
-| Many | your choice of map provider google/bing/openstreetmap/etc | User selectable | User/Many |
-| https://www.cloudflare.com | geo location provider - for NFZ selection | Not Possible | Michael Oborne |
-| https://esua.cad.gov.hk | HK no fly zones - user enabled | User selectable | HK Gov |
-| https://ssl.google-analytics.com | Google Analytics Anonymous Stats - Screen Loads, Exceptions/Crashs, Events (Connect), Startup Timing, FW upload (FW Type and Board Type) | disable in Config > Planner > OptOut Anon Stats | Michael Oborne |
-| https://api.dronelogbook.com | logging - disabled | N/A | N/A |
-| https://ardupilot.org | help urls on many pages | User Initiated | ArduPilot Team |
-| https://www.youtube.com | help videos on many pages | User Initiated | ArduPilot Team |
-| https://files.rfdesign.com.au | RFD firmwares | User Initiated | RFDesign |
-| https://teck.airmarket.io | airmarket - disabled | N/A | N/A |
-
-### Offline Use - No Internet
-
-| Location | Use | Transferable between pcs |
-|---|---|---|
-| C:\ProgramData\Mission Planner\gmapcache | Map cache | yes |
-| C:\ProgramData\Mission Planner\srtm | Elevation data cache | yes |
-| C:\ProgramData\Mission Planner\\*.pdef.xml | Parameter cache | yes |
-| C:\ProgramData\Mission Planner\LogMessages*.xml | DF Log metadata cache | yes |
-
-on linux this is in /home/<user>/.local/share/Mission Planner/
-
-### Offline Data Supported
-#### Elevation
-* SRTM Cache
-* GeoTiff's in WGS84/EGM96
-* DTED
-
-#### Images
-* Map Cache
-* WMS
-* WMTS
-* GDAL
-
-### Paths used - Default
-
-| Location | Use |
+| 項目 | 內容 |
 |---|---|
-| C:\ProgramData\Mission Planner | All cross user content |
-| C:\Users\USERNAME\Documents\Mission Planner | All per user content |
+| 軟體名稱 | **FeiMaoTecPlanner V1.0.4** |
+| 執行檔 | **FMTPlanner.exe** |
+| 公司／品牌 | **FMT 飛貓科技** |
+| 基礎專案 | ArduPilot Mission Planner |
+| 支援系統 | Windows |
+| 發布形式 | 解壓縮後即可執行的可攜式 ZIP |
+| 支援構型 | 多旋翼、定翼機、VTOL／QuadPlane |
+| 介面語言 | 預設英文，可使用繁體中文 |
 
-on linux this is in /home/<user>/.local/share/Mission Planner/
+## V1.0.4 主要功能
 
-### CA Cert
-A CA cert is installed to the root store and used to sign the windows serial port drivers, and is installed as part of the MSI install.
+- FMT Logo、天空藍主題、專屬程式圖示及登入畫面。
+- TitanPlanner 風格姿態儀與依嚴重程度著色的飛行訊息。
+- 工具列快捷操作：解鎖／上鎖、空速計歸零及 QNH 校正。
+- 工具列 GPS 狀態：衛星數量、定位型態、HDOP 與 VDOP。
+- 航點間距離標示，拖曳航點時同步更新點位與航線。
+- 台灣民航局限禁航區：禁航區紅色、限航區黃色。
+- 高度檢查與限禁航區檢查，涵蓋起飛、航點間及返航路徑。
+- 參數頁面密碼保護及深色主題文字可讀性修正。
+- 多旋翼、定翼機與 VTOL／QuadPlane 各自獨立的常用參數方框。
+- 啟動時不顯示額外命令提示字元視窗。
 
-[![FlagCounter](https://s01.flagcounter.com/count2/A4bA/bg_FFFFFF/txt_000000/border_CCCCCC/columns_8/maxflags_40/viewers_0/labels_1/pageviews_0/flags_0/percent_0/)](https://info.flagcounter.com/A4bA)
+## 操作畫面
+
+![FeiMaoTecPlanner V1.0.4 飛行資料畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.4/FMT/ManualImages/flight-data-overview.png)
+
+### 任務限禁航區檢查
+
+![限禁航區檢查](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.4/FMT/ManualImages/mission-airspace-check.png)
+
+### 飛行訊息顏色
+
+![飛行訊息顏色](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.4/FMT/ManualImages/message-severity.png)
+
+## 快速開始
+
+1. 下載 [FMTPlanner-V1.0.4.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.4/FMTPlanner-V1.0.4.zip)。
+2. 將 ZIP **完整解壓縮**到可寫入的資料夾。
+3. 執行 **FMTPlanner.exe**，不要直接在壓縮檔內啟動。
+4. 使用預設登入資料：
+
+   - 帳號：**FMT**
+   - 密碼：**1234**
+
+5. 進入程式後選擇正確 COM 埠與傳輸速率，再按 **CONNECT／連線**。
+6. 正式使用前請變更預設密碼，並先完成飛控校正與任務安全檢查。
+
+## 三種飛行器常用設定
+
+「初始配置 → 飛行模式設定」下方提供三個獨立設定方框。程式會依目前連線飛控啟用正確構型，其他方框保持停用，避免跨構型誤寫參數。
+
+| 構型 | 常用設定 |
+|---|---|
+| 多旋翼 | 導航速度、GPS 定位速度、WP 半徑、WP 航向、RTL 航向及 RTL 速度 |
+| 定翼機 | 巡航／RTL 空速、最低 GPS 地速及 WP 半徑 |
+| VTOL／QuadPlane | 定翼巡航空速、VTOL 導航／返航速度、GPS 速度、WP 半徑及 QRTL 返航模式 |
+
+速度統一以 **m/s** 顯示，WP 半徑以 **m** 顯示；程式會處理 ArduPilot 新舊版參數及單位換算。
+
+## 文件與下載
+
+- [V1.0.4 正式發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.4)
+- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.4/FMTPlanner-V1.0.4.zip)
+- [完整繁體中文圖文操作手冊](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.4/README-FMT.md)
+- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.4/CHANGELOG-FMT.md)
+- [FMT 飛貓科技官網](https://www.feimaotec.com)
+
+## 安全提醒
+
+FMTPlanner 的高度與限禁航區檢查屬於輔助功能。實際飛行前仍須確認最新法規、公告、任務區域、天候、飛控狀態及現場安全條件。請勿僅依賴軟體提示決定是否可以飛行。
+
+## 授權
+
+本專案基於 Mission Planner，依原專案的 [GPL-3.0 授權](COPYING.txt)散布。FMT 品牌、Logo 與客製素材之權利歸 FMT 飛貓科技所有。
