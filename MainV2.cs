@@ -4786,7 +4786,7 @@ namespace MissionPlanner
                 ForeColor = Color.Gray,
                 Font = new Font(SystemFonts.MenuFont.FontFamily, 8.25f, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleLeft,
-                Text = "Sats: --  Disconnected"
+                Text = IsFmtTraditionalChineseUi ? "衛星: --  未連線" : "Sats: --  Disconnected"
             };
             FmtGpsDopLabel = new Label
             {
@@ -4864,25 +4864,45 @@ namespace MissionPlanner
 
             if (!connected)
             {
-                FmtGpsPrimaryLabel.Text = "Sats: --  Disconnected";
+                FmtGpsPrimaryLabel.Text = IsFmtTraditionalChineseUi
+                    ? "衛星: --  未連線"
+                    : "Sats: --  Disconnected";
                 FmtGpsDopLabel.Text = "H: --  |  V: --";
                 FmtGpsPrimaryLabel.ForeColor = Color.Gray;
                 FmtGpsDopLabel.ForeColor = Color.Gray;
                 return;
             }
 
-            var fixLabel = GetFmtGpsFixLabel(gpsStatus);
+            var fixLabel = GetFmtGpsFixLabel(gpsStatus, IsFmtTraditionalChineseUi);
             var fixColor = GetFmtGpsFixColor(gpsStatus);
             FmtGpsPrimaryLabel.Text = string.Format(CultureInfo.InvariantCulture,
-                "Sats: {0:0}  {1}", Math.Max(0, satCount), fixLabel);
+                IsFmtTraditionalChineseUi ? "衛星: {0:0}  {1}" : "Sats: {0:0}  {1}",
+                Math.Max(0, satCount), fixLabel);
             FmtGpsDopLabel.Text = string.Format(CultureInfo.InvariantCulture,
                 "H: {0}  |  V: {1}", FormatFmtDop(hdop), FormatFmtDop(vdop));
             FmtGpsPrimaryLabel.ForeColor = fixColor;
             FmtGpsDopLabel.ForeColor = gpsStatus >= 3 ? Color.LightGreen : fixColor;
         }
 
-        internal static string GetFmtGpsFixLabel(float gpsStatus)
+        internal static string GetFmtGpsFixLabel(float gpsStatus, bool traditionalChinese)
         {
+            if (traditionalChinese)
+            {
+                switch ((int)Math.Round(gpsStatus))
+                {
+                    case 0: return "無 GPS";
+                    case 1: return "未定位";
+                    case 2: return "2D 定位";
+                    case 3: return "3D 定位";
+                    case 4: return "DGPS";
+                    case 5: return "RTK 浮點解";
+                    case 6: return "RTK 固定解";
+                    case 7: return "靜態定位";
+                    case 8: return "PPP";
+                    default: return "未知";
+                }
+            }
+
             switch ((int)Math.Round(gpsStatus))
             {
                 case 0: return "No GPS";

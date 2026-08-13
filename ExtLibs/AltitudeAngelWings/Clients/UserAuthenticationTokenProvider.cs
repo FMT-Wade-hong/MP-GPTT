@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -61,7 +62,9 @@ namespace AltitudeAngelWings.Clients
                 {
                     await _messagesService.AddMessageAsync(Message.ForAction(
                         "AskToSignIn",
-                        "You need to sign into Altitude Angel. Click here to sign in.",
+                        CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
+                            ? "您尚未登入 Altitude Angel，點擊這裡登入。"
+                            : "You need to sign into Altitude Angel. Click here to sign in.",
                         () => Task.Factory.StartNew(() => AskUserForAccessToken(CancellationToken.None), cancellationToken),
                         () => _settings.TokenResponse.IsValidForAuth()));
                     return null;

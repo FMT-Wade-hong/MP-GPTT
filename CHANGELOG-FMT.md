@@ -27,6 +27,8 @@
 ### GPS toolbar status
 
 - Added a live two-line GPS display beside the FMT logo with satellite count, fix type, HDOP, and VDOP. Missing telemetry is shown as `--`, and the fix state is color coded.
+- Removed the duplicate satellite-count and HDOP values from the lower map overlay.
+- Localized the GPS fix labels, map heading legend, and Altitude Angel sign-in action for the Traditional Chinese interface.
 
 ## FMTPlanner v1.0.2 — 2026-08-13
 

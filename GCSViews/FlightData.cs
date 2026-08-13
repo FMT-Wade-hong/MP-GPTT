@@ -249,6 +249,19 @@ namespace MissionPlanner.GCSViews
 
             InitializeComponent();
 
+            // GPS satellite count and HDOP are shown in the FMT top toolbar.
+            // Hide the duplicate map-overlay values to keep the lower legend clear.
+            lbl_hdop.Visible = false;
+            lbl_sats.Visible = false;
+
+            if (IsFmtTraditionalChineseUi)
+            {
+                label4.Text = "目前航向";
+                label3.Text = "直飛目前航點";
+                label5.Text = "目標航向";
+                label6.Text = "GPS 航跡（黑色）";
+            }
+
             log.Info("Components Done");
 
             instance = this;

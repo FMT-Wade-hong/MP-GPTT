@@ -88,6 +88,7 @@ $authenticationSource = Get-Content -LiteralPath (Join-Path $projectRoot 'FMT\Fm
 $plannerConfigSource = Get-Content -LiteralPath (Join-Path $projectRoot 'GCSViews\ConfigurationView\ConfigPlanner.cs') -Raw -Encoding UTF8
 $flightDataSource = Get-Content -LiteralPath (Join-Path $projectRoot 'GCSViews\FlightData.cs') -Raw -Encoding UTF8
 $currentStateSource = Get-Content -LiteralPath (Join-Path $projectRoot 'ExtLibs\ArduPilot\CurrentState.cs') -Raw -Encoding UTF8
+$altitudeAngelSource = Get-Content -LiteralPath (Join-Path $projectRoot 'ExtLibs\AltitudeAngelWings\Clients\UserAuthenticationTokenProvider.cs') -Raw -Encoding UTF8
 Test-FmtCondition 'Takeoff warning label' ($source.Contains('Takeoff path Home')) 'warning identifies takeoff path'
 Test-FmtCondition 'Return warning label' ($source.Contains('Return path WP')) 'warning identifies return path'
 Test-FmtCondition 'Home required for complete check' ($source.Contains('Please set the Home location before checking takeoff and return paths.')) 'prevents incomplete clear result'
@@ -109,9 +110,16 @@ Test-FmtCondition 'Airspeed zero blocked while armed' ($flightDataSource.Contain
 Test-FmtCondition 'GPS toolbar host compiled' ($mainSource.Contains('MenuFmtGpsStatus = new ToolStripControlHost')) 'two-line GPS status is hosted in the top toolbar'
 Test-FmtCondition 'GPS toolbar is right aligned' ($mainSource.Contains('Name = "MenuFmtGpsStatus"') -and $mainSource.Contains('Alignment = ToolStripItemAlignment.Right')) 'GPS status is placed next to the FMT logo'
 $fixLabelMethod = $mainType.GetMethod('GetFmtGpsFixLabel', $binding)
-Test-FmtCondition 'RTK Fixed label mapping' ($fixLabelMethod.Invoke($null, @([single]6)) -eq 'RTK Fixed') 'GPS fix type 6 has the requested label'
+Test-FmtCondition 'RTK Fixed English label mapping' ($fixLabelMethod.Invoke($null, @([single]6, $false)) -eq 'RTK Fixed') 'GPS fix type 6 has the standard English label'
+$rtkFixedChinese = 'RTK ' + [char]0x56FA + [char]0x5B9A + [char]0x89E3
+Test-FmtCondition 'RTK Fixed Chinese label mapping' ($fixLabelMethod.Invoke($null, @([single]6, $true)) -eq $rtkFixedChinese) 'GPS fix type 6 is localized for the Chinese UI'
 Test-FmtCondition 'VDOP state exists' ($currentStateSource.Contains('public float gpsvdop { get; set; }')) 'vertical dilution is retained in current state'
 Test-FmtCondition 'VDOP telemetry source' ($currentStateSource.Contains('gpsvdop = (float)Math.Round(gps.epv / 100.0, 2);')) 'GPS_RAW_INT epv updates VDOP'
+Test-FmtCondition 'Duplicate lower GPS values hidden' ($flightDataSource.Contains('lbl_hdop.Visible = false;') -and $flightDataSource.Contains('lbl_sats.Visible = false;')) 'GPS values are shown only in the top toolbar'
+$currentHeadingChinese = [string]([char]0x76EE) + [char]0x524D + [char]0x822A + [char]0x5411
+$gpsTrackChinese = 'GPS ' + [char]0x822A + [char]0x8DE1 + [char]0xFF08 + [char]0x9ED1 + [char]0x8272 + [char]0xFF09
+Test-FmtCondition 'Lower heading legend localized' ($flightDataSource.Contains('label4.Text = "' + $currentHeadingChinese + '";') -and $flightDataSource.Contains('label6.Text = "' + $gpsTrackChinese + '";')) 'remaining map legend uses Traditional Chinese'
+Test-FmtCondition 'Altitude Angel prompt localized' ($altitudeAngelSource.Contains('CultureInfo.CurrentUICulture.Name.StartsWith("zh"') -and $altitudeAngelSource.Contains('You need to sign into Altitude Angel.')) 'sign-in action selects a Chinese prompt for the Chinese UI'
 
 $fileVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($binaryPath)
 Test-FmtCondition 'Windows file version' ($fileVersion.FileVersion -eq '1.0.3.0') "FileVersion=$($fileVersion.FileVersion)"
