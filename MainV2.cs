@@ -584,6 +584,7 @@ namespace MissionPlanner
         private ToolStripButton MenuFeiMao;
         private ToolStripButton MenuFmtArmDisarm;
         private ToolStripButton MenuFmtAirspeedZero;
+        private ToolStripButton MenuFmtQnh;
         private ToolStripControlHost MenuFmtGpsStatus;
         private Label FmtGpsPrimaryLabel;
         private Label FmtGpsDopLabel;
@@ -4624,7 +4625,7 @@ namespace MissionPlanner
         {
             foreach (ToolStripItem item in MainMenu.Items)
             {
-                if (item == MenuFmtArmDisarm || item == MenuFmtAirspeedZero)
+                if (item == MenuFmtArmDisarm || item == MenuFmtAirspeedZero || item == MenuFmtQnh)
                 {
                     ApplyFmtQuickActionButtonStyle(item);
                     continue;
@@ -4722,11 +4723,29 @@ namespace MissionPlanner
             };
             MenuFmtAirspeedZero.Click += MenuFmtAirspeedZero_Click;
 
+            MenuFmtQnh = new ToolStripButton
+            {
+                Name = "MenuFmtQnh",
+                Text = IsFmtTraditionalChineseUi ? "QNH校正" : "QNH",
+                Alignment = ToolStripItemAlignment.Left,
+                DisplayStyle = ToolStripItemDisplayStyle.Text,
+                AutoSize = false,
+                Size = new Size(82, 35),
+                Margin = new Padding(0, 0, 4, 0),
+                Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
+                ToolTipText = IsFmtTraditionalChineseUi
+                    ? "未解鎖時設定海平面氣壓（QNH）"
+                    : "Set sea-level pressure (QNH) while disarmed"
+            };
+            MenuFmtQnh.Click += MenuFmtQnh_Click;
+
             var quickActionIndex = MainMenu.Items.IndexOf(MenuConfigTune) + 1;
             MainMenu.Items.Insert(quickActionIndex, MenuFmtArmDisarm);
             MainMenu.Items.Insert(quickActionIndex + 1, MenuFmtAirspeedZero);
+            MainMenu.Items.Insert(quickActionIndex + 2, MenuFmtQnh);
             ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
             ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
+            ApplyFmtQuickActionButtonStyle(MenuFmtQnh);
             UpdateFmtQuickActionButtons();
 
             const string resourceName = "MissionPlanner.FMT.Assets.fmt-app-icon-source.png";
@@ -4835,7 +4854,7 @@ namespace MissionPlanner
 
         private void UpdateFmtQuickActionButtons()
         {
-            if (MenuFmtArmDisarm == null || MenuFmtAirspeedZero == null)
+            if (MenuFmtArmDisarm == null || MenuFmtAirspeedZero == null || MenuFmtQnh == null)
                 return;
 
             var connected = comPort?.BaseStream != null && comPort.BaseStream.IsOpen;
@@ -4851,8 +4870,10 @@ namespace MissionPlanner
                     : (armed ? "DISARM" : "ARM");
                 MenuFmtArmDisarm.Enabled = connected && !comPort.ReadOnly;
                 MenuFmtAirspeedZero.Enabled = connected && !armed && !comPort.ReadOnly;
+                MenuFmtQnh.Enabled = connected && !armed && !comPort.ReadOnly;
                 ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
                 ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
+                ApplyFmtQuickActionButtonStyle(MenuFmtQnh);
                 UpdateFmtGpsStatus(connected, gpsStatus, satCount, hdop, vdop);
             }));
         }
@@ -4945,6 +4966,12 @@ namespace MissionPlanner
         private void MenuFmtAirspeedZero_Click(object sender, EventArgs e)
         {
             FlightData?.ExecuteFmtAirspeedZero();
+            UpdateFmtQuickActionButtons();
+        }
+
+        private void MenuFmtQnh_Click(object sender, EventArgs e)
+        {
+            FlightData?.ExecuteFmtQnh();
             UpdateFmtQuickActionButtons();
         }
 

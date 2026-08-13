@@ -1154,6 +1154,101 @@ namespace MissionPlanner.GCSViews
             }
         }
 
+        internal void ExecuteFmtQnh()
+        {
+            const string title = "FMT QNH";
+            if (MainV2.comPort?.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
+            {
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "請先連線飛控。"
+                        : "Please connect to the flight controller first.",
+                    title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (MainV2.comPort.MAV.cs.armed)
+            {
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "QNH 校正只能在飛機上鎖（未解鎖）時執行。"
+                        : "QNH can only be changed while the vehicle is disarmed.",
+                    title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var parameters = MainV2.comPort.MAV.param;
+            var parameterName = parameters.ContainsKey("GND_ABS_PRESS")
+                ? "GND_ABS_PRESS"
+                : parameters.ContainsKey("BARO1_GND_PRESS") ? "BARO1_GND_PRESS" : null;
+            if (parameterName == null)
+            {
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "目前飛控未提供可用的 QNH 氣壓參數。"
+                        : "The connected flight controller does not expose a supported QNH pressure parameter.",
+                    title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var qnhInput = parameters[parameterName].Value.ToString("0", CultureInfo.InvariantCulture);
+            var prompt = IsFmtTraditionalChineseUi
+                ? "請輸入 QNH，單位為 Pa（例如：101325 Pa = 1013.25 hPa）。\r\n有效範圍：80000～110000 Pa。"
+                : "Enter QNH in pascals (for example, 101325 Pa = 1013.25 hPa).\r\nValid range: 80000-110000 Pa.";
+            if (InputBox.Show(title, prompt, ref qnhInput) != DialogResult.OK)
+                return;
+
+            double qnhPascals;
+            if (!TryParseFmtQnhPascals(qnhInput, out qnhPascals))
+            {
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "QNH 輸入無效，請輸入 80000～110000 Pa 之間的數字。"
+                        : "Invalid QNH. Enter a number between 80000 and 110000 Pa.",
+                    title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmation = IsFmtTraditionalChineseUi
+                ? string.Format(CultureInfo.CurrentCulture,
+                    "即將設定 QNH 為 {0:0} Pa（{1:0.00} hPa）。\r\n這會改變氣壓高度基準，確定要繼續嗎？",
+                    qnhPascals, qnhPascals / 100.0)
+                : string.Format(CultureInfo.InvariantCulture,
+                    "Set QNH to {0:0} Pa ({1:0.00} hPa)?\r\nThis changes the barometric altitude reference.",
+                    qnhPascals, qnhPascals / 100.0);
+            if (CustomMessageBox.Show(confirmation, title, MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning) != (int)DialogResult.Yes)
+                return;
+
+            try
+            {
+                var accepted = MainV2.comPort.setParam((byte)MainV2.comPort.sysidcurrent,
+                    (byte)MainV2.comPort.compidcurrent, parameterName, qnhPascals);
+                CustomMessageBox.Show(accepted
+                        ? (IsFmtTraditionalChineseUi
+                            ? "QNH 已寫入飛控。"
+                            : "QNH was written to the flight controller.")
+                        : (IsFmtTraditionalChineseUi
+                            ? "飛控拒絕 QNH 寫入；此韌體可能將 " + parameterName + " 設為唯讀。"
+                            : "The flight controller rejected the QNH update; this firmware may expose " +
+                              parameterName + " as read-only."),
+                    title, MessageBoxButtons.OK,
+                    accepted ? MessageBoxIcon.Information : MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                log.Error("FMT QNH update failed", ex);
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "QNH 寫入失敗：" + ex.Message
+                        : "QNH update failed: " + ex.Message,
+                    title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        internal static bool TryParseFmtQnhPascals(string value, out double qnhPascals)
+        {
+            var parsed = double.TryParse(value, NumberStyles.Float, CultureInfo.CurrentCulture, out qnhPascals) ||
+                         double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out qnhPascals);
+            return parsed && !double.IsNaN(qnhPascals) && !double.IsInfinity(qnhPascals) &&
+                   qnhPascals >= 80000 && qnhPascals <= 110000;
+        }
+
         private static bool IsFmtTraditionalChineseUi =>
             CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 

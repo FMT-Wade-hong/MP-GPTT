@@ -8,6 +8,12 @@
 - The parameter tree, rows, alternating rows, headers, selection colors, and grid lines now explicitly use the FMT theme whenever the protected page is opened.
 - The cached parameter control is hidden while the password prompt and parameter data are loading, preventing the previous white page from flashing behind the dialog.
 
+### Flight quick actions
+
+- Added a QNH sea-level pressure button immediately after Airspeed Zero in the top toolbar.
+- QNH entry uses pascals with hPa guidance, validates a safe atmospheric range, requires confirmation, and is available only while connected and disarmed.
+- Unsupported or read-only flight-controller pressure parameters now produce a clear error instead of failing silently.
+
 ## FMTPlanner v1.0.3 — 2026-08-13
 
 ### Airspace safety checks
