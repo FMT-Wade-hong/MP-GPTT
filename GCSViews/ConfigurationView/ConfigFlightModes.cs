@@ -24,9 +24,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         }
 
         private readonly Timer _timer = new Timer();
+        private Label fmtVehicleNotice;
         private GroupBox fmtCommonSettings;
         private NumericUpDown fmtNavigationSpeed;
         private NumericUpDown fmtGpsSpeed;
+        private NumericUpDown fmtWpRadius;
         private ComboBox fmtWpYaw;
         private ComboBox fmtRtlYaw;
         private NumericUpDown fmtRtlSpeed;
@@ -34,8 +36,36 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private Button fmtSaveCommonSettings;
         private string fmtNavigationSpeedParameter;
         private string fmtGpsSpeedParameter;
+        private string fmtWpRadiusParameter;
         private string fmtYawBehaviorParameter;
         private string fmtRtlSpeedParameter;
+        private Label fmtMultirotorStatus;
+
+        private GroupBox fmtFixedWingSettings;
+        private NumericUpDown fmtPlaneCruiseSpeed;
+        private NumericUpDown fmtPlaneGpsSpeed;
+        private NumericUpDown fmtPlaneWpRadius;
+        private Label fmtPlaneStatus;
+        private Label fmtPlaneParameterHint;
+        private Button fmtSavePlaneSettings;
+        private string fmtPlaneCruiseSpeedParameter;
+        private string fmtPlaneGpsSpeedParameter;
+        private string fmtPlaneWpRadiusParameter;
+
+        private GroupBox fmtVtolSettings;
+        private NumericUpDown fmtVtolCruiseSpeed;
+        private NumericUpDown fmtVtolNavigationSpeed;
+        private NumericUpDown fmtVtolGpsSpeed;
+        private NumericUpDown fmtVtolWpRadius;
+        private ComboBox fmtVtolRtlMode;
+        private Label fmtVtolStatus;
+        private Label fmtVtolParameterHint;
+        private Button fmtSaveVtolSettings;
+        private string fmtVtolCruiseSpeedParameter;
+        private string fmtVtolNavigationSpeedParameter;
+        private string fmtVtolGpsSpeedParameter;
+        private string fmtVtolWpRadiusParameter;
+        private string fmtVtolRtlModeParameter;
 
         private sealed class FmtSelectionOption
         {
@@ -513,18 +543,30 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private void CreateFmtCommonSettings()
         {
             AutoScroll = true;
+            fmtVehicleNotice = new Label
+            {
+                Name = "FmtVehicleNotice",
+                Text = "連線後會依飛控構型啟用對應設定方框。",
+                Location = new Point(4, tableLayoutPanel1.Bottom + 8),
+                Size = new Size(587, 22),
+                ForeColor = Color.FromArgb(41, 171, 226),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            Controls.Add(fmtVehicleNotice);
+
             fmtCommonSettings = new GroupBox
             {
                 Name = "FmtCommonSettings",
-                Text = "常用設定（ArduCopter）",
-                Location = new Point(0, tableLayoutPanel1.Bottom + 10),
-                Size = new Size(593, 213),
+                Text = "多旋翼常用設定",
+                Location = new Point(0, fmtVehicleNotice.Bottom + 4),
+                Size = new Size(593, 285),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left,
-                Visible = false
+                Visible = true
             };
 
             fmtNavigationSpeed = CreateFmtSpeedControl("FmtNavigationSpeed", new Point(143, 27), 0.1m);
             fmtGpsSpeed = CreateFmtSpeedControl("FmtGpsSpeed", new Point(430, 27), 0.1m);
+            fmtWpRadius = CreateFmtDistanceControl("FmtWpRadius", new Point(143, 66), 0.1m);
             fmtRtlSpeed = CreateFmtSpeedControl("FmtRtlSpeed", new Point(430, 66), 0m);
 
             fmtWpYaw = CreateFmtYawCombo("FmtWpYaw", new Point(143, 105));
@@ -549,7 +591,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             {
                 Name = "FmtSaveCommonSettings",
                 Text = "儲存常用設定",
-                Location = new Point(430, 143),
+                Location = new Point(430, 182),
                 Size = new Size(125, 30),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(41, 171, 226),
@@ -561,12 +603,15 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             fmtCommonParameterHint = new Label
             {
                 Name = "FmtCommonParameterHint",
-                Location = new Point(16, 180),
+                Location = new Point(16, 252),
                 Size = new Size(575, 22),
                 AutoEllipsis = true,
                 ForeColor = Color.Gray,
                 Text = "連線後顯示飛控實際使用的參數名稱。"
             };
+
+            fmtMultirotorStatus = CreateFmtStatusLabel("FmtMultirotorStatus", new Point(16, 184),
+                "等待辨識構型");
 
             fmtCommonSettings.Controls.AddRange(new Control[]
             {
@@ -576,6 +621,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 CreateFmtLabel("GPS 速度參數", new Point(295, 30), new Size(130, 22)),
                 fmtGpsSpeed,
                 CreateFmtUnitLabel(new Point(518, 30)),
+                CreateFmtLabel("WP 接受半徑", new Point(16, 69), new Size(122, 22)),
+                fmtWpRadius,
+                CreateFmtDistanceUnitLabel(new Point(231, 69)),
                 CreateFmtLabel("RTL 速度", new Point(295, 69), new Size(130, 22)),
                 fmtRtlSpeed,
                 CreateFmtUnitLabel(new Point(518, 69)),
@@ -583,13 +631,167 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 fmtWpYaw,
                 CreateFmtLabel("RTL 航向", new Point(295, 108), new Size(130, 22)),
                 fmtRtlYaw,
+                fmtMultirotorStatus,
                 fmtSaveCommonSettings,
+                CreateFmtDescriptionLabel(new Point(16, 218),
+                    "說明：導航／GPS 速度控制任務與定點移動；WP 半徑決定多接近航點才視為到達；WP／RTL 航向與返航速度控制返航姿態及速度。"),
                 fmtCommonParameterHint
             });
             Controls.Add(fmtCommonSettings);
-            fmtCommonSettings.BringToFront();
-            ThemeManager.ApplyThemeTo(fmtCommonSettings);
-            ApplyFmtCommonSettingsColors();
+
+            CreateFmtFixedWingSettings();
+            CreateFmtVtolSettings();
+            ApplyFmtCommonSettingsTheme();
+        }
+
+        private void CreateFmtFixedWingSettings()
+        {
+            fmtFixedWingSettings = new GroupBox
+            {
+                Name = "FmtFixedWingSettings",
+                Text = "定翼機常用設定",
+                Location = new Point(0, fmtCommonSettings.Bottom + 10),
+                Size = new Size(593, 250),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left,
+                Visible = true
+            };
+
+            fmtPlaneCruiseSpeed = CreateFmtSpeedControl("FmtPlaneCruiseSpeed", new Point(143, 28), 0.1m);
+            fmtPlaneGpsSpeed = CreateFmtSpeedControl("FmtPlaneGpsSpeed", new Point(430, 28), 0m);
+            fmtPlaneWpRadius = CreateFmtDistanceControl("FmtPlaneWpRadius", new Point(143, 67), 0m);
+            fmtPlaneStatus = CreateFmtStatusLabel("FmtPlaneStatus", new Point(16, 146),
+                "等待辨識構型");
+            fmtSavePlaneSettings = CreateFmtSaveButton("FmtSavePlaneSettings", new Point(430, 140),
+                "儲存定翼設定", SaveFmtPlaneSettings);
+            fmtPlaneParameterHint = CreateFmtParameterHint("FmtPlaneParameterHint", new Point(16, 217));
+
+            fmtFixedWingSettings.Controls.AddRange(new Control[]
+            {
+                CreateFmtLabel("巡航／RTL 空速", new Point(16, 31), new Size(122, 22)),
+                fmtPlaneCruiseSpeed,
+                CreateFmtUnitLabel(new Point(231, 31)),
+                CreateFmtLabel("最低 GPS 地速", new Point(295, 31), new Size(130, 22)),
+                fmtPlaneGpsSpeed,
+                CreateFmtUnitLabel(new Point(518, 31)),
+                CreateFmtLabel("WP 接受半徑", new Point(16, 70), new Size(122, 22)),
+                fmtPlaneWpRadius,
+                CreateFmtDistanceUnitLabel(new Point(231, 70)),
+                CreateFmtLabel("WP 航向", new Point(295, 70), new Size(130, 22)),
+                CreateFmtValueLabel("航線自動控制", new Point(430, 70), new Size(145, 22)),
+                CreateFmtLabel("RTL 航向", new Point(16, 109), new Size(122, 22)),
+                CreateFmtValueLabel("自動朝向返航點", new Point(143, 109), new Size(140, 22)),
+                CreateFmtLabel("RTL 速度", new Point(295, 109), new Size(130, 22)),
+                CreateFmtValueLabel("沿用巡航目標空速", new Point(430, 109), new Size(145, 22)),
+                fmtPlaneStatus,
+                fmtSavePlaneSettings,
+                CreateFmtDescriptionLabel(new Point(16, 180),
+                    "說明：巡航空速供 AUTO／GUIDED／RTL 使用；最低 GPS 地速在逆風時補足地速；WP 半徑決定航點切換範圍，航向由定翼航線自動控制。"),
+                fmtPlaneParameterHint
+            });
+            Controls.Add(fmtFixedWingSettings);
+        }
+
+        private void CreateFmtVtolSettings()
+        {
+            fmtVtolSettings = new GroupBox
+            {
+                Name = "FmtVtolSettings",
+                Text = "VTOL／QuadPlane 常用設定",
+                Location = new Point(0, fmtFixedWingSettings.Bottom + 10),
+                Size = new Size(593, 285),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left,
+                Visible = true
+            };
+
+            fmtVtolCruiseSpeed = CreateFmtSpeedControl("FmtVtolCruiseSpeed", new Point(143, 28), 0.1m);
+            fmtVtolNavigationSpeed = CreateFmtSpeedControl("FmtVtolNavigationSpeed", new Point(430, 28), 0.1m);
+            fmtVtolGpsSpeed = CreateFmtSpeedControl("FmtVtolGpsSpeed", new Point(143, 67), 0.1m);
+            fmtVtolRtlMode = CreateFmtYawCombo("FmtVtolRtlMode", new Point(430, 67));
+            fmtVtolWpRadius = CreateFmtDistanceControl("FmtVtolWpRadius", new Point(143, 106), 0.1m);
+            fmtVtolRtlMode.Items.AddRange(new object[]
+            {
+                new FmtSelectionOption(0, "定翼返航盤旋"),
+                new FmtSelectionOption(1, "接近後垂直降落"),
+                new FmtSelectionOption(2, "VTOL 進場"),
+                new FmtSelectionOption(3, "總是使用 QRTL")
+            });
+            fmtVtolStatus = CreateFmtStatusLabel("FmtVtolStatus", new Point(16, 185),
+                "等待辨識構型");
+            fmtSaveVtolSettings = CreateFmtSaveButton("FmtSaveVtolSettings", new Point(430, 179),
+                "儲存 VTOL 設定", SaveFmtVtolSettings);
+            fmtVtolParameterHint = CreateFmtParameterHint("FmtVtolParameterHint", new Point(16, 252));
+
+            fmtVtolSettings.Controls.AddRange(new Control[]
+            {
+                CreateFmtLabel("定翼巡航空速", new Point(16, 31), new Size(122, 22)),
+                fmtVtolCruiseSpeed,
+                CreateFmtUnitLabel(new Point(231, 31)),
+                CreateFmtLabel("VTOL 導航／返航速度", new Point(295, 31), new Size(130, 22)),
+                fmtVtolNavigationSpeed,
+                CreateFmtUnitLabel(new Point(518, 31)),
+                CreateFmtLabel("VTOL GPS 速度", new Point(16, 70), new Size(122, 22)),
+                fmtVtolGpsSpeed,
+                CreateFmtUnitLabel(new Point(231, 70)),
+                CreateFmtLabel("VTOL 返航模式", new Point(295, 70), new Size(130, 22)),
+                fmtVtolRtlMode,
+                CreateFmtLabel("VTOL WP 半徑", new Point(16, 109), new Size(122, 22)),
+                fmtVtolWpRadius,
+                CreateFmtDistanceUnitLabel(new Point(231, 109)),
+                CreateFmtLabel("WP 航向", new Point(295, 109), new Size(130, 22)),
+                CreateFmtValueLabel("航線／QAUTO 控制", new Point(430, 109), new Size(145, 22)),
+                CreateFmtLabel("RTL 航向", new Point(16, 148), new Size(122, 22)),
+                CreateFmtValueLabel("由 QRTL 模式控制", new Point(143, 148), new Size(140, 22)),
+                fmtVtolStatus,
+                fmtSaveVtolSettings,
+                CreateFmtDescriptionLabel(new Point(16, 218),
+                    "說明：定翼巡航空速用於轉換前後；Q 導航速度同時用於純 VTOL 返航；Q GPS 速度控制定點移動；Q WP 半徑與 QRTL 模式控制返航接近及降落。"),
+                fmtVtolParameterHint
+            });
+            Controls.Add(fmtVtolSettings);
+        }
+
+        private static Label CreateFmtStatusLabel(string name, Point location, string text)
+        {
+            return new Label
+            {
+                Name = name,
+                Location = location,
+                Size = new Size(260, 28),
+                Text = text,
+                ForeColor = Color.Gray,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+        }
+
+        private static Label CreateFmtParameterHint(string name, Point location)
+        {
+            return new Label
+            {
+                Name = name,
+                Location = location,
+                Size = new Size(575, 22),
+                AutoEllipsis = true,
+                ForeColor = Color.Gray,
+                Text = "連線後顯示飛控實際使用的參數名稱。"
+            };
+        }
+
+        private static Button CreateFmtSaveButton(string name, Point location, string text,
+            EventHandler clickHandler)
+        {
+            var button = new Button
+            {
+                Name = name,
+                Text = text,
+                Location = location,
+                Size = new Size(145, 30),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(41, 171, 226),
+                ForeColor = Color.White
+            };
+            button.FlatAppearance.BorderSize = 0;
+            button.Click += clickHandler;
+            return button;
         }
 
         private static NumericUpDown CreateFmtSpeedControl(string name, Point location, decimal minimum)
@@ -605,6 +807,13 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 Maximum = 100m,
                 TextAlign = HorizontalAlignment.Right
             };
+        }
+
+        private static NumericUpDown CreateFmtDistanceControl(string name, Point location, decimal minimum)
+        {
+            var control = CreateFmtSpeedControl(name, location, minimum);
+            control.Maximum = 1000m;
+            return control;
         }
 
         private static ComboBox CreateFmtYawCombo(string name, Point location)
@@ -629,9 +838,32 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             };
         }
 
+        private static Label CreateFmtValueLabel(string text, Point location, Size size)
+        {
+            var label = CreateFmtLabel(text, location, size);
+            label.ForeColor = Color.Silver;
+            return label;
+        }
+
         private static Label CreateFmtUnitLabel(Point location)
         {
             return CreateFmtLabel("m/s", location, new Size(45, 22));
+        }
+
+        private static Label CreateFmtDistanceUnitLabel(Point location)
+        {
+            return CreateFmtLabel("m", location, new Size(45, 22));
+        }
+
+        private static Label CreateFmtDescriptionLabel(Point location, string text)
+        {
+            return new Label
+            {
+                Location = location,
+                Size = new Size(559, 31),
+                Text = text,
+                ForeColor = Color.Silver
+            };
         }
 
         private void LoadFmtCommonSettings()
@@ -639,18 +871,44 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             if (fmtCommonSettings == null)
                 return;
 
-            var isCopter = MainV2.comPort.MAV.cs.firmware == Firmwares.ArduCopter2;
-            fmtCommonSettings.Visible = isCopter;
-            if (!isCopter)
-                return;
+            var hasParameterData = MainV2.comPort.MAV.param.Count > 0;
+            var isCopter = hasParameterData &&
+                           MainV2.comPort.MAV.cs.firmware == Firmwares.ArduCopter2;
+            var isPlane = hasParameterData &&
+                          (MainV2.comPort.MAV.cs.firmware == Firmwares.ArduPlane ||
+                           MainV2.comPort.MAV.cs.firmware == Firmwares.Ateryx);
+            var isVtol = isPlane && IsFmtVtolEnabled();
+            var isFixedWing = isPlane && !isVtol;
+            var canWrite = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen &&
+                           !MainV2.comPort.ReadOnly && !MainV2.comPort.MAV.cs.armed;
 
-            fmtNavigationSpeedParameter = FindFmtParameter("WP_SPD", "WPNAV_SPEED");
-            fmtGpsSpeedParameter = FindFmtParameter("LOIT_SPEED_MS", "WPNAV_LOIT_SPEED", "LOIT_SPEED");
-            fmtYawBehaviorParameter = FindFmtParameter("WP_YAW_BEHAVIOR");
-            fmtRtlSpeedParameter = FindFmtParameter("RTL_SPEED_MS", "RTL_SPEED");
+            ApplyFmtCommonSettingsTheme();
+            LoadFmtMultirotorSettings(isCopter, canWrite);
+            LoadFmtFixedWingSettings(isFixedWing, canWrite);
+            LoadFmtVtolSettings(isVtol, canWrite);
+
+            fmtVehicleNotice.Text = isCopter
+                ? "目前辨識構型：多旋翼"
+                : isVtol
+                    ? "目前辨識構型：VTOL／QuadPlane"
+                    : isFixedWing
+                        ? "目前辨識構型：定翼機"
+                        : "連線後會依飛控構型啟用對應設定方框。";
+        }
+
+        private void LoadFmtMultirotorSettings(bool active, bool canWrite)
+        {
+            fmtNavigationSpeedParameter = active ? FindFmtParameter("WP_SPD", "WPNAV_SPEED") : null;
+            fmtGpsSpeedParameter = active
+                ? FindFmtParameter("LOIT_SPEED_MS", "WPNAV_LOIT_SPEED", "LOIT_SPEED")
+                : null;
+            fmtWpRadiusParameter = active ? FindFmtParameter("WP_RADIUS_M", "WPNAV_RADIUS") : null;
+            fmtYawBehaviorParameter = active ? FindFmtParameter("WP_YAW_BEHAVIOR") : null;
+            fmtRtlSpeedParameter = active ? FindFmtParameter("RTL_SPEED_MS", "RTL_SPEED") : null;
 
             LoadFmtSpeed(fmtNavigationSpeed, fmtNavigationSpeedParameter);
             LoadFmtSpeed(fmtGpsSpeed, fmtGpsSpeedParameter);
+            LoadFmtDistance(fmtWpRadius, fmtWpRadiusParameter);
             LoadFmtSpeed(fmtRtlSpeed, fmtRtlSpeedParameter);
 
             fmtWpYaw.Enabled = fmtYawBehaviorParameter != null;
@@ -666,26 +924,124 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             var parameters = new List<string>();
             AddFmtParameterName(parameters, fmtNavigationSpeedParameter);
             AddFmtParameterName(parameters, fmtGpsSpeedParameter);
+            AddFmtParameterName(parameters, fmtWpRadiusParameter);
             AddFmtParameterName(parameters, fmtYawBehaviorParameter);
             AddFmtParameterName(parameters, fmtRtlSpeedParameter);
-            fmtCommonParameterHint.Text = parameters.Count == 0
+            fmtCommonParameterHint.Text = !active
+                ? "此方框只寫入多旋翼參數。"
+                : parameters.Count == 0
                 ? "目前飛控沒有支援的常用設定參數。"
                 : "使用參數：" + string.Join("、", parameters);
-            fmtSaveCommonSettings.Enabled = parameters.Count > 0 &&
-                                            MainV2.comPort.BaseStream != null &&
-                                            MainV2.comPort.BaseStream.IsOpen &&
-                                            !MainV2.comPort.ReadOnly &&
-                                            !MainV2.comPort.MAV.cs.armed;
-            ThemeManager.ApplyThemeTo(fmtCommonSettings);
-            ApplyFmtCommonSettingsColors();
+            fmtSaveCommonSettings.Enabled = active && canWrite && parameters.Count > 0;
+            SetFmtStatus(fmtMultirotorStatus, active, "多旋翼構型已啟用");
         }
 
-        private void ApplyFmtCommonSettingsColors()
+        private void LoadFmtFixedWingSettings(bool active, bool canWrite)
         {
+            fmtPlaneCruiseSpeedParameter = active
+                ? FindFmtParameter("AIRSPEED_CRUISE", "TRIM_ARSPD_CM")
+                : null;
+            fmtPlaneGpsSpeedParameter = active
+                ? FindFmtParameter("MIN_GROUNDSPEED", "MIN_GNDSPD_CM")
+                : null;
+            fmtPlaneWpRadiusParameter = active ? FindFmtParameter("WP_RADIUS") : null;
+
+            LoadFmtSpeed(fmtPlaneCruiseSpeed, fmtPlaneCruiseSpeedParameter);
+            LoadFmtSpeed(fmtPlaneGpsSpeed, fmtPlaneGpsSpeedParameter);
+            LoadFmtDistance(fmtPlaneWpRadius, fmtPlaneWpRadiusParameter);
+
+            var parameters = new List<string>();
+            AddFmtParameterName(parameters, fmtPlaneCruiseSpeedParameter);
+            AddFmtParameterName(parameters, fmtPlaneGpsSpeedParameter);
+            AddFmtParameterName(parameters, fmtPlaneWpRadiusParameter);
+            fmtPlaneParameterHint.Text = !active
+                ? "此方框只寫入純定翼機參數；WP／RTL 航向由航線自動控制。"
+                : parameters.Count == 0
+                    ? "目前飛控沒有支援的定翼常用參數。"
+                    : "使用參數：" + string.Join("、", parameters) + "；WP／RTL 航向由航線自動控制。";
+            fmtSavePlaneSettings.Enabled = active && canWrite && parameters.Count > 0;
+            SetFmtStatus(fmtPlaneStatus, active, "定翼機構型已啟用");
+        }
+
+        private void LoadFmtVtolSettings(bool active, bool canWrite)
+        {
+            fmtVtolCruiseSpeedParameter = active
+                ? FindFmtParameter("AIRSPEED_CRUISE", "TRIM_ARSPD_CM")
+                : null;
+            fmtVtolNavigationSpeedParameter = active
+                ? FindFmtParameter("Q_WP_SPD", "Q_WP_SPEED")
+                : null;
+            fmtVtolGpsSpeedParameter = active
+                ? FindFmtParameter("Q_LOIT_SPEED_MS", "Q_LOIT_SPEED")
+                : null;
+            fmtVtolWpRadiusParameter = active
+                ? FindFmtParameter("Q_WP_RADIUS_M", "Q_WP_RADIUS")
+                : null;
+            fmtVtolRtlModeParameter = active ? FindFmtParameter("Q_RTL_MODE") : null;
+
+            LoadFmtSpeed(fmtVtolCruiseSpeed, fmtVtolCruiseSpeedParameter);
+            LoadFmtSpeed(fmtVtolNavigationSpeed, fmtVtolNavigationSpeedParameter);
+            LoadFmtSpeed(fmtVtolGpsSpeed, fmtVtolGpsSpeedParameter);
+            LoadFmtDistance(fmtVtolWpRadius, fmtVtolWpRadiusParameter);
+            fmtVtolRtlMode.Enabled = fmtVtolRtlModeParameter != null;
+            fmtVtolRtlMode.SelectedIndex = -1;
+            if (fmtVtolRtlModeParameter != null)
+            {
+                var rtlMode = (int)Math.Round(MainV2.comPort.MAV.param[fmtVtolRtlModeParameter].Value);
+                SelectFmtOption(fmtVtolRtlMode, rtlMode);
+            }
+
+            var parameters = new List<string>();
+            AddFmtParameterName(parameters, fmtVtolCruiseSpeedParameter);
+            AddFmtParameterName(parameters, fmtVtolNavigationSpeedParameter);
+            AddFmtParameterName(parameters, fmtVtolGpsSpeedParameter);
+            AddFmtParameterName(parameters, fmtVtolWpRadiusParameter);
+            AddFmtParameterName(parameters, fmtVtolRtlModeParameter);
+            fmtVtolParameterHint.Text = !active
+                ? "此方框只在 Q_ENABLE／VTOL 構型啟用後寫入 Q_ 參數。"
+                : parameters.Count == 0
+                    ? "目前飛控沒有支援的 VTOL 常用參數。"
+                    : "使用參數：" + string.Join("、", parameters);
+            fmtSaveVtolSettings.Enabled = active && canWrite && parameters.Count > 0;
+            SetFmtStatus(fmtVtolStatus, active, "VTOL／QuadPlane 構型已啟用");
+        }
+
+        private static bool IsFmtVtolEnabled()
+        {
+            if (MainV2.comPort.MAV.param.ContainsKey("Q_ENABLE"))
+                return IsFmtParameterEnabled("Q_ENABLE");
+
+            return IsFmtParameterEnabled("Q_TILT_ENABLE") ||
+                   IsFmtParameterEnabled("Q_TAILSIT_ENABLE") ||
+                   IsFmtParameterEnabled("Q_FRAME_CLASS") ||
+                   MainV2.comPort.MAV.param.ContainsKey("Q_WP_SPD") ||
+                   MainV2.comPort.MAV.param.ContainsKey("Q_WP_SPEED");
+        }
+
+        private static bool IsFmtParameterEnabled(string parameterName)
+        {
+            return MainV2.comPort.MAV.param.ContainsKey(parameterName) &&
+                   Math.Abs(MainV2.comPort.MAV.param[parameterName].Value) > double.Epsilon;
+        }
+
+        private static void SetFmtStatus(Label status, bool active, string activeText)
+        {
+            status.Text = active ? "● " + activeText : "○ 非目前連線構型";
+            status.ForeColor = active ? Color.LimeGreen : Color.Gray;
+        }
+
+        private void ApplyFmtCommonSettingsTheme()
+        {
+            ThemeManager.ApplyThemeTo(fmtCommonSettings);
+            ThemeManager.ApplyThemeTo(fmtFixedWingSettings);
+            ThemeManager.ApplyThemeTo(fmtVtolSettings);
             var inputBackground = Color.FromArgb(67, 68, 69);
             foreach (var control in new Control[]
                      {
-                         fmtNavigationSpeed, fmtGpsSpeed, fmtRtlSpeed, fmtWpYaw, fmtRtlYaw
+                         fmtNavigationSpeed, fmtGpsSpeed, fmtRtlSpeed, fmtWpYaw, fmtRtlYaw,
+                         fmtWpRadius, fmtPlaneCruiseSpeed, fmtPlaneGpsSpeed, fmtPlaneWpRadius,
+                         fmtVtolCruiseSpeed, fmtVtolNavigationSpeed, fmtVtolGpsSpeed, fmtVtolWpRadius,
+                         fmtVtolRtlMode
                      })
             {
                 control.BackColor = inputBackground;
@@ -694,6 +1050,10 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             fmtSaveCommonSettings.BackColor = Color.FromArgb(41, 171, 226);
             fmtSaveCommonSettings.ForeColor = Color.White;
+            fmtSavePlaneSettings.BackColor = Color.FromArgb(41, 171, 226);
+            fmtSavePlaneSettings.ForeColor = Color.White;
+            fmtSaveVtolSettings.BackColor = Color.FromArgb(41, 171, 226);
+            fmtSaveVtolSettings.ForeColor = Color.White;
         }
 
         private static void AddFmtParameterName(ICollection<string> parameters, string parameterName)
@@ -726,6 +1086,18 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             control.Value = value;
         }
 
+        private static void LoadFmtDistance(NumericUpDown control, string parameterName)
+        {
+            control.Enabled = parameterName != null;
+            if (parameterName == null)
+                return;
+
+            var meters = FmtDistanceRawToMeters(parameterName,
+                MainV2.comPort.MAV.param[parameterName].Value);
+            control.Value = (decimal)Math.Max((double)control.Minimum,
+                Math.Min((double)control.Maximum, meters));
+        }
+
         internal static double FmtSpeedRawToMetersPerSecond(string parameterName, double rawValue)
         {
             return IsFmtLegacyCentimeterSpeed(parameterName) ? rawValue / 100.0 : rawValue;
@@ -738,12 +1110,34 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 : metersPerSecond;
         }
 
+        internal static double FmtDistanceRawToMeters(string parameterName, double rawValue)
+        {
+            return IsFmtLegacyCentimeterDistance(parameterName) ? rawValue / 100.0 : rawValue;
+        }
+
+        internal static double FmtDistanceMetersToRaw(string parameterName, double meters)
+        {
+            return IsFmtLegacyCentimeterDistance(parameterName)
+                ? Math.Round(meters * 100.0, MidpointRounding.AwayFromZero)
+                : meters;
+        }
+
+        private static bool IsFmtLegacyCentimeterDistance(string parameterName)
+        {
+            return string.Equals(parameterName, "WPNAV_RADIUS", StringComparison.Ordinal) ||
+                   string.Equals(parameterName, "Q_WP_RADIUS", StringComparison.Ordinal);
+        }
+
         private static bool IsFmtLegacyCentimeterSpeed(string parameterName)
         {
             return string.Equals(parameterName, "WPNAV_SPEED", StringComparison.Ordinal) ||
                    string.Equals(parameterName, "WPNAV_LOIT_SPEED", StringComparison.Ordinal) ||
                    string.Equals(parameterName, "LOIT_SPEED", StringComparison.Ordinal) ||
-                   string.Equals(parameterName, "RTL_SPEED", StringComparison.Ordinal);
+                   string.Equals(parameterName, "RTL_SPEED", StringComparison.Ordinal) ||
+                   string.Equals(parameterName, "TRIM_ARSPD_CM", StringComparison.Ordinal) ||
+                   string.Equals(parameterName, "MIN_GNDSPD_CM", StringComparison.Ordinal) ||
+                   string.Equals(parameterName, "Q_WP_SPEED", StringComparison.Ordinal) ||
+                   string.Equals(parameterName, "Q_LOIT_SPEED", StringComparison.Ordinal);
         }
 
         private bool fmtUpdatingYawSelection;
@@ -822,28 +1216,10 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void SaveFmtCommonSettings(object sender, EventArgs e)
         {
-            if (MainV2.comPort.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
-            {
-                CustomMessageBox.Show("請先連線飛控。", "常用設定", MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+            if (!ValidateFmtCommonWrite("多旋翼常用設定"))
                 return;
-            }
 
-            if (MainV2.comPort.MAV.cs.armed)
-            {
-                CustomMessageBox.Show("常用設定只能在飛機上鎖（未解鎖）時修改。", "常用設定",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            if (MainV2.comPort.ReadOnly)
-            {
-                CustomMessageBox.Show("目前為唯讀連線，無法寫入參數。", "常用設定",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var confirmation = "確定要將導航、GPS 定位、WP／RTL 航向及 RTL 速度寫入飛控嗎？";
+            var confirmation = "確定要將導航、GPS 定位、WP 半徑、WP／RTL 航向及 RTL 速度寫入飛控嗎？";
             if (CustomMessageBox.Show(confirmation, "常用設定", MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning) != (int)DialogResult.Yes)
                 return;
@@ -853,6 +1229,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 var failures = new List<string>();
                 SaveFmtSpeed(fmtNavigationSpeed, fmtNavigationSpeedParameter, failures);
                 SaveFmtSpeed(fmtGpsSpeed, fmtGpsSpeedParameter, failures);
+                SaveFmtDistance(fmtWpRadius, fmtWpRadiusParameter, failures);
                 SaveFmtSpeed(fmtRtlSpeed, fmtRtlSpeedParameter, failures);
 
                 var wpYaw = fmtWpYaw.SelectedItem as FmtSelectionOption;
@@ -882,6 +1259,101 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             }
         }
 
+        private void SaveFmtPlaneSettings(object sender, EventArgs e)
+        {
+            if (!ValidateFmtCommonWrite("定翼機常用設定"))
+                return;
+
+            if (CustomMessageBox.Show("確定要將定翼巡航／RTL 空速、最低 GPS 地速及 WP 半徑寫入飛控嗎？",
+                    "定翼機常用設定", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) !=
+                (int)DialogResult.Yes)
+                return;
+
+            try
+            {
+                var failures = new List<string>();
+                SaveFmtSpeed(fmtPlaneCruiseSpeed, fmtPlaneCruiseSpeedParameter, failures);
+                SaveFmtSpeed(fmtPlaneGpsSpeed, fmtPlaneGpsSpeedParameter, failures);
+                SaveFmtDistance(fmtPlaneWpRadius, fmtPlaneWpRadiusParameter, failures);
+                FinishFmtCommonWrite("定翼機常用設定", failures);
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("定翼機常用設定寫入失敗：" + ex.Message, "定翼機常用設定",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void SaveFmtVtolSettings(object sender, EventArgs e)
+        {
+            if (!ValidateFmtCommonWrite("VTOL／QuadPlane 常用設定"))
+                return;
+
+            if (CustomMessageBox.Show("確定要將定翼巡航、VTOL 導航／返航、GPS 速度、WP 半徑及返航模式寫入飛控嗎？",
+                    "VTOL／QuadPlane 常用設定", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) !=
+                (int)DialogResult.Yes)
+                return;
+
+            try
+            {
+                var failures = new List<string>();
+                SaveFmtSpeed(fmtVtolCruiseSpeed, fmtVtolCruiseSpeedParameter, failures);
+                SaveFmtSpeed(fmtVtolNavigationSpeed, fmtVtolNavigationSpeedParameter, failures);
+                SaveFmtSpeed(fmtVtolGpsSpeed, fmtVtolGpsSpeedParameter, failures);
+                SaveFmtDistance(fmtVtolWpRadius, fmtVtolWpRadiusParameter, failures);
+                var rtlMode = fmtVtolRtlMode.SelectedItem as FmtSelectionOption;
+                if (fmtVtolRtlModeParameter != null && rtlMode != null &&
+                    !SetFmtParameter(fmtVtolRtlModeParameter, rtlMode.Value))
+                    failures.Add(fmtVtolRtlModeParameter);
+                FinishFmtCommonWrite("VTOL／QuadPlane 常用設定", failures);
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("VTOL／QuadPlane 常用設定寫入失敗：" + ex.Message,
+                    "VTOL／QuadPlane 常用設定", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static bool ValidateFmtCommonWrite(string title)
+        {
+            if (MainV2.comPort.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
+            {
+                CustomMessageBox.Show("請先連線飛控。", title, MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return false;
+            }
+
+            if (MainV2.comPort.MAV.cs.armed)
+            {
+                CustomMessageBox.Show("常用設定只能在飛機上鎖（未解鎖）時修改。", title,
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            if (MainV2.comPort.ReadOnly)
+            {
+                CustomMessageBox.Show("目前為唯讀連線，無法寫入參數。", title,
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void FinishFmtCommonWrite(string title, ICollection<string> failures)
+        {
+            if (failures.Count > 0)
+            {
+                CustomMessageBox.Show("下列參數寫入失敗：" + string.Join("、", failures), title,
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            CustomMessageBox.Show("常用設定已寫入飛控。", title, MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+            LoadFmtCommonSettings();
+        }
+
         private static void SaveFmtSpeed(NumericUpDown control, string parameterName,
             ICollection<string> failures)
         {
@@ -889,6 +1361,17 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 return;
 
             var rawValue = FmtSpeedMetersPerSecondToRaw(parameterName, (double)control.Value);
+            if (!SetFmtParameter(parameterName, rawValue))
+                failures.Add(parameterName);
+        }
+
+        private static void SaveFmtDistance(NumericUpDown control, string parameterName,
+            ICollection<string> failures)
+        {
+            if (parameterName == null || !control.Enabled)
+                return;
+
+            var rawValue = FmtDistanceMetersToRaw(parameterName, (double)control.Value);
             if (!SetFmtParameter(parameterName, rawValue))
                 failures.Add(parameterName);
         }

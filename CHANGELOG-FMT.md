@@ -25,10 +25,12 @@
 
 ### Flight mode common settings
 
-- Added a Traditional Chinese common-settings panel below the ArduCopter flight-mode controls.
-- Added navigation speed, GPS position-control speed, separate Chinese waypoint and RTL yaw selectors, and RTL speed controls. The two yaw selectors map only to combinations supported by ArduPilot's shared `WP_YAW_BEHAVIOR` parameter.
-- All displayed speeds use `m/s`; legacy `cm/s` parameters are converted automatically, while ArduPilot 4.7 renamed `*_MS` parameters are written directly.
-- The panel discovers the parameter names supported by the connected firmware and permits writes only while connected, disarmed, and not read-only.
+- Added three Traditional Chinese common-settings frames below the flight-mode controls: Multirotor, Fixed Wing, and VTOL/QuadPlane.
+- Multirotor includes navigation speed, GPS position-control speed, waypoint radius, waypoint/RTL yaw, and RTL speed. Fixed Wing includes cruise airspeed, minimum GPS ground speed, and waypoint radius. VTOL includes fixed-wing cruise speed, VTOL waypoint/return speed, VTOL GPS speed, VTOL waypoint radius, and QRTL behavior.
+- Added an in-frame Traditional Chinese explanation for every vehicle type so the operator can see which flight phase each value controls.
+- The connected firmware and `Q_` parameters determine which vehicle frame is enabled; other frames remain visible but cannot write parameters.
+- All displayed speeds use `m/s`; legacy `cm/s` parameters are converted automatically, while renamed parameters such as `WP_SPD`, `AIRSPEED_CRUISE`, `Q_WP_SPD`, and `Q_LOIT_SPEED_MS` are written directly.
+- Every frame permits writes only while connected, disarmed, and not read-only.
 
 ## FMTPlanner v1.0.3 — 2026-08-13
 

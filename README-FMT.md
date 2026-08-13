@@ -79,7 +79,13 @@
 
 ### 飛行模式頁常用設定
 
-在「初始配置 → 飛行模式設定」下方提供 ArduCopter 常用參數：導航速度、GPS 定位速度、WP 航向、RTL 航向及 RTL 速度。速度一律以 `m/s` 顯示；程式會依飛控版本自動對應新版 `WP_SPD`、`LOIT_SPEED_MS`、`RTL_SPEED_MS` 或舊版 `WPNAV_SPEED`、`WPNAV_LOIT_SPEED`、`RTL_SPEED`，並處理 `cm/s` 換算。WP 航向與 RTL 航向在畫面中分開選擇，但因 ArduPilot 使用共用的 `WP_YAW_BEHAVIOR`，FMTPlanner 只保留飛控實際支援的四種組合。
+在「初始配置 → 飛行模式設定」下方提供三個獨立方框，並依連線飛控自動啟用對應構型：
+
+- **多旋翼**：導航速度、GPS 定位速度、WP 接受半徑、WP 航向、RTL 航向及 RTL 速度。WP 航向與 RTL 航向在畫面中分開選擇，但會安全映射至飛控共用的 `WP_YAW_BEHAVIOR`。
+- **定翼機**：巡航／RTL 目標空速、最低 GPS 地速與 WP 接受半徑；WP／RTL 航向由定翼機航線控制，不寫入多旋翼的航向參數。
+- **VTOL／QuadPlane**：定翼巡航空速、VTOL 導航／返航速度、VTOL GPS 速度、VTOL WP 接受半徑與中文 QRTL 返航模式。
+
+速度一律以 `m/s` 顯示，WP 半徑一律以公尺 `m` 顯示。程式會依飛控版本自動對應新舊參數，並處理舊版 `cm/s`、`cm` 換算；每個方框都有中文用途說明，非目前連線構型的方框仍會顯示但保持停用，避免跨構型誤寫參數。
 
 ## 連線飛控
 
