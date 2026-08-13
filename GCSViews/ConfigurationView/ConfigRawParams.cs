@@ -47,6 +47,56 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             InitializeComponent();
         }
 
+        internal void ApplyFmtReadableTheme()
+        {
+            ThemeManager.ApplyThemeTo(this);
+
+            BackColor = ThemeManager.BGColor;
+            ForeColor = ThemeManager.TextColor;
+            splitContainer1.BackColor = ThemeManager.BGColor;
+            splitContainer1.Panel1.BackColor = ThemeManager.BGColor;
+            splitContainer1.Panel2.BackColor = ThemeManager.BGColor;
+
+            treeView1.BackColor = ThemeManager.ControlBGColor;
+            treeView1.ForeColor = ThemeManager.TextColor;
+            treeView1.LineColor = ThemeManager.TextColor;
+
+            var selectionColor = ThemeManager.BannerColor1.IsEmpty
+                ? Color.FromArgb(11, 111, 157)
+                : ThemeManager.BannerColor1;
+            var normalStyle = new DataGridViewCellStyle(Params.DefaultCellStyle)
+            {
+                BackColor = ThemeManager.ControlBGColor,
+                ForeColor = ThemeManager.TextColor,
+                SelectionBackColor = selectionColor,
+                SelectionForeColor = Color.White
+            };
+            Params.DefaultCellStyle = normalStyle;
+            Params.RowsDefaultCellStyle = new DataGridViewCellStyle(normalStyle);
+
+            var alternatingStyle = new DataGridViewCellStyle(normalStyle)
+            {
+                BackColor = ThemeManager.BGColor
+            };
+            Params.AlternatingRowsDefaultCellStyle = alternatingStyle;
+
+            var headerStyle = new DataGridViewCellStyle(Params.ColumnHeadersDefaultCellStyle)
+            {
+                BackColor = ThemeManager.BGColor,
+                ForeColor = ThemeManager.TextColor,
+                SelectionBackColor = selectionColor,
+                SelectionForeColor = Color.White
+            };
+            Params.EnableHeadersVisualStyles = false;
+            Params.BackgroundColor = ThemeManager.BGColor;
+            Params.GridColor = ControlPaint.Light(ThemeManager.ControlBGColor, 0.25f);
+            Params.ColumnHeadersDefaultCellStyle = headerStyle;
+            Params.RowHeadersDefaultCellStyle = new DataGridViewCellStyle(headerStyle);
+
+            treeView1.Invalidate();
+            Params.Invalidate();
+        }
+
         public void Activate()
         {
             if ((rowlist.Count == 0) || (!Settings.Instance.GetBoolean("SlowMachine", false))) startup = true;

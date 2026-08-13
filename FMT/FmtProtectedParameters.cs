@@ -1,5 +1,6 @@
 using MissionPlanner.Controls;
 using MissionPlanner.GCSViews.ConfigurationView;
+using MissionPlanner.Utilities;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -16,8 +17,16 @@ namespace MissionPlanner.FMT
 
         public void Activate()
         {
+            // This page creates its parameter control after the containing backstage view
+            // has already been themed. Clear any cached white control before prompting and
+            // explicitly theme dynamically-created content when it is added again.
+            Controls.Clear();
+            BackColor = ThemeManager.BGColor;
+            ForeColor = ThemeManager.TextColor;
+
             using (var access = new FmtParameterAccessForm())
             {
+                ThemeManager.ApplyThemeTo(access);
                 if (access.ShowDialog(FindForm()) != DialogResult.OK)
                 {
                     ShowLockedMessage();
@@ -25,11 +34,23 @@ namespace MissionPlanner.FMT
                 }
             }
 
-            Controls.Clear();
             if (parameterControl == null || parameterControl.IsDisposed)
                 parameterControl = new ConfigRawParams { Dock = DockStyle.Fill };
-            Controls.Add(parameterControl);
-            parameterControl.Activate();
+
+            SuspendLayout();
+            parameterControl.Visible = false;
+            try
+            {
+                Controls.Add(parameterControl);
+                parameterControl.ApplyFmtReadableTheme();
+                parameterControl.Activate();
+                parameterControl.ApplyFmtReadableTheme();
+            }
+            finally
+            {
+                parameterControl.Visible = true;
+                ResumeLayout(true);
+            }
         }
 
         public void Deactivate()
@@ -46,8 +67,10 @@ namespace MissionPlanner.FMT
                 Text = "Parameter access is locked. Select this page again to unlock it.",
                 TextAlign = ContentAlignment.MiddleCenter,
                 Font = new Font("Segoe UI", 13, FontStyle.Bold),
+                BackColor = ThemeManager.BGColor,
                 ForeColor = Color.FromArgb(41, 171, 226)
             });
+            ThemeManager.ApplyThemeTo(this);
         }
     }
 }

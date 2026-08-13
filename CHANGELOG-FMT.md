@@ -1,5 +1,13 @@
 # FMTPlanner release history
 
+## Next release — Unreleased
+
+### Parameter interface
+
+- Fixed the protected Full Parameter List being created after theme initialization, which could leave the parameter tree and table white with unreadable text.
+- The parameter tree, rows, alternating rows, headers, selection colors, and grid lines now explicitly use the FMT theme whenever the protected page is opened.
+- The cached parameter control is hidden while the password prompt and parameter data are loading, preventing the previous white page from flashing behind the dialog.
+
 ## FMTPlanner v1.0.3 — 2026-08-13
 
 ### Airspace safety checks
