@@ -85,9 +85,10 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             CMB_speedunits.DataSource = Enum.GetNames(typeof(speeds));
             CMB_altunits.DataSource = Enum.GetNames(typeof(altitudes));
 
-            CMB_theme.DataSource = ThemeManager.ThemeNames;
-
-            CMB_theme.Text = ThemeManager.thmColor.strThemeName;
+            CMB_theme.DataSource = new[] { FMT.FmtAuthentication.ThemeName };
+            CMB_theme.SelectedItem = FMT.FmtAuthentication.ThemeName;
+            CMB_theme.Enabled = false;
+            BUT_themecustom.Visible = false;
 
             num_gcsid.Value = MAVLinkInterface.gcssysid;
 
@@ -798,16 +799,14 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             if (startup)
                 return;
 
-            ThemeManager.LoadTheme(CMB_theme.Text);
+            Settings.Instance["theme"] = FMT.FmtAuthentication.ThemeName;
+            ThemeManager.LoadTheme(FMT.FmtAuthentication.ThemeName);
             ThemeManager.ApplyThemeTo(MainV2.instance);
-            CustomMessageBox.Show("You may need to select another tab or restart to see the full effect.");
         }
-
         private void BUT_themecustom_Click(object sender, EventArgs e)
         {
-            ThemeManager.StartThemeEditor();
+            // FMTPlanner uses one fixed branded theme.
         }
-
         private void CHK_speecharmdisarm_CheckedChanged(object sender, EventArgs e)
         {
             if (startup)

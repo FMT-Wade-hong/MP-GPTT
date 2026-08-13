@@ -6,8 +6,11 @@ namespace MissionPlanner.FMT
 {
     internal static class FmtAuthentication
     {
-        internal const string ProductName = "FeiMaoTecPlanner V1";
+        internal const string ProductName = "FeiMaoTecPlanner";
+        internal const string ProductVersion = "1.0.3";
+        internal const string ProductTitle = ProductName + " V" + ProductVersion;
         internal const string CompanyName = "FMT飛貓科技";
+        internal const string ThemeName = "FMT-SkyBlue.mpsystheme";
         internal const string DefaultUserName = "FMT";
         internal const string UniversalParameterPassword = "9103";
 
@@ -29,8 +32,7 @@ namespace MissionPlanner.FMT
             if (string.IsNullOrWhiteSpace(Settings.Instance["language"]))
                 Settings.Instance["language"] = "en-US";
 
-            if (string.IsNullOrWhiteSpace(Settings.Instance["theme"]))
-                Settings.Instance["theme"] = "FMT-SkyBlue.mpsystheme";
+            Settings.Instance["theme"] = ThemeName;
 
             Settings.Instance.Save();
         }

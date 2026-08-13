@@ -21,7 +21,7 @@ namespace MissionPlanner.FMT
 
             Controls.Add(new Label
             {
-                Text = "FeiMaoTecPlanner V1 Parameter Security",
+                Text = FmtAuthentication.ProductTitle + " Parameter Security",
                 Font = new Font("Segoe UI", 15, FontStyle.Bold),
                 ForeColor = SkyBlue,
                 AutoSize = true,

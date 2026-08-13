@@ -14,7 +14,7 @@ namespace MissionPlanner.FMT
 
         internal FmtLoginForm()
         {
-            Text = FmtAuthentication.ProductName + " Login";
+            Text = FmtAuthentication.ProductTitle + " Login";
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;

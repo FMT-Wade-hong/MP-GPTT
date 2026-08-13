@@ -1084,6 +1084,66 @@ namespace MissionPlanner.GCSViews
             }
         }
 
+        internal void ExecuteFmtArmDisarm()
+        {
+            BUT_ARM_Click(BUT_ARM, EventArgs.Empty);
+        }
+
+        internal void ExecuteFmtAirspeedZero()
+        {
+            if (MainV2.comPort?.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
+            {
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "請先連線飛控。"
+                        : "Please connect to the flight controller first.",
+                    "FMT Airspeed Zero", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (MainV2.comPort.MAV.cs.armed)
+            {
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "空速計歸零只能在飛機上鎖（未解鎖）時執行。"
+                        : "Airspeed zeroing is only allowed while the vehicle is disarmed.",
+                    "FMT Airspeed Zero", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmation = IsFmtTraditionalChineseUi
+                ? "請將飛機保持靜止並鬆散遮住空速管，避免風吹影響零點。\r\n\r\n確定要執行空速計歸零嗎？"
+                : "Keep the vehicle still and loosely cover the pitot tube so wind cannot affect the zero point.\r\n\r\nRun airspeed zeroing now?";
+            if (CustomMessageBox.Show(confirmation, "FMT Airspeed Zero", MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning) != (int)DialogResult.Yes)
+                return;
+
+            try
+            {
+                // MAV_CMD_PREFLIGHT_CALIBRATION param6=2 requests airspeed-only calibration.
+                var accepted = MainV2.comPort.doCommand(MAVLink.MAV_CMD.PREFLIGHT_CALIBRATION,
+                    0, 0, 0, 0, 0, 2, 0);
+                CustomMessageBox.Show(accepted
+                        ? (IsFmtTraditionalChineseUi
+                            ? "飛控已接受空速計歸零命令，請等待校正完成訊息。"
+                            : "The flight controller accepted the airspeed-zero command. Wait for the calibration-complete message.")
+                        : (IsFmtTraditionalChineseUi
+                            ? "飛控拒絕空速計歸零命令。"
+                            : "The flight controller rejected the airspeed-zero command."),
+                    "FMT Airspeed Zero", MessageBoxButtons.OK,
+                    accepted ? MessageBoxIcon.Information : MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                log.Error("FMT airspeed zero failed", ex);
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "空速計歸零失敗：" + ex.Message
+                        : "Airspeed zeroing failed: " + ex.Message,
+                    "FMT Airspeed Zero", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static bool IsFmtTraditionalChineseUi =>
+            CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
         private void but_bintolog_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog ofd = new OpenFileDialog())

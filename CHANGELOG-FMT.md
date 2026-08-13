@@ -1,5 +1,33 @@
 # FMTPlanner release history
 
+## FMTPlanner v1.0.3 — Unreleased
+
+### Airspace safety checks
+
+- Extended the Taiwan CAA airspace check to include the takeoff path from Home to the first waypoint and the return path from the final waypoint back to Home.
+- Airspace warnings now identify whether a crossing occurs on the takeoff path, a mission segment, or the return path.
+- The check requires a valid Home location so it cannot incorrectly report a clear route while the takeoff and return paths are unknown.
+
+### Version display
+
+- Changed the application and login window titles to `FeiMaoTecPlanner V1.0.3`.
+- Removed the upstream Mission Planner `1.3.83 build ...` text from the title bar.
+- Aligned the Windows assembly and file version metadata with `1.0.3.0`.
+
+### FMT theme lock
+
+- Restricted the theme selector to the single `FMT-SkyBlue.mpsystheme` branded theme.
+- Removed the custom theme editor entry and automatically restores the FMT theme at startup.
+
+### Flight quick actions
+
+- Added a prominent red Arm/Disarm button to the left side of the main toolbar. It follows the live armed state and delegates to the existing Flight Data Arm/Disarm safety flow.
+- Added an Airspeed Zero button beside it. The action is available only while connected and disarmed, requires a pitot-cover confirmation, and sends an airspeed-only `MAV_CMD_PREFLIGHT_CALIBRATION` request (`param6=2`).
+
+### GPS toolbar status
+
+- Added a live two-line GPS display beside the FMT logo with satellite count, fix type, HDOP, and VDOP. Missing telemetry is shown as `--`, and the fix state is color coded.
+
 ## FMTPlanner v1.0.2 — 2026-08-13
 
 ### Stability and map interaction

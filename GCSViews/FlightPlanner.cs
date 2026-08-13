@@ -8078,26 +8078,34 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
             try
             {
                 writeKML();
-                var route = pointlist.Where(point =>
-                {
-                    int number;
-                    return point != null && int.TryParse(point.Tag, out number);
-                }).Select(CloneMissionPoint).ToList();
+                var route = pointlist.Where(IsNumberedMissionPoint).Select(CloneMissionPoint).ToList();
 
-                if (route.Count < 2)
+                if (route.Count < 1)
                 {
                     CustomMessageBox.Show(IsTraditionalChineseUi
-                            ? "請先規劃至少兩個航點。"
-                            : "Please plan at least two waypoints first.",
+                            ? "請先規劃至少一個航點。"
+                            : "Please plan at least one waypoint first.",
                         "FMT Airspace Check", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
-                var lookupPoints = new List<PointLatLng>();
-                for (var index = 0; index < route.Count - 1; index++)
+                var home = pointlist.FirstOrDefault(point =>
+                    point != null && string.Equals(point.Tag, "H", StringComparison.OrdinalIgnoreCase));
+                if (home == null)
                 {
-                    var from = route[index];
-                    var to = route[index + 1];
+                    CustomMessageBox.Show(IsTraditionalChineseUi
+                            ? "請先設定起飛點（Home），才能檢查起飛及返航路徑。"
+                            : "Please set the Home location before checking takeoff and return paths.",
+                        "FMT Airspace Check", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var segments = BuildFmtAirspaceSegments(pointlist);
+                var lookupPoints = new List<PointLatLng>();
+                foreach (var segment in segments)
+                {
+                    var from = segment.From;
+                    var to = segment.To;
                     var samples = Math.Max(1, (int)Math.Ceiling(from.GetDistance(to) / 20000.0));
                     for (var sample = 0; sample <= samples; sample++)
                     {
@@ -8118,10 +8126,10 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                     .ToList();
                 var crossings = new List<string>();
 
-                for (var index = 0; index < route.Count - 1; index++)
+                foreach (var segment in segments)
                 {
-                    var from = new PointLatLng(route[index].Lat, route[index].Lng);
-                    var to = new PointLatLng(route[index + 1].Lat, route[index + 1].Lng);
+                    var from = new PointLatLng(segment.From.Lat, segment.From.Lng);
+                    var to = new PointLatLng(segment.To.Lat, segment.To.Lng);
                     foreach (var zone in zones)
                     {
                         if (!zone.Polygons.Any(polygon => RouteSegmentIntersectsPolygon(from, to, polygon)))
@@ -8131,8 +8139,7 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                             ? (IsTraditionalChineseUi ? "禁航區（紅色）" : "Prohibited area (red)")
                             : (IsTraditionalChineseUi ? "限航區（黃色）" : "Restricted area (yellow)");
                         var name = string.IsNullOrWhiteSpace(zone.Name) ? zone.Id : zone.Name;
-                        crossings.Add("WP" + route[index].Tag + "–WP" + route[index + 1].Tag +
-                                      ": " + kind + " - " + name);
+                        crossings.Add(GetFmtAirspaceSegmentLabel(segment) + ": " + kind + " - " + name);
                     }
                 }
 
@@ -8140,8 +8147,8 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                 if (crossings.Count == 0)
                 {
                     CustomMessageBox.Show(IsTraditionalChineseUi
-                            ? "未發現任務航線跨越目前民航局資料中的紅色禁航區或黃色限航區。"
-                            : "No mission segment crosses a prohibited or restricted area in the current Taiwan CAA data.",
+                            ? "未發現起飛、任務或返航路徑跨越目前民航局資料中的紅色禁航區或黃色限航區。"
+                            : "No takeoff, mission, or return segment crosses a prohibited or restricted area in the current Taiwan CAA data.",
                         "FMT Airspace Check", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
@@ -8175,6 +8182,79 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                 Tag2 = point.Tag2,
                 color = point.color
             };
+        }
+
+        internal enum FmtAirspaceSegmentKind
+        {
+            Takeoff,
+            Mission,
+            Return
+        }
+
+        internal sealed class FmtAirspaceSegment
+        {
+            internal FmtAirspaceSegment(PointLatLngAlt from, PointLatLngAlt to,
+                FmtAirspaceSegmentKind kind)
+            {
+                From = from;
+                To = to;
+                Kind = kind;
+            }
+
+            internal PointLatLngAlt From { get; }
+            internal PointLatLngAlt To { get; }
+            internal FmtAirspaceSegmentKind Kind { get; }
+        }
+
+        private static bool IsNumberedMissionPoint(PointLatLngAlt point)
+        {
+            int number;
+            return point != null && int.TryParse(point.Tag, out number);
+        }
+
+        internal static List<FmtAirspaceSegment> BuildFmtAirspaceSegments(
+            IEnumerable<PointLatLngAlt> missionPoints)
+        {
+            var points = (missionPoints ?? Enumerable.Empty<PointLatLngAlt>())
+                .Where(point => point != null)
+                .ToList();
+            var home = points.FirstOrDefault(point =>
+                string.Equals(point.Tag, "H", StringComparison.OrdinalIgnoreCase));
+            var route = points.Where(IsNumberedMissionPoint).Select(CloneMissionPoint).ToList();
+            var segments = new List<FmtAirspaceSegment>();
+
+            if (home != null && route.Count > 0)
+                segments.Add(new FmtAirspaceSegment(CloneMissionPoint(home), route[0],
+                    FmtAirspaceSegmentKind.Takeoff));
+
+            for (var index = 0; index < route.Count - 1; index++)
+                segments.Add(new FmtAirspaceSegment(route[index], route[index + 1],
+                    FmtAirspaceSegmentKind.Mission));
+
+            if (home != null && route.Count > 0)
+                segments.Add(new FmtAirspaceSegment(route[route.Count - 1], CloneMissionPoint(home),
+                    FmtAirspaceSegmentKind.Return));
+
+            return segments;
+        }
+
+        private static string GetFmtAirspaceSegmentLabel(FmtAirspaceSegment segment)
+        {
+            switch (segment.Kind)
+            {
+                case FmtAirspaceSegmentKind.Takeoff:
+                    return IsTraditionalChineseUi
+                        ? "起飛路徑 Home → WP" + segment.To.Tag
+                        : "Takeoff path Home → WP" + segment.To.Tag;
+                case FmtAirspaceSegmentKind.Return:
+                    return IsTraditionalChineseUi
+                        ? "返航路徑 WP" + segment.From.Tag + " → Home"
+                        : "Return path WP" + segment.From.Tag + " → Home";
+                default:
+                    return IsTraditionalChineseUi
+                        ? "任務航段 WP" + segment.From.Tag + " → WP" + segment.To.Tag
+                        : "Mission segment WP" + segment.From.Tag + " → WP" + segment.To.Tag;
+            }
         }
 
         internal static bool RouteSegmentIntersectsPolygon(PointLatLng from, PointLatLng to,

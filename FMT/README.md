@@ -1,10 +1,10 @@
-# FeiMaoTecPlanner V1 customization
+# FeiMaoTecPlanner V1.0.3 customization
 
-FeiMaoTecPlanner V1 is the FMT 飛貓科技 customization layer for Mission Planner.
+FeiMaoTecPlanner V1.0.3 is the FMT 飛貓科技 customization layer for Mission Planner.
 
 ## Defaults
 
-- Product: `FeiMaoTecPlanner V1`
+- Product: `FeiMaoTecPlanner V1.0.3`
 - Company: `FMT飛貓科技`
 - Login branding: embedded `FMT/Assets/fmt-logo.png`
 - Application icon: generated from `FMT/Assets/fmt-app-icon-source.png` with `FMT/Build-FmtIcon.ps1`

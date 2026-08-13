@@ -4,11 +4,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("FeiMaoTecPlanner V1")]
-[assembly: AssemblyDescription("FeiMaoTecPlanner V1 ground control station for ArduPilot")]
+[assembly: AssemblyTitle("FeiMaoTecPlanner V1.0.3")]
+[assembly: AssemblyDescription("FeiMaoTecPlanner V1.0.3 ground control station for ArduPilot")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("FMT飛貓科技")]
-[assembly: AssemblyProduct("FeiMaoTecPlanner V1")]
+[assembly: AssemblyProduct("FeiMaoTecPlanner")]
 [assembly: AssemblyCopyright("Mission Planner contributors; FMT飛貓科技 customization")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -28,5 +28,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.3.*")]
-[assembly: AssemblyFileVersion("1.3.83")]
+[assembly: AssemblyVersion("1.0.3.0")]
+[assembly: AssemblyFileVersion("1.0.3.0")]
