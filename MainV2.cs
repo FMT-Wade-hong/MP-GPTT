@@ -4788,18 +4788,39 @@ namespace MissionPlanner
             };
             MainMenu.Items.Add(MenuFeiMao);
 
+            const string gpsIconResourceName = "MissionPlanner.FMT.Assets.fmt-satellite-icon.png";
+            Image gpsIcon = null;
+            using (var stream = typeof(MainV2).Assembly.GetManifestResourceStream(gpsIconResourceName))
+            {
+                if (stream != null)
+                {
+                    using (var source = Image.FromStream(stream))
+                        gpsIcon = new Bitmap(source, new Size(29, 29));
+                }
+            }
+
             var gpsStatusPanel = new Panel
             {
                 Name = "FmtGpsStatusPanel",
                 BackColor = Color.FromArgb(24, 24, 24),
-                Size = new Size(164, 35),
+                Size = new Size(190, 35),
                 Margin = Padding.Empty
+            };
+            var gpsIconBox = new PictureBox
+            {
+                Name = "FmtGpsIcon",
+                Location = new Point(3, 3),
+                Size = new Size(29, 29),
+                BackColor = Color.Transparent,
+                Image = gpsIcon,
+                SizeMode = PictureBoxSizeMode.Zoom,
+                TabStop = false
             };
             FmtGpsPrimaryLabel = new Label
             {
                 Name = "FmtGpsPrimaryLabel",
                 AutoSize = false,
-                Location = new Point(5, 1),
+                Location = new Point(35, 1),
                 Size = new Size(154, 17),
                 BackColor = Color.Transparent,
                 ForeColor = Color.Gray,
@@ -4811,7 +4832,7 @@ namespace MissionPlanner
             {
                 Name = "FmtGpsDopLabel",
                 AutoSize = false,
-                Location = new Point(5, 17),
+                Location = new Point(35, 17),
                 Size = new Size(154, 16),
                 BackColor = Color.Transparent,
                 ForeColor = Color.Gray,
@@ -4819,6 +4840,7 @@ namespace MissionPlanner
                 TextAlign = ContentAlignment.MiddleLeft,
                 Text = "H: --  |  V: --"
             };
+            gpsStatusPanel.Controls.Add(gpsIconBox);
             gpsStatusPanel.Controls.Add(FmtGpsPrimaryLabel);
             gpsStatusPanel.Controls.Add(FmtGpsDopLabel);
 
@@ -4827,7 +4849,7 @@ namespace MissionPlanner
                 Name = "MenuFmtGpsStatus",
                 Alignment = ToolStripItemAlignment.Right,
                 AutoSize = false,
-                Size = new Size(164, 35),
+                Size = new Size(190, 35),
                 Margin = new Padding(2, 0, 2, 0),
                 Padding = Padding.Empty,
                 BackColor = Color.FromArgb(24, 24, 24),

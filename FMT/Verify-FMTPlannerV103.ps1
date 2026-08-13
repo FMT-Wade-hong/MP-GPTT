@@ -24,6 +24,7 @@ $subsystem = [BitConverter]::ToUInt16($bytes, $peOffset + 24 + 68)
 Test-FmtCondition 'Windows GUI subsystem' ($subsystem -eq 2) "PE subsystem=$subsystem (2 means no console window)"
 
 $assembly = [Reflection.Assembly]::LoadFrom($binaryPath)
+$resources = @($assembly.GetManifestResourceNames())
 $flightPlannerType = $assembly.GetType('MissionPlanner.GCSViews.FlightPlanner', $true)
 $flightDataType = $assembly.GetType('MissionPlanner.GCSViews.FlightData', $true)
 $mainType = $assembly.GetType('MissionPlanner.MainV2', $true)
@@ -115,6 +116,8 @@ Test-FmtCondition 'Airspeed-only calibration parameter' ($flightDataSource.Conta
 Test-FmtCondition 'Airspeed zero blocked while armed' ($flightDataSource.Contains('if (MainV2.comPort.MAV.cs.armed)')) 'preflight-only safety guard'
 Test-FmtCondition 'GPS toolbar host compiled' ($mainSource.Contains('MenuFmtGpsStatus = new ToolStripControlHost')) 'two-line GPS status is hosted in the top toolbar'
 Test-FmtCondition 'GPS toolbar is right aligned' ($mainSource.Contains('Name = "MenuFmtGpsStatus"') -and $mainSource.Contains('Alignment = ToolStripItemAlignment.Right')) 'GPS status is placed next to the FMT logo'
+Test-FmtCondition 'GPS satellite icon embedded' ($resources -contains 'MissionPlanner.FMT.Assets.fmt-satellite-icon.png') 'satellite icon is available without an external file'
+Test-FmtCondition 'GPS satellite icon is left of data' ($mainSource.Contains('Name = "FmtGpsIcon"') -and $mainSource.Contains('Location = new Point(3, 3)') -and $mainSource.Contains('Location = new Point(35, 1)')) 'icon precedes the two-line GPS text'
 $fixLabelMethod = $mainType.GetMethod('GetFmtGpsFixLabel', $binding)
 Test-FmtCondition 'RTK Fixed English label mapping' ($fixLabelMethod.Invoke($null, @([single]6, $false)) -eq 'RTK Fixed') 'GPS fix type 6 has the standard English label'
 $rtkFixedChinese = 'RTK ' + [char]0x56FA + [char]0x5B9A + [char]0x89E3

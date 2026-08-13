@@ -1206,5 +1206,6 @@
     <EmbeddedResource Include="plugins\example23-switch.resx" />
     <EmbeddedResource Include="FMT\Assets\fmt-logo.png" LogicalName="MissionPlanner.FMT.Assets.fmt-logo.png" />
     <EmbeddedResource Include="FMT\Assets\fmt-app-icon-source.png" LogicalName="MissionPlanner.FMT.Assets.fmt-app-icon-source.png" />
+    <EmbeddedResource Include="FMT\Assets\fmt-satellite-icon.png" LogicalName="MissionPlanner.FMT.Assets.fmt-satellite-icon.png" />
   </ItemGroup>
 </Project>

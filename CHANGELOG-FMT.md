@@ -14,6 +14,10 @@
 - QNH entry uses pascals with hPa guidance, validates a safe atmospheric range, requires confirmation, and is available only while connected and disarmed.
 - Unsupported or read-only flight-controller pressure parameters now produce a clear error instead of failing silently.
 
+### GPS toolbar status
+
+- Added a white satellite icon to the left of the two-line satellite, fix, HDOP, and VDOP display.
+
 ## FMTPlanner v1.0.3 — 2026-08-13
 
 ### Airspace safety checks
