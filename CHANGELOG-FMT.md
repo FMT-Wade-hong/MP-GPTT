@@ -1,6 +1,6 @@
 # FMTPlanner release history
 
-## FMTPlanner v1.0.3 — Unreleased
+## FMTPlanner v1.0.3 — 2026-08-13
 
 ### Airspace safety checks
 

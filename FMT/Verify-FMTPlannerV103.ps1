@@ -1,5 +1,6 @@
 param(
-    [string]$BinaryDirectory = (Join-Path (Split-Path $PSScriptRoot -Parent) 'bin\Release\net461')
+    [string]$BinaryDirectory = (Join-Path (Split-Path $PSScriptRoot -Parent) 'bin\Release\net461'),
+    [string]$PackagePath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'bin\Package\FMTPlanner-V1.0.3.zip')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -16,6 +17,11 @@ function Test-FmtCondition {
 
 $binaryPath = Join-Path $BinaryDirectory 'FMTPlanner.exe'
 Test-FmtCondition 'Release binary exists' (Test-Path -LiteralPath $binaryPath -PathType Leaf) $binaryPath
+
+$bytes = [System.IO.File]::ReadAllBytes($binaryPath)
+$peOffset = [BitConverter]::ToInt32($bytes, 0x3c)
+$subsystem = [BitConverter]::ToUInt16($bytes, $peOffset + 24 + 68)
+Test-FmtCondition 'Windows GUI subsystem' ($subsystem -eq 2) "PE subsystem=$subsystem (2 means no console window)"
 
 $assembly = [Reflection.Assembly]::LoadFrom($binaryPath)
 $flightPlannerType = $assembly.GetType('MissionPlanner.GCSViews.FlightPlanner', $true)
@@ -127,6 +133,22 @@ Test-FmtCondition 'Windows product version' ($fileVersion.ProductVersion -eq '1.
 
 $version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Raw).Trim()
 Test-FmtCondition 'Development version' ($version -eq '1.0.3') "FMT/VERSION=$version"
+
+Test-FmtCondition 'Versioned package exists' (Test-Path -LiteralPath $PackagePath -PathType Leaf) $PackagePath
+Test-FmtCondition 'Versioned package filename' ((Split-Path $PackagePath -Leaf) -eq 'FMTPlanner-V1.0.3.zip') $PackagePath
+Test-FmtCondition 'Versioned package is non-empty' ((Get-Item -LiteralPath $PackagePath).Length -gt 1MB) ((Get-Item -LiteralPath $PackagePath).Length.ToString())
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$packageArchive = [IO.Compression.ZipFile]::OpenRead($PackagePath)
+try {
+    $entryNames = @($packageArchive.Entries | ForEach-Object FullName)
+    Test-FmtCondition 'Portable package contains FMTPlanner.exe' ($entryNames -contains 'FMTPlanner-V1.0.3/FMTPlanner.exe') 'direct application executable is present'
+    Test-FmtCondition 'Portable package contains startup guide' ($entryNames -contains 'FMTPlanner-V1.0.3/README-FIRST.txt') 'extraction and startup instructions are present'
+    Test-FmtCondition 'Portable package excludes old executable' (-not ($entryNames -contains 'FMTPlanner-V1.0.3/MissionPlanner.exe')) 'upstream executable is not bundled'
+    Test-FmtCondition 'Portable package excludes self-extracting launcher' (-not ($entryNames | Where-Object { $_ -like '*FMTPlanner.Start.exe' -or $_ -like '*FMTPlanner.Payload.zip' })) 'no extraction launcher or nested payload'
+}
+finally {
+    $packageArchive.Dispose()
+}
 
 $results | Format-Table -AutoSize
 [PSCustomObject]@{
