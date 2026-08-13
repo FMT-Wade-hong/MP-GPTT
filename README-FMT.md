@@ -77,6 +77,10 @@
 
 右側 FMT Logo 可點擊開啟 [FMT 飛貓科技官網](https://www.feimaotec.com)。
 
+### 飛行模式頁常用設定
+
+在「初始配置 → 飛行模式設定」下方提供 ArduCopter 常用參數：導航速度、GPS 定位速度、WP 航向、RTL 航向及 RTL 速度。速度一律以 `m/s` 顯示；程式會依飛控版本自動對應新版 `WP_SPD`、`LOIT_SPEED_MS`、`RTL_SPEED_MS` 或舊版 `WPNAV_SPEED`、`WPNAV_LOIT_SPEED`、`RTL_SPEED`，並處理 `cm/s` 換算。WP 航向與 RTL 航向在畫面中分開選擇，但因 ArduPilot 使用共用的 `WP_YAW_BEHAVIOR`，FMTPlanner 只保留飛控實際支援的四種組合。
+
 ## 連線飛控
 
 1. 使用 USB、遙測電台或其他支援的通訊方式連接飛控。

@@ -23,6 +23,13 @@
 - Fixed the running taskbar and window icon so the splash screen, login, main window, and FMT parameter dialogs consistently use the embedded FMT icon.
 - Disabled the legacy external `icon.png` override so a file beside the executable cannot replace FMT branding at runtime.
 
+### Flight mode common settings
+
+- Added a Traditional Chinese common-settings panel below the ArduCopter flight-mode controls.
+- Added navigation speed, GPS position-control speed, separate Chinese waypoint and RTL yaw selectors, and RTL speed controls. The two yaw selectors map only to combinations supported by ArduPilot's shared `WP_YAW_BEHAVIOR` parameter.
+- All displayed speeds use `m/s`; legacy `cm/s` parameters are converted automatically, while ArduPilot 4.7 renamed `*_MS` parameters are written directly.
+- The panel discovers the parameter names supported by the connected firmware and permits writes only while connected, disarmed, and not read-only.
+
 ## FMTPlanner v1.0.3 — 2026-08-13
 
 ### Airspace safety checks

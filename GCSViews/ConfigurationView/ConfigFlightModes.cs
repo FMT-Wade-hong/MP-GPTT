@@ -2,7 +2,9 @@
 using MissionPlanner.Controls;
 using MissionPlanner.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace MissionPlanner.GCSViews.ConfigurationView
@@ -22,12 +24,42 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         }
 
         private readonly Timer _timer = new Timer();
+        private GroupBox fmtCommonSettings;
+        private NumericUpDown fmtNavigationSpeed;
+        private NumericUpDown fmtGpsSpeed;
+        private ComboBox fmtWpYaw;
+        private ComboBox fmtRtlYaw;
+        private NumericUpDown fmtRtlSpeed;
+        private Label fmtCommonParameterHint;
+        private Button fmtSaveCommonSettings;
+        private string fmtNavigationSpeedParameter;
+        private string fmtGpsSpeedParameter;
+        private string fmtYawBehaviorParameter;
+        private string fmtRtlSpeedParameter;
+
+        private sealed class FmtSelectionOption
+        {
+            internal readonly int Value;
+            private readonly string text;
+
+            internal FmtSelectionOption(int value, string text)
+            {
+                Value = value;
+                this.text = text;
+            }
+
+            public override string ToString()
+            {
+                return text;
+            }
+        }
 
         public ConfigFlightModes()
         {
             try
             {
                 InitializeComponent();
+                CreateFmtCommonSettings();
             }
             catch (Exception ex)
             {
@@ -223,6 +255,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 {
                 }
             }
+
+            LoadFmtCommonSettings();
 
             _timer.Tick += timer_Tick;
 
@@ -474,6 +508,379 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             {
                 items[0].Enabled = enable;
             }
+        }
+
+        private void CreateFmtCommonSettings()
+        {
+            AutoScroll = true;
+            fmtCommonSettings = new GroupBox
+            {
+                Name = "FmtCommonSettings",
+                Text = "常用設定（ArduCopter）",
+                Location = new Point(0, tableLayoutPanel1.Bottom + 10),
+                Size = new Size(593, 213),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left,
+                Visible = false
+            };
+
+            fmtNavigationSpeed = CreateFmtSpeedControl("FmtNavigationSpeed", new Point(143, 27), 0.1m);
+            fmtGpsSpeed = CreateFmtSpeedControl("FmtGpsSpeed", new Point(430, 27), 0.1m);
+            fmtRtlSpeed = CreateFmtSpeedControl("FmtRtlSpeed", new Point(430, 66), 0m);
+
+            fmtWpYaw = CreateFmtYawCombo("FmtWpYaw", new Point(143, 105));
+            fmtWpYaw.Items.AddRange(new object[]
+            {
+                new FmtSelectionOption(0, "保持航向"),
+                new FmtSelectionOption(1, "朝向下一航點"),
+                new FmtSelectionOption(3, "沿 GPS 航跡方向")
+            });
+
+            fmtRtlYaw = CreateFmtYawCombo("FmtRtlYaw", new Point(430, 105));
+            fmtRtlYaw.Items.AddRange(new object[]
+            {
+                new FmtSelectionOption(0, "保持航向"),
+                new FmtSelectionOption(1, "朝向返航點"),
+                new FmtSelectionOption(3, "沿 GPS 航跡方向")
+            });
+            fmtWpYaw.SelectedIndexChanged += FmtYawSelectionChanged;
+            fmtRtlYaw.SelectedIndexChanged += FmtYawSelectionChanged;
+
+            fmtSaveCommonSettings = new Button
+            {
+                Name = "FmtSaveCommonSettings",
+                Text = "儲存常用設定",
+                Location = new Point(430, 143),
+                Size = new Size(125, 30),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(41, 171, 226),
+                ForeColor = Color.White
+            };
+            fmtSaveCommonSettings.FlatAppearance.BorderSize = 0;
+            fmtSaveCommonSettings.Click += SaveFmtCommonSettings;
+
+            fmtCommonParameterHint = new Label
+            {
+                Name = "FmtCommonParameterHint",
+                Location = new Point(16, 180),
+                Size = new Size(575, 22),
+                AutoEllipsis = true,
+                ForeColor = Color.Gray,
+                Text = "連線後顯示飛控實際使用的參數名稱。"
+            };
+
+            fmtCommonSettings.Controls.AddRange(new Control[]
+            {
+                CreateFmtLabel("導航速度參數", new Point(16, 30), new Size(122, 22)),
+                fmtNavigationSpeed,
+                CreateFmtUnitLabel(new Point(231, 30)),
+                CreateFmtLabel("GPS 速度參數", new Point(295, 30), new Size(130, 22)),
+                fmtGpsSpeed,
+                CreateFmtUnitLabel(new Point(518, 30)),
+                CreateFmtLabel("RTL 速度", new Point(295, 69), new Size(130, 22)),
+                fmtRtlSpeed,
+                CreateFmtUnitLabel(new Point(518, 69)),
+                CreateFmtLabel("WP 航向", new Point(16, 108), new Size(122, 22)),
+                fmtWpYaw,
+                CreateFmtLabel("RTL 航向", new Point(295, 108), new Size(130, 22)),
+                fmtRtlYaw,
+                fmtSaveCommonSettings,
+                fmtCommonParameterHint
+            });
+            Controls.Add(fmtCommonSettings);
+            fmtCommonSettings.BringToFront();
+            ThemeManager.ApplyThemeTo(fmtCommonSettings);
+        }
+
+        private static NumericUpDown CreateFmtSpeedControl(string name, Point location, decimal minimum)
+        {
+            return new NumericUpDown
+            {
+                Name = name,
+                Location = location,
+                Size = new Size(82, 24),
+                DecimalPlaces = 1,
+                Increment = 0.1m,
+                Minimum = minimum,
+                Maximum = 100m,
+                TextAlign = HorizontalAlignment.Right
+            };
+        }
+
+        private static ComboBox CreateFmtYawCombo(string name, Point location)
+        {
+            return new ComboBox
+            {
+                Name = name,
+                Location = location,
+                Size = new Size(140, 25),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+        }
+
+        private static Label CreateFmtLabel(string text, Point location, Size size)
+        {
+            return new Label
+            {
+                Text = text,
+                Location = location,
+                Size = size,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+        }
+
+        private static Label CreateFmtUnitLabel(Point location)
+        {
+            return CreateFmtLabel("m/s", location, new Size(45, 22));
+        }
+
+        private void LoadFmtCommonSettings()
+        {
+            if (fmtCommonSettings == null)
+                return;
+
+            var isCopter = MainV2.comPort.MAV.cs.firmware == Firmwares.ArduCopter2;
+            fmtCommonSettings.Visible = isCopter;
+            if (!isCopter)
+                return;
+
+            fmtNavigationSpeedParameter = FindFmtParameter("WP_SPD", "WPNAV_SPEED");
+            fmtGpsSpeedParameter = FindFmtParameter("LOIT_SPEED_MS", "WPNAV_LOIT_SPEED", "LOIT_SPEED");
+            fmtYawBehaviorParameter = FindFmtParameter("WP_YAW_BEHAVIOR");
+            fmtRtlSpeedParameter = FindFmtParameter("RTL_SPEED_MS", "RTL_SPEED");
+
+            LoadFmtSpeed(fmtNavigationSpeed, fmtNavigationSpeedParameter);
+            LoadFmtSpeed(fmtGpsSpeed, fmtGpsSpeedParameter);
+            LoadFmtSpeed(fmtRtlSpeed, fmtRtlSpeedParameter);
+
+            fmtWpYaw.Enabled = fmtYawBehaviorParameter != null;
+            fmtRtlYaw.Enabled = fmtYawBehaviorParameter != null;
+            fmtWpYaw.SelectedIndex = -1;
+            fmtRtlYaw.SelectedIndex = -1;
+            if (fmtYawBehaviorParameter != null)
+            {
+                var yawValue = (int)Math.Round(MainV2.comPort.MAV.param[fmtYawBehaviorParameter].Value);
+                SelectFmtYawBehavior(yawValue);
+            }
+
+            var parameters = new List<string>();
+            AddFmtParameterName(parameters, fmtNavigationSpeedParameter);
+            AddFmtParameterName(parameters, fmtGpsSpeedParameter);
+            AddFmtParameterName(parameters, fmtYawBehaviorParameter);
+            AddFmtParameterName(parameters, fmtRtlSpeedParameter);
+            fmtCommonParameterHint.Text = parameters.Count == 0
+                ? "目前飛控沒有支援的常用設定參數。"
+                : "使用參數：" + string.Join("、", parameters);
+            fmtSaveCommonSettings.Enabled = parameters.Count > 0 &&
+                                            MainV2.comPort.BaseStream != null &&
+                                            MainV2.comPort.BaseStream.IsOpen &&
+                                            !MainV2.comPort.ReadOnly &&
+                                            !MainV2.comPort.MAV.cs.armed;
+            ThemeManager.ApplyThemeTo(fmtCommonSettings);
+            fmtSaveCommonSettings.BackColor = Color.FromArgb(41, 171, 226);
+            fmtSaveCommonSettings.ForeColor = Color.White;
+        }
+
+        private static void AddFmtParameterName(ICollection<string> parameters, string parameterName)
+        {
+            if (!string.IsNullOrEmpty(parameterName))
+                parameters.Add(parameterName);
+        }
+
+        private static string FindFmtParameter(params string[] candidates)
+        {
+            foreach (var candidate in candidates)
+            {
+                if (MainV2.comPort.MAV.param.ContainsKey(candidate))
+                    return candidate;
+            }
+
+            return null;
+        }
+
+        private static void LoadFmtSpeed(NumericUpDown control, string parameterName)
+        {
+            control.Enabled = parameterName != null;
+            if (parameterName == null)
+                return;
+
+            var metersPerSecond = FmtSpeedRawToMetersPerSecond(parameterName,
+                MainV2.comPort.MAV.param[parameterName].Value);
+            var value = (decimal)Math.Max((double)control.Minimum,
+                Math.Min((double)control.Maximum, metersPerSecond));
+            control.Value = value;
+        }
+
+        internal static double FmtSpeedRawToMetersPerSecond(string parameterName, double rawValue)
+        {
+            return IsFmtLegacyCentimeterSpeed(parameterName) ? rawValue / 100.0 : rawValue;
+        }
+
+        internal static double FmtSpeedMetersPerSecondToRaw(string parameterName, double metersPerSecond)
+        {
+            return IsFmtLegacyCentimeterSpeed(parameterName)
+                ? Math.Round(metersPerSecond * 100.0, MidpointRounding.AwayFromZero)
+                : metersPerSecond;
+        }
+
+        private static bool IsFmtLegacyCentimeterSpeed(string parameterName)
+        {
+            return string.Equals(parameterName, "WPNAV_SPEED", StringComparison.Ordinal) ||
+                   string.Equals(parameterName, "WPNAV_LOIT_SPEED", StringComparison.Ordinal) ||
+                   string.Equals(parameterName, "LOIT_SPEED", StringComparison.Ordinal) ||
+                   string.Equals(parameterName, "RTL_SPEED", StringComparison.Ordinal);
+        }
+
+        private bool fmtUpdatingYawSelection;
+
+        private void SelectFmtYawBehavior(int yawValue)
+        {
+            fmtUpdatingYawSelection = true;
+            try
+            {
+                switch (yawValue)
+                {
+                    case 0:
+                        SelectFmtOption(fmtWpYaw, 0);
+                        SelectFmtOption(fmtRtlYaw, 0);
+                        break;
+                    case 1:
+                        SelectFmtOption(fmtWpYaw, 1);
+                        SelectFmtOption(fmtRtlYaw, 1);
+                        break;
+                    case 2:
+                        SelectFmtOption(fmtWpYaw, 1);
+                        SelectFmtOption(fmtRtlYaw, 0);
+                        break;
+                    case 3:
+                        SelectFmtOption(fmtWpYaw, 3);
+                        SelectFmtOption(fmtRtlYaw, 3);
+                        break;
+                }
+            }
+            finally
+            {
+                fmtUpdatingYawSelection = false;
+            }
+        }
+
+        private static void SelectFmtOption(ComboBox control, int value)
+        {
+            for (var index = 0; index < control.Items.Count; index++)
+            {
+                if (((FmtSelectionOption)control.Items[index]).Value == value)
+                {
+                    control.SelectedIndex = index;
+                    return;
+                }
+            }
+        }
+
+        private void FmtYawSelectionChanged(object sender, EventArgs e)
+        {
+            if (fmtUpdatingYawSelection || fmtWpYaw.SelectedItem == null || fmtRtlYaw.SelectedItem == null)
+                return;
+
+            var wpYaw = ((FmtSelectionOption)fmtWpYaw.SelectedItem).Value;
+            var rtlYaw = ((FmtSelectionOption)fmtRtlYaw.SelectedItem).Value;
+            var behavior = FmtYawSelectionsToBehavior(wpYaw, rtlYaw);
+            if (behavior >= 0)
+                return;
+
+            // WP_YAW_BEHAVIOR is one shared ArduPilot parameter. If the requested pair
+            // is unsupported, keep the user's last selection and adjust the other list
+            // to the closest valid firmware behavior.
+            if (ReferenceEquals(sender, fmtWpYaw))
+                SelectFmtYawBehavior(wpYaw == 0 ? 0 : wpYaw == 3 ? 3 : 2);
+            else
+                SelectFmtYawBehavior(rtlYaw == 1 ? 1 : rtlYaw == 3 ? 3 : 2);
+        }
+
+        internal static int FmtYawSelectionsToBehavior(int wpYaw, int rtlYaw)
+        {
+            if (wpYaw == 0 && rtlYaw == 0) return 0;
+            if (wpYaw == 1 && rtlYaw == 1) return 1;
+            if (wpYaw == 1 && rtlYaw == 0) return 2;
+            if (wpYaw == 3 && rtlYaw == 3) return 3;
+            return -1;
+        }
+
+        private void SaveFmtCommonSettings(object sender, EventArgs e)
+        {
+            if (MainV2.comPort.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
+            {
+                CustomMessageBox.Show("請先連線飛控。", "常用設定", MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            if (MainV2.comPort.MAV.cs.armed)
+            {
+                CustomMessageBox.Show("常用設定只能在飛機上鎖（未解鎖）時修改。", "常用設定",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (MainV2.comPort.ReadOnly)
+            {
+                CustomMessageBox.Show("目前為唯讀連線，無法寫入參數。", "常用設定",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmation = "確定要將導航、GPS 定位、WP／RTL 航向及 RTL 速度寫入飛控嗎？";
+            if (CustomMessageBox.Show(confirmation, "常用設定", MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning) != (int)DialogResult.Yes)
+                return;
+
+            try
+            {
+                var failures = new List<string>();
+                SaveFmtSpeed(fmtNavigationSpeed, fmtNavigationSpeedParameter, failures);
+                SaveFmtSpeed(fmtGpsSpeed, fmtGpsSpeedParameter, failures);
+                SaveFmtSpeed(fmtRtlSpeed, fmtRtlSpeedParameter, failures);
+
+                var wpYaw = fmtWpYaw.SelectedItem as FmtSelectionOption;
+                var rtlYaw = fmtRtlYaw.SelectedItem as FmtSelectionOption;
+                if (fmtYawBehaviorParameter != null && wpYaw != null && rtlYaw != null)
+                {
+                    var yawBehavior = FmtYawSelectionsToBehavior(wpYaw.Value, rtlYaw.Value);
+                    if (yawBehavior < 0 || !SetFmtParameter(fmtYawBehaviorParameter, yawBehavior))
+                        failures.Add(fmtYawBehaviorParameter);
+                }
+
+                if (failures.Count > 0)
+                {
+                    CustomMessageBox.Show("下列參數寫入失敗：" + string.Join("、", failures), "常用設定",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                CustomMessageBox.Show("常用設定已寫入飛控。", "常用設定", MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                LoadFmtCommonSettings();
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("常用設定寫入失敗：" + ex.Message, "常用設定",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static void SaveFmtSpeed(NumericUpDown control, string parameterName,
+            ICollection<string> failures)
+        {
+            if (parameterName == null || !control.Enabled)
+                return;
+
+            var rawValue = FmtSpeedMetersPerSecondToRaw(parameterName, (double)control.Value);
+            if (!SetFmtParameter(parameterName, rawValue))
+                failures.Add(parameterName);
+        }
+
+        private static bool SetFmtParameter(string parameterName, double value)
+        {
+            return MainV2.comPort.setParam((byte)MainV2.comPort.sysidcurrent,
+                (byte)MainV2.comPort.compidcurrent, parameterName, value);
         }
     }
 }
