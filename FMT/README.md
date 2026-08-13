@@ -1,5 +1,7 @@
 # FeiMaoTecPlanner V1.0.3 customization
 
+> 使用者圖文操作手冊請見儲存庫根目錄的 [README-FMT.md](../README-FMT.md)。本文件保留開發、建置與客製技術資訊。
+
 FeiMaoTecPlanner V1.0.3 is the FMT 飛貓科技 customization layer for Mission Planner.
 
 ## Defaults

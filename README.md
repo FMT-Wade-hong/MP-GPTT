@@ -1,5 +1,9 @@
 # MissionPlanner
 
+> ## FMT 飛貓科技客製版
+>
+> 本儲存庫包含 **FeiMaoTecPlanner（FMTPlanner）** 客製功能。中文圖文操作手冊請見：[README-FMT.md](README-FMT.md)。
+
 ![Dot Net](https://github.com/ardupilot/missionplanner/actions/workflows/main.yml/badge.svg) ![Android](https://github.com/ardupilot/missionplanner/actions/workflows/android.yml/badge.svg) ![OSX/IOS](https://github.com/ardupilot/missionplanner/actions/workflows/mac.yml/badge.svg)
 
 Website : http://ardupilot.org/planner/
