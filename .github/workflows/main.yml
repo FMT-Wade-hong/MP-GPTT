@@ -61,7 +61,10 @@ jobs:
         with:
           name: ${{ github.ref_name }}
           body_path: CHANGELOG-FMT.md
-          files: ${{ env.FMT_PACKAGE }}
+          files: |
+            ${{ env.FMT_PACKAGE }}
+            README-FMT.md
+            CHANGELOG-FMT.md
           fail_on_unmatched_files: true
 
 

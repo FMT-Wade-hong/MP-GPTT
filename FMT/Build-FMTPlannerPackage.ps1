@@ -38,6 +38,29 @@ Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $temporaryOutput = Join-Path $outputDirectory ('.fmtplanner-' + [Guid]::NewGuid().ToString('N') + '.zip')
 $rootFolder = "FMTPlanner-V$ReleaseVersion"
+$documentationFiles = @(
+    [PSCustomObject]@{
+        Source = Join-Path $projectRoot 'README-FMT.md'
+        Entry = "$rootFolder/README-FMT.md"
+    },
+    [PSCustomObject]@{
+        Source = Join-Path $projectRoot 'CHANGELOG-FMT.md'
+        Entry = "$rootFolder/CHANGELOG-FMT.md"
+    }
+)
+$documentationAssetRoot = Join-Path $projectRoot 'FMT'
+foreach ($assetDirectory in 'Assets', 'ManualImages') {
+    $assetPath = Join-Path $documentationAssetRoot $assetDirectory
+    if (Test-Path -LiteralPath $assetPath -PathType Container) {
+        foreach ($asset in Get-ChildItem -LiteralPath $assetPath -Recurse -File) {
+            $relativeAsset = $asset.FullName.Substring($projectRoot.Length).TrimStart('\', '/')
+            $documentationFiles += [PSCustomObject]@{
+                Source = $asset.FullName
+                Entry = ($rootFolder + '/' + $relativeAsset.Replace('\', '/'))
+            }
+        }
+    }
+}
 $staleMissionPlannerOutputs = @(
     'MissionPlanner.exe',
     'MissionPlanner.exe.config',
@@ -65,6 +88,17 @@ try {
                     [IO.Compression.CompressionLevel]::Optimal) | Out-Null
             }
 
+            foreach ($document in $documentationFiles) {
+                if (-not (Test-Path -LiteralPath $document.Source -PathType Leaf)) {
+                    throw "Release documentation file was not found: $($document.Source)"
+                }
+                [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                    $archive,
+                    $document.Source,
+                    $document.Entry,
+                    [IO.Compression.CompressionLevel]::Optimal) | Out-Null
+            }
+
             $readmeEntry = $archive.CreateEntry(
                 "$rootFolder/README-FIRST.txt",
                 [IO.Compression.CompressionLevel]::Optimal)
@@ -75,6 +109,7 @@ try {
                 $writer.WriteLine('1. Extract this ZIP to a normal local folder.')
                 $writer.WriteLine('2. Run FMTPlanner.exe.')
                 $writer.WriteLine('3. Do not run files directly from inside the ZIP viewer.')
+                $writer.WriteLine('4. Open README-FMT.md for the Traditional Chinese illustrated user manual.')
                 $writer.WriteLine('')
                 $writer.WriteLine('Publisher: FMT飛貓科技')
                 $writer.WriteLine('Website: https://www.feimaotec.com')
@@ -98,7 +133,7 @@ try {
     [PSCustomObject]@{
         Output = $outputFile.FullName
         Packaging = 'Portable ZIP (no self-extracting launcher)'
-        FilesBundled = $files.Count + 1
+        FilesBundled = $files.Count + $documentationFiles.Count + 1
         SizeBytes = $outputFile.Length
         SHA256 = (Get-FileHash -LiteralPath $outputFullPath -Algorithm SHA256).Hash.ToLowerInvariant()
     }

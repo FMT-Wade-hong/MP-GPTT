@@ -1,6 +1,6 @@
 # FMTPlanner release history
 
-## Next release — Unreleased
+## FMTPlanner v1.0.4 — 2026-08-13
 
 ### Parameter interface
 

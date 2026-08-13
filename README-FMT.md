@@ -1,4 +1,4 @@
-# FeiMaoTecPlanner（FMTPlanner）使用手冊
+# FeiMaoTecPlanner V1.0.4（FMTPlanner）使用手冊
 
 <p align="center">
   <img src="FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="360">
@@ -6,7 +6,7 @@
 
 **FeiMaoTecPlanner** 是由 **FMT 飛貓科技**以 ArduPilot Mission Planner 為基礎製作的客製化地面站軟體，重點包含 FMT 品牌介面、飛行快捷操作、TitanPlanner 風格姿態儀、台灣限禁航區、任務安全檢查、參數保護及繁體中文介面。
 
-> 本手冊對應 `codex/missionplanner-dev` 開發分支。GitHub 已發布的 `FMTPlanner-v1.0.3` 不包含標籤建立後新增的 QNH 按鈕與參數頁面顯示修正；這些項目會在後續封裝版本提供。
+> 本手冊對應 GitHub 正式發布版 [`FMTPlanner-v1.0.4`](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.4)，包含 QNH、GPS 狀態、參數頁面顯示修正及多旋翼／定翼機／VTOL 三構型常用設定。
 
 ## 目錄
 
