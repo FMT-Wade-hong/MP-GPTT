@@ -589,6 +589,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             Controls.Add(fmtCommonSettings);
             fmtCommonSettings.BringToFront();
             ThemeManager.ApplyThemeTo(fmtCommonSettings);
+            ApplyFmtCommonSettingsColors();
         }
 
         private static NumericUpDown CreateFmtSpeedControl(string name, Point location, decimal minimum)
@@ -676,6 +677,21 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                                             !MainV2.comPort.ReadOnly &&
                                             !MainV2.comPort.MAV.cs.armed;
             ThemeManager.ApplyThemeTo(fmtCommonSettings);
+            ApplyFmtCommonSettingsColors();
+        }
+
+        private void ApplyFmtCommonSettingsColors()
+        {
+            var inputBackground = Color.FromArgb(67, 68, 69);
+            foreach (var control in new Control[]
+                     {
+                         fmtNavigationSpeed, fmtGpsSpeed, fmtRtlSpeed, fmtWpYaw, fmtRtlYaw
+                     })
+            {
+                control.BackColor = inputBackground;
+                control.ForeColor = Color.White;
+            }
+
             fmtSaveCommonSettings.BackColor = Color.FromArgb(41, 171, 226);
             fmtSaveCommonSettings.ForeColor = Color.White;
         }

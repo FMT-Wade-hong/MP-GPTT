@@ -60,6 +60,8 @@ Test-FmtCondition 'Yaw parameter mapped honestly' ($source.Contains('FindFmtPara
 Test-FmtCondition 'All speed units are m/s' (([regex]::Matches($source, 'CreateFmtUnitLabel')).Count -ge 4 -and $source.Contains('return CreateFmtLabel("m/s"')) 'three speed rows share the m/s unit label'
 Test-FmtCondition 'Writes blocked while armed' ($source.Contains('MainV2.comPort.MAV.cs.armed')) 'parameter writes have a disarmed safety gate'
 Test-FmtCondition 'Read-only writes blocked' ($source.Contains('MainV2.comPort.ReadOnly')) 'read-only links cannot write parameters'
+Test-FmtCondition 'Common input text is readable' ($source.Contains('control.BackColor = inputBackground;') -and $source.Contains('control.ForeColor = Color.White;')) 'numeric and yaw inputs use a dark background with white text'
+Test-FmtCondition 'Save action keeps FMT colors' ($source.Contains('fmtSaveCommonSettings.BackColor = Color.FromArgb(41, 171, 226);') -and $source.Contains('fmtSaveCommonSettings.ForeColor = Color.White;')) 'save action remains sky blue with white text after theme application'
 
 $results | Format-Table -AutoSize
 [PSCustomObject]@{
