@@ -778,7 +778,17 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             List<string> commands = new List<string>();
             foreach (DataGridViewRow row in Params.Rows)
             {
+                // The protected parameter page can activate while the grid is still
+                // creating its placeholder row.  That row has no command value and
+                // must not be treated as a real parameter.
+                if (row == null || row.IsNewRow || Command.Index < 0 ||
+                    Command.Index >= row.Cells.Count || row.Cells[Command.Index].Value == null)
+                    continue;
+
                 string command = row.Cells[Command.Index].Value.ToString();
+                if (string.IsNullOrWhiteSpace(command))
+                    continue;
+
                 if (!commands.Contains(command))
                 {
                     commands.Add(command);
@@ -793,10 +803,16 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 string param = commands[i];
 
                 // While param does not start with currentPrefix, step up a layer in the tree
-                while (!param.StartsWith(currentPrefix))
+                while (!param.StartsWith(currentPrefix) && currentNode?.Parent != null)
                 {
                     currentPrefix = currentPrefix.RemoveFromEnd(currentNode.Text.Split('_').Last() + "_");
                     currentNode = currentNode.Parent;
+                }
+
+                if (currentNode == null)
+                {
+                    currentNode = treeView1.Nodes.Count > 0 ? treeView1.Nodes[0] : treeView1.Nodes.Add("All");
+                    currentPrefix = "";
                 }
 
                 // If this is the last parameter, add it
@@ -819,7 +835,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 }
                 currentNode.Nodes.Add(param);
             }
-            treeView1.TopNode.Expand();
+            // TopNode can temporarily be null during the first activation/layout pass.
+            // Expanding is cosmetic, so defer safely instead of crashing the page.
+            treeView1.TopNode?.Expand();
         }
 
 

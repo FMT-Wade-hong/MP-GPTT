@@ -95,20 +95,36 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             BUT_rerequestparams.Text = "重新讀取參數";
             BUT_refreshpart.Text = "更新畫面";
 
-            foreach (var label in new[]
-                     {
-                         label1, label2, label3, label4, label5, label6, label7, label8,
-                         label9, label10, label11, label12, label13, label14, label15,
-                         label37, label38, label39, label49, label50, label51, label52,
-                         label53, label54, label55, label56, label57, label58, label59,
-                         label60, label65, label66, label67, label68, label69, label70,
-                         label71, label72, label73, label74, label75, label76, label78,
-                         label83
-                     })
+            foreach (var label in FmtParameterLabels())
             {
-                label.Width = 104;
+                // The original resource labels are only 13 px high. Traditional
+                // Chinese glyphs can be clipped completely at that height when the
+                // application uses Windows display scaling, leaving only the value
+                // editors visible. Give every caption a fixed readable area.
+                label.AutoSize = false;
+                label.Width = 100;
+                label.Height = 20;
+                label.TextAlign = ContentAlignment.MiddleLeft;
+                label.ForeColor = ThemeManager.TextColor;
+                label.BackColor = Color.Transparent;
                 label.AutoEllipsis = true;
+                label.Visible = true;
+                label.BringToFront();
             }
+        }
+
+        private Label[] FmtParameterLabels()
+        {
+            return new[]
+            {
+                label1, label2, label3, label4, label5, label6, label7, label8,
+                label9, label10, label11, label12, label13, label14, label15,
+                label37, label38, label39, label49, label50, label51, label52,
+                label53, label54, label55, label56, label57, label58, label59,
+                label60, label65, label66, label67, label68, label69, label70,
+                label71, label72, label73, label74, label75, label76, label78,
+                label83
+            };
         }
 
         private void ApplyFmtTraditionalChineseTooltips()
@@ -325,6 +341,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             // Parameter metadata is normally English. Restore the FMT Traditional Chinese
             // descriptions after metadata loading so the page remains fully localized.
+            ApplyFmtTraditionalChineseText();
             ApplyFmtTraditionalChineseTooltips();
 
             startup = false;

@@ -1,12 +1,12 @@
-﻿# FeiMaoTecPlanner V1.0.8 customization
+﻿# FeiMaoTecPlanner V1.0.9 customization
 
 > 使用者圖文操作手冊請見儲存庫根目錄的 [README-FMT.md](../README-FMT.md)。本文件保留開發、建置與客製技術資訊。
 
-FeiMaoTecPlanner V1.0.8 is the FMT 飛貓科技 customization layer for Mission Planner.
+FeiMaoTecPlanner V1.0.9 is the FMT 飛貓科技 customization layer for Mission Planner.
 
 ## Defaults
 
-- Product: `FeiMaoTecPlanner V1.0.8`
+- Product: `FeiMaoTecPlanner V1.0.9`
 - Company: `FMT飛貓科技`
 - Login branding: embedded `FMT/Assets/fmt-logo.png`
 - Application icon: generated from `FMT/Assets/fmt-app-icon-source.png` with `FMT/Build-FmtIcon.ps1`
@@ -40,7 +40,7 @@ CAA GIS information is a planning reference only. The official announcement and 
 
 Open `MissionPlanner.sln` in Visual Studio 2022 and build `Debug` or `Release`.
 
-After a Release build, run `FMT/Build-FMTPlannerPackage.ps1` to produce the versioned portable ZIP, for example `bin/Package/FMTPlanner-V1.0.8.zip`. The version comes from `FMT/VERSION` unless `-ReleaseVersion X.X.X` is supplied. Extract the ZIP and run `FMTPlanner.exe`. The package deliberately avoids self-extracting launchers because McAfee Real Protect classifies their extract-and-launch behavior as suspicious until the publisher has trusted code-signing reputation.
+After a Release build, run `FMT/Build-FMTPlannerPackage.ps1` to produce the versioned portable ZIP, for example `bin/Package/FMTPlanner-V1.0.9.zip`. The version comes from `FMT/VERSION` unless `-ReleaseVersion X.X.X` is supplied. Extract the ZIP and run `FMTPlanner.exe`. The package deliberately avoids self-extracting launchers because McAfee Real Protect classifies their extract-and-launch behavior as suspicious until the publisher has trusted code-signing reputation.
 
 A locally generated self-signed certificate can verify whether a file changed, but it does not establish public publisher trust on other computers. Public releases should remain ZIP packages until FMT has a trusted code-signing certificate; future signed builds should use an RFC 3161 timestamp server.
 

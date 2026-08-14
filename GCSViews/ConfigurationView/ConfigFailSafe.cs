@@ -16,13 +16,53 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         public ConfigFailSafe()
         {
             InitializeComponent();
+            ApplyFmtTraditionalChineseLayout();
 
             // setup rc update
             _timer.Tick += timer_Tick;
         }
 
+        private void ApplyFmtTraditionalChineseLayout()
+        {
+            groupBox3.Text = "地面站失控保護（GCS）";
+
+            mavlinkCheckBoxFS_GCS_ENABLE.Text = "啟用地面站斷線保護";
+            mavlinkCheckBoxgcs_fs.Text = "地面站斷線保護";
+            mavlinkCheckBoxshort_fs.Text = "短時間失聯動作（1 秒）";
+            mavlinkCheckBoxlong_fs.Text = "長時間失聯動作（20 秒）";
+
+            var gcsOptions = new[]
+            {
+                mavlinkCheckBoxFS_GCS_ENABLE,
+                mavlinkCheckBoxgcs_fs,
+                mavlinkCheckBoxshort_fs,
+                mavlinkCheckBoxlong_fs
+            };
+
+            groupBox3.Height = 108;
+            for (var index = 0; index < gcsOptions.Length; index++)
+            {
+                var option = gcsOptions[index];
+                option.AutoSize = false;
+                option.SetBounds(8, 18 + index * 21, groupBox3.ClientSize.Width - 16, 20);
+                option.TextAlign = ContentAlignment.MiddleLeft;
+                option.AutoEllipsis = true;
+            }
+
+            toolTip1.SetToolTip(mavlinkCheckBoxFS_GCS_ENABLE,
+                "啟用後，飛控在地面站遙測連線中斷時執行設定的失控保護動作。");
+            toolTip1.SetToolTip(mavlinkCheckBoxgcs_fs,
+                "固定翼地面站連線失效保護；實際動作依飛控韌體與其他失控保護參數決定。");
+            toolTip1.SetToolTip(mavlinkCheckBoxshort_fs,
+                "地面站短時間失聯達 1 秒時，啟用短時間失聯動作。");
+            toolTip1.SetToolTip(mavlinkCheckBoxlong_fs,
+                "地面站長時間失聯達 20 秒時，啟用長時間失聯動作。");
+        }
+
         public void Activate()
         {
+            ApplyFmtTraditionalChineseLayout();
+
             mavlinkComboBox_fs_thr_enable.setup(
                 ParameterMetaDataRepository.GetParameterOptionsInt("FS_THR_ENABLE",
                     MainV2.comPort.MAV.cs.firmware.ToString()), "FS_THR_ENABLE", MainV2.comPort.MAV.param);

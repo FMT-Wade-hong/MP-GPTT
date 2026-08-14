@@ -4650,6 +4650,23 @@ namespace MissionPlanner.GCSViews
                         }
 
 
+                        // Aircraft markers must not depend on the flown-track route.
+                        // FMT intentionally keeps that route empty while disarmed, but
+                        // the live aircraft position must still remain visible.
+                        foreach (var port in MainV2.Comports.ToArray())
+                        {
+                            foreach (var MAV in port.MAVlist)
+                            {
+                                if (MAV == MainV2.comPort?.MAV)
+                                    continue;
+
+                                addMAVMarker(MAV);
+                            }
+                        }
+
+                        addMAVMarker(MainV2.comPort.MAV);
+                        RefreshFmtAirspaceForAircraft(false);
+
                         if (route.Points.Count > 0)
                         {
                             // add primary route icon
@@ -4664,37 +4681,21 @@ namespace MissionPlanner.GCSViews
                                     routes);
                             }
 
-                            // draw all icons for all connected mavs
-                            foreach (var port in MainV2.Comports.ToArray())
-                            {
-                                // draw the mavs seen on this port
-                                foreach (var MAV in port.MAVlist)
-                                {
-                                    if (MAV == MainV2.comPort?.MAV)
-                                    {
-                                        // We will draw this last
-                                        continue;
-                                    }
-                                    addMAVMarker(MAV);
-                                }
-                            }
-
-                            // Draw the active aircraft
-                            addMAVMarker(MainV2.comPort.MAV);
-                            RefreshFmtAirspaceForAircraft(false);
-
-                            if (route.Points.Count == 0 || route.Points[route.Points.Count - 1].Lat != 0 &&
-                                (mapupdate.AddSeconds(3) < DateTime.Now) && CHK_autopan.Checked)
-                            {
-                                updateMapPosition(currentloc);
-                                mapupdate = DateTime.Now;
-                            }
-
                             if (route.Points.Count == 1 && gMapControl1.Zoom == 3) // 3 is the default load zoom
                             {
                                 updateMapPosition(currentloc);
                                 updateMapZoom(17);
                             }
+                        }
+
+                        // Auto-pan follows the live aircraft even while disarmed. FMT
+                        // intentionally does not draw a flown track before arming, so
+                        // following must not depend on route.Points containing data.
+                        if (CHK_autopan.Checked && mapupdate.AddSeconds(3) < DateTime.Now &&
+                            (route.Points.Count == 0 || route.Points[route.Points.Count - 1].Lat != 0))
+                        {
+                            updateMapPosition(currentloc);
+                            mapupdate = DateTime.Now;
                         }
 
                         prop.Update(MainV2.comPort.MAV.cs.HomeLocation, MainV2.comPort.MAV.cs.Location,

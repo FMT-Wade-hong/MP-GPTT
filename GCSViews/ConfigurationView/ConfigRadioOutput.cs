@@ -30,7 +30,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             {
                 setup(i);
             }
-            tableLayoutPanel1.Height = (num_servos + 1) * 34;
+            // Include the 32 px heading row and the one-pixel cell borders for every
+            // row. The old formula clipped the bottom half of CH16 (and CH32).
+            tableLayoutPanel1.Height = 32 + num_servos * 34 + num_servos + 8;
 
             ResumeLayout(true);
         }

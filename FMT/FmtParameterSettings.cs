@@ -13,7 +13,15 @@ namespace MissionPlanner.FMT
     {
         private static readonly Color SkyBlue = Color.FromArgb(41, 171, 226);
         private readonly FmtProtectedParameters fullParameters = new FmtProtectedParameters();
-        private readonly Panel header = new Panel { Dock = DockStyle.Top, Height = 76 };
+        private readonly Panel header = new Panel { Dock = DockStyle.Fill };
+        private readonly TableLayoutPanel pageLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
         private readonly Label connectionStatus = new Label { AutoSize = true };
         private readonly Label passwordStatus = new Label { AutoSize = true };
 
@@ -22,10 +30,14 @@ namespace MissionPlanner.FMT
             Dock = DockStyle.Fill;
             BuildHeader();
 
+            pageLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 76F));
+            pageLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
             fullParameters.Dock = DockStyle.Fill;
-            Controls.Add(fullParameters);
-            Controls.Add(header);
-            header.BringToFront();
+            pageLayout.Controls.Add(header, 0, 0);
+            pageLayout.Controls.Add(fullParameters, 0, 1);
+            Controls.Add(pageLayout);
             ApplyFmtTheme();
         }
 

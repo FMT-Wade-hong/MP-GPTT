@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using AltitudeAngelWings.Plugin.Properties;
 using AltitudeAngelWings.Service;
@@ -85,18 +84,11 @@ namespace AltitudeAngelWings.Plugin
         {
             ServiceLocator.Clear();
             ConfigureServiceLocator();
-            var service = ServiceLocator.GetService<IAltitudeAngelService>();
-            Task.Run(() =>
-            {
-                Host.MainForm.Invoke(new Action(() =>
-                {
-                    // Wait for splash screen to be closed before signing in
-                    Program.Splash.Closed += (sender, args) =>
-                    {
-                        service.SignInAsync();
-                    };
-                }));
-            });
+
+            // FMT uses its own Taiwan airspace overlays. Do not start the optional
+            // Altitude Angel sign-in flow automatically, because it adds a persistent
+            // clickable login banner over both maps. Users can still sign in explicitly
+            // from Altitude Angel Settings when that service is required.
         }
 
         private ToolStripMenuItem CreateSettingsMenuItem()
