@@ -1117,9 +1117,15 @@ namespace MissionPlanner.GCSViews
             {
                 var isitarmed = MainV2.comPort.MAV.cs.armed;
                 var action = MainV2.comPort.MAV.cs.armed ? "Disarm" : "Arm";
+                var localizedAction = IsFmtTraditionalChineseUi
+                    ? (isitarmed ? "上鎖" : "解鎖")
+                    : action;
 
                 if (isitarmed)
-                    if (CustomMessageBox.Show("Are you sure you want to " + action, action,
+                    if (CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                                ? "確定要將飛行器上鎖嗎？"
+                                : "Are you sure you want to " + action,
+                            localizedAction,
                             CustomMessageBox.MessageBoxButtons.YesNo) !=
                         CustomMessageBox.DialogResult.Yes)
                         return;
@@ -1134,11 +1140,23 @@ namespace MissionPlanner.GCSViews
                 MainV2.comPort.UnSubscribeToPacketType(sub);
                 if (ans == false)
                 {
+                    var forceWarning = IsFmtTraditionalChineseUi
+                        ? localizedAction + "失敗。\n" + sb +
+                          "\n強制" + localizedAction + "會略過飛控安全檢查，" +
+                          "\n可能造成飛行器墜毀及人員嚴重受傷。" +
+                          "\n\n確定要強制" + localizedAction + "嗎？"
+                        : action + " failed.\n" + sb + "\nForce " + action +
+                          " can bypass safety checks,\nwhich can lead to the vehicle crashing" +
+                          "\nand causing serious injuries.\n\nDo you wish to Force " + action + "?";
+                    var forceButtonText = IsFmtTraditionalChineseUi
+                        ? "強制" + localizedAction
+                        : "Force " + action;
+                    var cancelButtonText = IsFmtTraditionalChineseUi ? "取消" : "Cancel";
+                    var errorTitle = IsFmtTraditionalChineseUi ? localizedAction + "失敗" : Strings.ERROR;
+
                     if (CustomMessageBox.Show(
-                            action + " failed.\n" + sb.ToString() + "\nForce " + action +
-                            " can bypass safety checks,\nwhich can lead to the vehicle crashing\nand causing serious injuries.\n\nDo you wish to Force " +
-                            action + "?", Strings.ERROR, CustomMessageBox.MessageBoxButtons.YesNo,
-                            CustomMessageBox.MessageBoxIcon.Exclamation, "Force " + action, "Cancel") ==
+                            forceWarning, errorTitle, CustomMessageBox.MessageBoxButtons.YesNo,
+                            CustomMessageBox.MessageBoxIcon.Exclamation, forceButtonText, cancelButtonText) ==
                         CustomMessageBox.DialogResult.Yes)
                     {
                         ans = MainV2.comPort.doARM(!isitarmed, true);

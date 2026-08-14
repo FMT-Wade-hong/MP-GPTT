@@ -582,6 +582,7 @@ namespace MissionPlanner
         public GCSViews.FlightPlanner FlightPlanner;
         GCSViews.SITL Simulation;
         private ToolStripButton MenuFeiMao;
+        private ToolStripButton MenuFmtParameterSettings;
         private ToolStripButton MenuFmtArmDisarm;
         private ToolStripButton MenuFmtAirspeedZero;
         private ToolStripButton MenuFmtQnh;
@@ -2501,6 +2502,19 @@ namespace MissionPlanner
             }
         }
 
+        private void MenuFmtParameterSettings_Click(object sender, EventArgs e)
+        {
+            using (var access = new FMT.FmtParameterAccessForm())
+            {
+                ThemeManager.ApplyThemeTo(access);
+                if (access.ShowDialog(this) != DialogResult.OK)
+                    return;
+            }
+
+            MyView.ShowScreen("FMTParameterSettings");
+            SaveConfig();
+        }
+
         ManualResetEvent PluginThreadrunner = new ManualResetEvent(false);
 
         private void PluginThread()
@@ -3178,6 +3192,7 @@ namespace MissionPlanner
             MyView.AddScreen(new MainSwitcher.Screen("FlightPlanner", FlightPlanner, true));
             MyView.AddScreen(new MainSwitcher.Screen("HWConfig", typeof(GCSViews.InitialSetup), false));
             MyView.AddScreen(new MainSwitcher.Screen("SWConfig", typeof(GCSViews.SoftwareConfig), false));
+            MyView.AddScreen(new MainSwitcher.Screen("FMTParameterSettings", typeof(FMT.FmtParameterSettings), false));
 
             try
             {
@@ -4727,6 +4742,27 @@ namespace MissionPlanner
             MainMenu.Items.Remove(MenuHelp);
             MenuFlightPlanner.Text = "任務規劃";
 
+            MenuFmtParameterSettings = new ToolStripButton
+            {
+                Name = "MenuFmtParameterSettings",
+                Text = "參數設定",
+                Alignment = ToolStripItemAlignment.Left,
+                DisplayStyle = ToolStripItemDisplayStyle.ImageAndText,
+                Image = CreateFmtParameterMenuIcon(),
+                ImageScaling = ToolStripItemImageScaling.None,
+                AutoSize = false,
+                Size = new Size(76, 47),
+                Margin = Padding.Empty,
+                ForeColor = SystemColors.ControlLight,
+                TextAlign = ContentAlignment.BottomCenter,
+                TextImageRelation = TextImageRelation.ImageAboveText,
+                ToolTipText = "輸入參數設定密碼後，開啟完整參數列表"
+            };
+            MenuFmtParameterSettings.Click += MenuFmtParameterSettings_Click;
+
+            var parameterSettingsIndex = MainMenu.Items.IndexOf(MenuConfigTune) + 1;
+            MainMenu.Items.Insert(parameterSettingsIndex, MenuFmtParameterSettings);
+
             MenuFmtArmDisarm = new ToolStripButton
             {
                 Name = "MenuFmtArmDisarm",
@@ -4775,7 +4811,7 @@ namespace MissionPlanner
             };
             MenuFmtQnh.Click += MenuFmtQnh_Click;
 
-            var quickActionIndex = MainMenu.Items.IndexOf(MenuConfigTune) + 1;
+            var quickActionIndex = MainMenu.Items.IndexOf(MenuFmtParameterSettings) + 1;
             MainMenu.Items.Insert(quickActionIndex, MenuFmtArmDisarm);
             MainMenu.Items.Insert(quickActionIndex + 1, MenuFmtAirspeedZero);
             MainMenu.Items.Insert(quickActionIndex + 2, MenuFmtQnh);
@@ -4939,6 +4975,28 @@ namespace MissionPlanner
             // Adding this after GPS places the flight-time panel immediately to its left.
             MainMenu.Items.Add(MenuFmtFlightTime);
             UpdateFmtQuickActionButtons();
+        }
+
+        private static Image CreateFmtParameterMenuIcon()
+        {
+            var image = new Bitmap(42, 29);
+            using (var graphics = Graphics.FromImage(image))
+            using (var linePen = new Pen(Color.WhiteSmoke, 2F))
+            using (var knobBrush = new SolidBrush(Color.FromArgb(41, 171, 226)))
+            using (var outlinePen = new Pen(Color.FromArgb(41, 171, 226), 1.5F))
+            {
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                graphics.Clear(Color.Transparent);
+                var yValues = new[] { 6, 14, 22 };
+                var knobValues = new[] { 13, 29, 20 };
+                for (var index = 0; index < yValues.Length; index++)
+                {
+                    graphics.DrawLine(linePen, 4, yValues[index], 38, yValues[index]);
+                    graphics.FillEllipse(knobBrush, knobValues[index] - 4, yValues[index] - 4, 8, 8);
+                    graphics.DrawEllipse(outlinePen, knobValues[index] - 4, yValues[index] - 4, 8, 8);
+                }
+            }
+            return image;
         }
 
         private static bool IsFmtTraditionalChineseUi =>

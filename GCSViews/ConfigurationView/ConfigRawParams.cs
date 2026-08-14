@@ -41,7 +41,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private string filterPrefix = "";
 
         private NaturalStringComparer naturalsorter = new NaturalStringComparer();
-        private bool fmtEditingUnlocked;
+        private bool fmtEditingEnabled;
 
         public ConfigRawParams()
         {
@@ -99,28 +99,28 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             Params.Invalidate();
         }
 
-        internal void EnableFmtEditingAfterUnlock()
+        internal void EnableFmtEditing()
         {
             // The first activation builds the shared row cache while startup is true.
-            // Complete that transition before accepting the user's first edit.
+            // Complete that transition before accepting the user's first edit. Password
+            // validation belongs to the parent Parameter Settings page, not this grid.
             startup = false;
             Params.ReadOnly = false;
             Value.ReadOnly = false;
             Params.EditMode = DataGridViewEditMode.EditOnKeystrokeOrF2;
-            // The FMT password gate is the authority for this page.  MAVLinkInterface.ReadOnly
-            // is also used by a few connection modes and was incorrectly leaving a normally
-            // connected vehicle's value cells locked after a successful unlock.
-            fmtEditingUnlocked = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
+            // MAVLinkInterface.ReadOnly is also used by a few connection modes and was
+            // incorrectly leaving a normally connected vehicle's value cells locked.
+            fmtEditingEnabled = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
             foreach (DataGridViewRow row in Params.Rows)
-                row.Cells[Value.Index].ReadOnly = !fmtEditingUnlocked;
-            Params.Enabled = fmtEditingUnlocked;
-            BUT_writePIDS.Enabled = fmtEditingUnlocked;
+                row.Cells[Value.Index].ReadOnly = !fmtEditingEnabled;
+            Params.Enabled = fmtEditingEnabled;
+            BUT_writePIDS.Enabled = fmtEditingEnabled;
             Params.Focus();
         }
 
         private void Params_FmtCellClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (!fmtEditingUnlocked || e.RowIndex < 0 || e.ColumnIndex != Value.Index)
+            if (!fmtEditingEnabled || e.RowIndex < 0 || e.ColumnIndex != Value.Index)
                 return;
 
             Params.CurrentCell = Params[e.ColumnIndex, e.RowIndex];
@@ -178,7 +178,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         public void Deactivate()
         {
-            fmtEditingUnlocked = false;
+            fmtEditingEnabled = false;
             Params.EndEdit();
             Params.Enabled = false;
             foreach (DataGridViewColumn col in Params.Columns)

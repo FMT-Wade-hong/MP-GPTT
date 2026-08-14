@@ -176,10 +176,24 @@ namespace MissionPlanner.Maps
             }
 
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            var fmtIcon = IsVtol
-                ? (IsActive ? VtolGlowIcon : VtolIcon)
-                : (IsActive ? FixedWingGlowIcon : FixedWingIcon);
-            g.DrawImage(fmtIcon, -fmtIcon.Width / 2, -fmtIcon.Height / 2, fmtIcon.Width, fmtIcon.Height);
+            var aircraftIcon = IsVtol ? VtolIcon : FixedWingIcon;
+            if (IsActive)
+            {
+                // FMT: retain a narrow cyan backlight without covering the aircraft
+                // with the original thick 100 px glow background.
+                var glowIcon = IsVtol ? VtolGlowIcon : FixedWingGlowIcon;
+                const int glowSize = 78;
+                const int aircraftSize = 60;
+                g.DrawImage(glowIcon, -glowSize / 2, -glowSize / 2, glowSize, glowSize);
+                g.DrawImage(aircraftIcon, -aircraftSize / 2, -aircraftSize / 2,
+                    aircraftSize, aircraftSize);
+            }
+            else
+            {
+                const int aircraftSize = 56;
+                g.DrawImage(aircraftIcon, -aircraftSize / 2, -aircraftSize / 2,
+                    aircraftSize, aircraftSize);
+            }
 
             g.Transform = temp;
         }

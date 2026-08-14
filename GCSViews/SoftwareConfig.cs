@@ -4,7 +4,6 @@ using MissionPlanner.Controls;
 using MissionPlanner.Controls.BackstageView;
 using MissionPlanner.GCSViews.ConfigurationView;
 using MissionPlanner.Utilities;
-using MissionPlanner.FMT;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -154,7 +153,7 @@ namespace MissionPlanner.GCSViews
                         {
                             if (MainV2.DisplayConfiguration.displayGeoFence)
                             {
-                                AddBackstageViewPage(typeof(ConfigAC_Fence), Strings.GeoFence);
+                                AddBackstageViewPage(typeof(ConfigAC_Fence), "地理圍欄");
                             }
                         }
 
@@ -162,12 +161,12 @@ namespace MissionPlanner.GCSViews
                         {
                             if (MainV2.DisplayConfiguration.displayBasicTuning)
                             {
-                                start = AddBackstageViewPage(typeof(ConfigSimplePids), Strings.BasicTuning);
+                                start = AddBackstageViewPage(typeof(ConfigSimplePids), "基本調校");
                             }
 
                             if (MainV2.DisplayConfiguration.displayExtendedTuning)
                             {
-                                AddBackstageViewPage(typeof(ConfigArducopter), Strings.ExtendedTuning);
+                                AddBackstageViewPage(typeof(ConfigArducopter), "進階調校");
                             }
                         }
 
@@ -175,60 +174,55 @@ namespace MissionPlanner.GCSViews
                         {
                             if (MainV2.DisplayConfiguration.displayBasicTuning)
                             {
-                                start = AddBackstageViewPage(typeof(ConfigArduplane), Strings.BasicTuning);
+                                start = AddBackstageViewPage(typeof(ConfigArduplane), "基本調校");
                             }
 
                             if (MainV2.DisplayConfiguration.displayExtendedTuning)
                             {
-                                AddBackstageViewPage(typeof(ConfigArducopter), "QP " + Strings.ExtendedTuning);
+                                AddBackstageViewPage(typeof(ConfigArducopter), "VTOL 進階調校");
                             }
                         }
 
                         if (MainV2.comPort.MAV.cs.firmware == Firmwares.ArduRover)
                         {
-                            start = AddBackstageViewPage(typeof(ConfigArdurover), Strings.BasicTuning);
+                            start = AddBackstageViewPage(typeof(ConfigArdurover), "基本調校");
                         }
 
                         if (MainV2.comPort.MAV.cs.firmware == Firmwares.ArduTracker)
                         {
-                            start = AddBackstageViewPage(typeof(ConfigAntennaTracker), Strings.ExtendedTuning);
+                            start = AddBackstageViewPage(typeof(ConfigAntennaTracker), "進階調校");
                         }
 
                         if (MainV2.DisplayConfiguration.displayStandardParams)
                         {
-                            AddBackstageViewPage(typeof(ConfigFriendlyParams), Strings.StandardParams);
+                            AddBackstageViewPage(typeof(ConfigFriendlyParams), "標準參數");
                         }
 
                         if (MainV2.DisplayConfiguration.displayAdvancedParams)
                         {
-                            AddBackstageViewPage(typeof(ConfigFriendlyParamsAdv), Strings.AdvancedParams, null, true);
+                            AddBackstageViewPage(typeof(ConfigFriendlyParamsAdv), "進階參數", null, true);
                         }
 
                         if (!Program.MONO && ConfigOSD.IsApplicable() && MainV2.DisplayConfiguration.displayOSD)
                         {
-                            AddBackstageViewPage(typeof(ConfigOSD), Strings.OnboardOSD);
+                            AddBackstageViewPage(typeof(ConfigOSD), "機載螢幕顯示（OSD）");
                         }
 
                         if (MainV2.DisplayConfiguration.displayMavFTP)
                         {
                             if ((MainV2.comPort.MAV.cs.capabilities & (int)MAVLink.MAV_PROTOCOL_CAPABILITY.FTP) > 0)
                             {
-                                AddBackstageViewPage(typeof(MavFTPUI), Strings.MAVFtp);
+                                AddBackstageViewPage(typeof(MavFTPUI), "飛控檔案管理（MAVFTP）");
                             }
                         }
 
                         if (MainV2.DisplayConfiguration.displayUserParam)
                         {
-                            AddBackstageViewPage(typeof(ConfigUserDefined), Strings.User_Params);
+                            AddBackstageViewPage(typeof(ConfigUserDefined), "使用者參數");
                         }
                     }
                 }
 
-                if (MainV2.DisplayConfiguration.displayFullParamList)
-                {
-                    if(!MainV2.comPort.BaseStream.IsOpen || gotAllParams)
-                        AddBackstageViewPage(typeof(FmtProtectedParameters), Strings.FullParameterList, null, false);
-                }
                 if (MainV2.comPort.BaseStream.IsOpen)
                 {
                     if (MainV2.comPort.MAV.cs.firmware == Firmwares.Ateryx)
@@ -248,14 +242,14 @@ namespace MissionPlanner.GCSViews
 
                     if (MainV2.DisplayConfiguration.displayPlannerSettings)
                     {
-                        AddBackstageViewPage(typeof(ConfigPlanner), Strings.Planner);
+                        AddBackstageViewPage(typeof(ConfigPlanner), "軟體設定");
                     }
                 }
                 else
                 {
                     if (MainV2.DisplayConfiguration.displayPlannerSettings)
                     {
-                        start = AddBackstageViewPage(typeof(ConfigPlanner), Strings.Planner);
+                        start = AddBackstageViewPage(typeof(ConfigPlanner), "軟體設定");
                     }
                 }
 

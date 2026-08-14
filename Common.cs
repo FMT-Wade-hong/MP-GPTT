@@ -40,8 +40,15 @@ namespace MissionPlanner
                     var item = existing.First();
                     if (item is GMapMarkerPlane)
                     {
+                        if (MAV.aptype != MAVLink.MAV_TYPE.FIXED_WING && !isVtol)
+                        {
+                            existing.ForEach(a => overlay.Markers.Remove(a));
+                        }
+                        else
+                        {
                         var itemp = (GMapMarkerPlane)item;
                         itemp.Position = portlocation;
+                        itemp.IsVisible = true;
                         itemp.Heading = MAV.cs.yaw;
                         itemp.Cog = MAV.cs.groundcourse;
                         itemp.Target = MAV.cs.target_bearing;
@@ -50,17 +57,26 @@ namespace MissionPlanner
                         itemp.IsVtol = isVtol;
                         itemp.IsActive = MAV == MainV2.comPort?.MAV;
                         return null;
+                        }
                     }
                     else if (item is GMapMarkerQuad)
                     {
+                        if (isVtol)
+                        {
+                            existing.ForEach(a => overlay.Markers.Remove(a));
+                        }
+                        else
+                        {
                         var itemq = (GMapMarkerQuad)item;
                         itemq.Position = portlocation;
+                        itemq.IsVisible = true;
                         itemq.Heading = MAV.cs.yaw;
                         itemq.Cog = MAV.cs.groundcourse;
                         itemq.Target = MAV.cs.nav_bearing;
                         itemq.Sysid = MAV.sysid;
                         itemq.IsActive = MAV == MainV2.comPort?.MAV;
                         return null;
+                        }
                     }
                     else if (item is GMapMarkerRover)
                     {
@@ -79,8 +95,7 @@ namespace MissionPlanner
                     }
                 }
             }
-            if (MAV.aptype == MAVLink.MAV_TYPE.FIXED_WING ||
-                MAV.aptype >= MAVLink.MAV_TYPE.VTOL_DUOROTOR && MAV.aptype <= MAVLink.MAV_TYPE.VTOL_RESERVED5)
+            if (MAV.aptype == MAVLink.MAV_TYPE.FIXED_WING || isVtol)
             {
                 return new GMapMarkerPlane(
                     MAV.sysid - 1,

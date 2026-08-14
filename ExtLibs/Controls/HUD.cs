@@ -1081,6 +1081,15 @@ namespace MissionPlanner.Controls
 
         private static readonly SolidBrush AltGroundBrush = new SolidBrush(Color.FromArgb(100, Color.BurlyWood));
 
+        private static readonly SolidBrush FmtWaypointBadgeBrush =
+            new SolidBrush(Color.FromArgb(225, 5, 28, 40));
+
+        private static readonly SolidBrush FmtWaypointLabelBrush =
+            new SolidBrush(Color.FromArgb(90, 210, 255));
+
+        private static readonly Pen FmtWaypointBadgePen =
+            new Pen(Color.FromArgb(35, 190, 255), 2);
+
         private readonly object _bgimagelock = new object();
 
         public Image bgimage
@@ -2643,45 +2652,6 @@ namespace MissionPlanner.Controls
                             scrollbg.Top - linespace * a);
                     }
 
-                    // wp distance
-                    var newdist = _disttowp;
-                    var newdistunit = distunit;
-                    if (newdist >= 1000)
-                    {
-                        if (distunit == "m")
-                        {
-                            newdistunit = "km";
-                            newdist = (float)Math.Round(newdist / 1000.0, 1);
-                        }
-                        else
-                        {
-                            newdistunit = "mi";
-                            newdist = (float)Math.Round(newdist / 5280.0, 1);
-                        }
-                    }
-                    else
-                    {
-                        newdist = (int)newdist;
-                    }
-
-                    var wpPrefix = "WP ◀ ";
-                    if (_wpno > 0 && mode == "Auto")
-                    {
-                        wpPrefix = "WP " + _wpno + " ◀ ";
-                    }
-                    if (mode == "Loiter")
-                    {
-                        wpPrefix = "↻ ";
-                    }
-                    if (mode == "RTL")
-                    {
-                        wpPrefix = "H ◀ ";
-                    }
-                    if (mode == "Guided")
-                    {
-                        wpPrefix = "G ◀ ";
-                    }
-                    drawstring(wpPrefix + newdist + newdistunit, font, fontsize, _whiteBrush, scrollbg.Left + (fontsize / 2f), scrollbg.Bottom + (fontsize / 2f));
                 }
 
                 // right scroller
@@ -2835,6 +2805,68 @@ namespace MissionPlanner.Controls
 
                     drawstring(((int) _alt).ToString("0") + altunit, font, (fontsize * 0.75f), (SolidBrush) Brushes.White, scrollbg.Left + (notchIndent * 1.25f), ((fontsize * 0.8f) / -2f) - 2);
                     graphicsObject.ResetTransform();
+
+                    // FMT: make the active waypoint distance prominent in the clear area
+                    // between the right altitude tape and the bottom GPS fix indicator.
+                    var waypointDistance = Math.Max(0, _disttowp);
+                    var waypointDistanceUnit = distunit;
+                    string waypointDistanceText;
+                    if (waypointDistance >= 1000)
+                    {
+                        if (distunit == "m")
+                        {
+                            waypointDistanceUnit = "km";
+                            waypointDistance = (float)Math.Round(waypointDistance / 1000.0, 1);
+                        }
+                        else
+                        {
+                            waypointDistanceUnit = "mi";
+                            waypointDistance = (float)Math.Round(waypointDistance / 5280.0, 1);
+                        }
+
+                        waypointDistanceText = waypointDistance.ToString("0.0") + " " + waypointDistanceUnit;
+                    }
+                    else
+                    {
+                        waypointDistanceText = ((int)waypointDistance).ToString("0") + " " + waypointDistanceUnit;
+                    }
+
+                    var waypointLabel = "WP 航點距離";
+                    if (_wpno > 0 && string.Equals(mode, "Auto", StringComparison.OrdinalIgnoreCase))
+                        waypointLabel = "WP " + _wpno + " 航點距離";
+                    else if (string.Equals(mode, "RTL", StringComparison.OrdinalIgnoreCase))
+                        waypointLabel = "返航距離";
+                    else if (string.Equals(mode, "Guided", StringComparison.OrdinalIgnoreCase))
+                        waypointLabel = "引導點距離";
+                    else if (string.Equals(mode, "Loiter", StringComparison.OrdinalIgnoreCase))
+                        waypointLabel = "盤旋點距離";
+
+                    var waypointBadgeWidth = Math.Max(fontsize * 7.2f, this.Width / 5.2f);
+                    var waypointBadgeHeight = fontsize * 3.05f;
+                    var gpsStatusTop = this.Height - (fontsize + 13);
+                    var waypointBadgeBottom = gpsStatusTop - Math.Max(3, fontsize / 3f);
+                    var waypointBadgeTop = waypointBadgeBottom - waypointBadgeHeight;
+                    var minimumBadgeTop = scrollbg.Bottom + Math.Max(3, fontsize / 3f);
+                    if (waypointBadgeTop < minimumBadgeTop)
+                        waypointBadgeTop = minimumBadgeTop;
+
+                    var waypointBadge = new RectangleF(
+                        this.Width - waypointBadgeWidth - 3,
+                        waypointBadgeTop,
+                        waypointBadgeWidth,
+                        Math.Max(fontsize * 2.35f, waypointBadgeBottom - waypointBadgeTop));
+
+                    graphicsObject.FillRectangle(FmtWaypointBadgeBrush, waypointBadge);
+                    graphicsObject.DrawRectangle(FmtWaypointBadgePen, waypointBadge);
+
+                    var waypointLabelSize = calcsize(waypointLabel, fontsize - 2, FmtWaypointLabelBrush);
+                    var waypointValueSize = calcsize(waypointDistanceText, fontsize + 4, _whiteBrush);
+                    drawstring(waypointLabel, font, fontsize - 2, FmtWaypointLabelBrush,
+                        waypointBadge.Left + (waypointBadge.Width - waypointLabelSize.Width) / 2f,
+                        waypointBadge.Top + Math.Max(2, fontsize / 5f));
+                    drawstring(waypointDistanceText, font, fontsize + 4, _whiteBrush,
+                        waypointBadge.Left + (waypointBadge.Width - waypointValueSize.Width) / 2f,
+                        waypointBadge.Bottom - waypointValueSize.Height - Math.Max(2, fontsize / 6f));
                 }
 
                 if (displayconninfo)
@@ -2930,11 +2962,17 @@ namespace MissionPlanner.Controls
                     graphicsObject.DrawPolygon(_whitePen, AOA_arrow);
 
                     // FMT: show live throttle output directly below the coloured HUD bar.
-                    var throttleText = "油門 " + _throttlePercent.ToString("0") + "%";
-                    var throttleWidth = throttleText.Length * (fontsize - 2) * 0.55f;
-                    drawstring(throttleText, font, fontsize - 2, _whiteBrush,
-                        scrollbg.Left + scrollbg.Width / 2f - throttleWidth / 2f,
-                        scrollbg.Bottom + Math.Max(2, fontsize / 5f));
+                    var throttleLabel = "油門";
+                    var throttleValue = _throttlePercent.ToString("0") + "%";
+                    var throttleFontSize = Math.Max(6, fontsize - 2);
+                    var throttleLabelWidth = throttleLabel.Length * throttleFontSize * 0.75f;
+                    var throttleValueWidth = throttleValue.Length * throttleFontSize * 0.55f;
+                    var throttleTop = scrollbg.Bottom + Math.Max(2, fontsize / 5f);
+                    drawstring(throttleLabel, font, throttleFontSize, _whiteBrush,
+                        scrollbg.Left + scrollbg.Width / 2f - throttleLabelWidth / 2f, throttleTop);
+                    drawstring(throttleValue, font, throttleFontSize, _whiteBrush,
+                        scrollbg.Left + scrollbg.Width / 2f - throttleValueWidth / 2f,
+                        throttleTop + throttleFontSize + 1);
                 }
 
 

@@ -1,7 +1,6 @@
 using MissionPlanner.Controls;
 using MissionPlanner.GCSViews.ConfigurationView;
 using MissionPlanner.Utilities;
-using System.Drawing;
 using System.Windows.Forms;
 
 namespace MissionPlanner.FMT
@@ -17,22 +16,12 @@ namespace MissionPlanner.FMT
 
         public void Activate()
         {
-            // This page creates its parameter control after the containing backstage view
-            // has already been themed. Clear any cached white control before prompting and
-            // explicitly theme dynamically-created content when it is added again.
+            // Password validation is handled by the top-level FMT Parameter Settings page.
+            // The full parameter control itself must stay editable and must never display a
+            // second password prompt, otherwise its first activation can remain read-only.
             Controls.Clear();
             BackColor = ThemeManager.BGColor;
             ForeColor = ThemeManager.TextColor;
-
-            using (var access = new FmtParameterAccessForm())
-            {
-                ThemeManager.ApplyThemeTo(access);
-                if (access.ShowDialog(FindForm()) != DialogResult.OK)
-                {
-                    ShowLockedMessage();
-                    return;
-                }
-            }
 
             if (parameterControl == null || parameterControl.IsDisposed)
                 parameterControl = new ConfigRawParams { Dock = DockStyle.Fill };
@@ -45,7 +34,7 @@ namespace MissionPlanner.FMT
                 parameterControl.ApplyFmtReadableTheme();
                 parameterControl.Activate();
                 parameterControl.ApplyFmtReadableTheme();
-                parameterControl.EnableFmtEditingAfterUnlock();
+                parameterControl.EnableFmtEditing();
             }
             finally
             {
@@ -57,21 +46,6 @@ namespace MissionPlanner.FMT
         public void Deactivate()
         {
             parameterControl?.Deactivate();
-        }
-
-        private void ShowLockedMessage()
-        {
-            Controls.Clear();
-            Controls.Add(new Label
-            {
-                Dock = DockStyle.Fill,
-                Text = "Parameter access is locked. Select this page again to unlock it.",
-                TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font("Segoe UI", 13, FontStyle.Bold),
-                BackColor = ThemeManager.BGColor,
-                ForeColor = Color.FromArgb(41, 171, 226)
-            });
-            ThemeManager.ApplyThemeTo(this);
         }
     }
 }

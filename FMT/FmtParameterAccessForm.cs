@@ -13,16 +13,16 @@ namespace MissionPlanner.FMT
         internal FmtParameterAccessForm()
         {
             FmtBranding.ApplyApplicationIcon(this);
-            Text = "Protected Parameter Access";
+            Text = "參數設定驗證";
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
-            ClientSize = new Size(430, 210);
+            ClientSize = new Size(430, 190);
 
             Controls.Add(new Label
             {
-                Text = FmtAuthentication.ProductTitle + " Parameter Security",
+                Text = FmtAuthentication.ProductTitle + " 參數設定",
                 Font = new Font("Segoe UI", 15, FontStyle.Bold),
                 ForeColor = SkyBlue,
                 AutoSize = true,
@@ -30,7 +30,7 @@ namespace MissionPlanner.FMT
             });
             Controls.Add(new Label
             {
-                Text = "Enter the parameter password to continue.",
+                Text = "請輸入參數設定密碼後進入。",
                 AutoSize = true,
                 Location = new Point(27, 61)
             });
@@ -41,15 +41,11 @@ namespace MissionPlanner.FMT
             error.Location = new Point(29, 122);
             Controls.Add(error);
 
-            var change = new Button { Text = "Change password", Width = 130, Location = new Point(29, 157) };
-            change.Click += (sender, args) => ChangePassword();
-            Controls.Add(change);
-
             var unlock = new Button
             {
-                Text = "Unlock",
+                Text = "進入",
                 Width = 100,
-                Location = new Point(299, 157),
+                Location = new Point(299, 145),
                 BackColor = SkyBlue,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat
@@ -79,34 +75,17 @@ namespace MissionPlanner.FMT
             }
             else
             {
-                error.Text = "Invalid parameter password.";
+                error.Text = "密碼錯誤，請重新輸入。";
                 password.Clear();
                 password.Focus();
-            }
-        }
-
-        private void ChangePassword()
-        {
-            if (!FmtAuthentication.ValidateParameterPassword(password.Text))
-            {
-                error.Text = "Enter the current password first.";
-                return;
-            }
-
-            using (var dialog = new FmtChangeParameterPasswordForm())
-            {
-                if (dialog.ShowDialog(this) == DialogResult.OK)
-                {
-                    error.ForeColor = Color.ForestGreen;
-                    error.Text = "Parameter password updated.";
-                    password.Clear();
-                }
             }
         }
     }
 
     internal sealed class FmtChangeParameterPasswordForm : Form
     {
+        private static readonly Color SkyBlue = Color.FromArgb(41, 171, 226);
+        private readonly TextBox current = new TextBox { UseSystemPasswordChar = true };
         private readonly TextBox first = new TextBox { UseSystemPasswordChar = true };
         private readonly TextBox second = new TextBox { UseSystemPasswordChar = true };
         private readonly Label error = new Label { AutoSize = true, ForeColor = Color.Firebrick };
@@ -114,18 +93,28 @@ namespace MissionPlanner.FMT
         internal FmtChangeParameterPasswordForm()
         {
             FmtBranding.ApplyApplicationIcon(this);
-            Text = "Change Parameter Password";
+            Text = "設定參數密碼";
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
-            ClientSize = new Size(390, 190);
+            ClientSize = new Size(420, 240);
             MaximizeBox = false;
             MinimizeBox = false;
 
-            AddField("New password", first, 25);
-            AddField("Confirm", second, 73);
-            error.Location = new Point(140, 112);
+            AddField("目前密碼", current, 25);
+            AddField("新密碼", first, 73);
+            AddField("確認新密碼", second, 121);
+            error.Location = new Point(140, 163);
             Controls.Add(error);
-            var save = new Button { Text = "Save", Width = 90, Location = new Point(270, 143) };
+            var save = new Button
+            {
+                Text = "儲存",
+                Width = 90,
+                Location = new Point(300, 196),
+                BackColor = SkyBlue,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            save.FlatAppearance.BorderSize = 0;
             save.Click += SavePassword;
             Controls.Add(save);
             AcceptButton = save;
@@ -141,9 +130,17 @@ namespace MissionPlanner.FMT
 
         private void SavePassword(object sender, EventArgs e)
         {
+            if (!FmtAuthentication.ValidateParameterPassword(current.Text))
+            {
+                error.Text = "目前密碼不正確。";
+                current.Clear();
+                current.Focus();
+                return;
+            }
+
             if (!string.Equals(first.Text, second.Text, StringComparison.Ordinal))
             {
-                error.Text = "Passwords do not match.";
+                error.Text = "兩次輸入的新密碼不一致。";
                 return;
             }
 
@@ -155,7 +152,9 @@ namespace MissionPlanner.FMT
             }
             catch (ArgumentException ex)
             {
-                error.Text = ex.Message;
+                error.Text = ex.Message.Contains("four")
+                    ? "參數密碼至少需要四個字元。"
+                    : ex.Message;
             }
         }
     }
