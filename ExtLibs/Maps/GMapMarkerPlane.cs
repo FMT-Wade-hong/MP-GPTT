@@ -94,8 +94,8 @@ namespace MissionPlanner.Maps
 
             if (IsActive)
             {
-                using (var activeRing = new Pen(Color.FromArgb(45, 169, 220), 3F))
-                    g.DrawArc(activeRing, -34, -34, 68, 68, 0, 360);
+                using (var activeRing = new Pen(Color.FromArgb(45, 169, 220), 2F))
+                    g.DrawArc(activeRing, -28, -28, 56, 56, 0, 360);
             }
 
             // anti NaN

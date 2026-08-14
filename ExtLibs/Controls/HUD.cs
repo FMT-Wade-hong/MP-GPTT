@@ -346,6 +346,7 @@ namespace MissionPlanner.Controls
         private float _verticalspeed = 0;
         private float _accel_air = 0;
         private float _linkqualitygcs = 0;
+        private float _throttlePercent = 0;
         private DateTime _datetime;
         private string _mode = "Manual";
         private DateTime _modechanged = DateTime.MinValue;
@@ -360,6 +361,21 @@ namespace MissionPlanner.Controls
         float _redSSAp = 90;
         float _yellowSSAp = 60;
         float _greenSSAp = 10;
+
+        [System.ComponentModel.Browsable(true), System.ComponentModel.Category("Values")]
+        public float throttlePercent
+        {
+            get { return _throttlePercent; }
+            set
+            {
+                var constrained = Math.Max(0, Math.Min(100, value));
+                if (Math.Abs(_throttlePercent - constrained) > 0.01f)
+                {
+                    _throttlePercent = constrained;
+                    Invalidate();
+                }
+            }
+        }
 
         [System.ComponentModel.Browsable(true), System.ComponentModel.Category("Values")]
         public float roll
@@ -2912,6 +2928,13 @@ namespace MissionPlanner.Controls
 
                     graphicsObject.FillPolygon(Brushes.Black, AOA_arrow);
                     graphicsObject.DrawPolygon(_whitePen, AOA_arrow);
+
+                    // FMT: show live throttle output directly below the coloured HUD bar.
+                    var throttleText = "油門 " + _throttlePercent.ToString("0") + "%";
+                    var throttleWidth = throttleText.Length * (fontsize - 2) * 0.55f;
+                    drawstring(throttleText, font, fontsize - 2, _whiteBrush,
+                        scrollbg.Left + scrollbg.Width / 2f - throttleWidth / 2f,
+                        scrollbg.Bottom + Math.Max(2, fontsize / 5f));
                 }
 
 

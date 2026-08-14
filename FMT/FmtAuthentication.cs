@@ -7,7 +7,7 @@ namespace MissionPlanner.FMT
     internal static class FmtAuthentication
     {
         internal const string ProductName = "FeiMaoTecPlanner";
-        internal const string ProductVersion = "1.0.6";
+        internal const string ProductVersion = "1.0.7";
         internal const string ProductTitle = ProductName + " V" + ProductVersion;
         internal const string CompanyName = "FMT飛貓科技";
         internal const string ThemeName = "FMT-SkyBlue.mpsystheme";

@@ -1,7 +1,7 @@
-# FeiMaoTecPlanner V1.0.6
+﻿# FeiMaoTecPlanner V1.0.7
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.6/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
+  <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.7/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
 </p>
 
 <p align="center">
@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.6/FMTPlanner-V1.0.6.zip"><strong>下載 FMTPlanner V1.0.6</strong></a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.7/FMTPlanner-V1.0.7.zip"><strong>下載 FMTPlanner V1.0.7</strong></a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.6/README-FMT.md">繁體中文圖文操作手冊</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.7/README-FMT.md">繁體中文圖文操作手冊</a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.6">版本發布頁</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.7">版本發布頁</a>
 </p>
 
-![Version](https://img.shields.io/badge/version-V1.0.6-22a9dc)
+![Version](https://img.shields.io/badge/version-V1.0.7-22a9dc)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
 ![Package](https://img.shields.io/badge/package-portable%20ZIP-35a853)
 ![Language](https://img.shields.io/badge/UI-English%20%7C%20繁體中文-f0ad00)
@@ -26,7 +26,7 @@
 
 | 項目 | 內容 |
 |---|---|
-| 軟體名稱 | **FeiMaoTecPlanner V1.0.6** |
+| 軟體名稱 | **FeiMaoTecPlanner V1.0.7** |
 | 執行檔 | **FMTPlanner.exe** |
 | 公司／品牌 | **FMT 飛貓科技** |
 | 基礎專案 | ArduPilot Mission Planner |
@@ -35,7 +35,7 @@
 | 支援構型 | 多旋翼、定翼機、VTOL／QuadPlane |
 | 介面語言 | 預設英文，可使用繁體中文 |
 
-## V1.0.6 主要修正
+## V1.0.7 主要修正
 
 - 模式列改置於 HUD 與資訊頁籤之間，修正 ALT HOLD 與 VTOL／固定翼群組燈號。
 - 上方新增飛行時間、飛控累計總飛行時間，馬達測試移至必要硬體。
@@ -62,19 +62,19 @@
 
 ## 操作畫面
 
-![FeiMaoTecPlanner V1.0.6 飛行資料畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.6/FMT/ManualImages/flight-data-overview.png)
+![FeiMaoTecPlanner V1.0.7 飛行資料畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.7/FMT/ManualImages/flight-data-overview.png)
 
 ### 任務限禁航區檢查
 
-![限禁航區檢查](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.6/FMT/ManualImages/mission-airspace-check.png)
+![限禁航區檢查](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.7/FMT/ManualImages/mission-airspace-check.png)
 
 ### 飛行訊息顏色
 
-![飛行訊息顏色](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.6/FMT/ManualImages/message-severity.png)
+![飛行訊息顏色](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.7/FMT/ManualImages/message-severity.png)
 
 ## 快速開始
 
-1. 下載 [FMTPlanner-V1.0.6.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.6/FMTPlanner-V1.0.6.zip)。
+1. 下載 [FMTPlanner-V1.0.7.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.7/FMTPlanner-V1.0.7.zip)。
 2. 將 ZIP **完整解壓縮**到可寫入的資料夾。
 3. 執行 **FMTPlanner.exe**，不要直接在壓縮檔內啟動。
 4. 使用預設登入資料：
@@ -99,10 +99,10 @@
 
 ## 文件與下載
 
-- [V1.0.6 正式發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.6)
-- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.6/FMTPlanner-V1.0.6.zip)
-- [完整繁體中文圖文操作手冊](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.6/README-FMT.md)
-- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.6/CHANGELOG-FMT.md)
+- [V1.0.7 正式發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.7)
+- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.7/FMTPlanner-V1.0.7.zip)
+- [完整繁體中文圖文操作手冊](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.7/README-FMT.md)
+- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.7/CHANGELOG-FMT.md)
 - [FMT 飛貓科技官網](https://www.feimaotec.com)
 
 ## 安全提醒

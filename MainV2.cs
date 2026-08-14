@@ -3655,15 +3655,10 @@ namespace MissionPlanner
             try
             {
                 // single update check per day - in a seperate thread
-                if (Settings.Instance["update_check"] != DateTime.Now.ToShortDateString())
+                if (Settings.Instance["fmt_update_check"] != DateTime.Now.ToShortDateString())
                 {
-                    System.Threading.ThreadPool.QueueUserWorkItem(checkupdate);
-                    Settings.Instance["update_check"] = DateTime.Now.ToShortDateString();
-                }
-                else if (Settings.Instance.GetBoolean("beta_updates") == true)
-                {
-                    MissionPlanner.Utilities.Update.dobeta = true;
-                    System.Threading.ThreadPool.QueueUserWorkItem(checkupdate);
+                    System.Threading.ThreadPool.QueueUserWorkItem(checkFmtUpdate);
+                    Settings.Instance["fmt_update_check"] = DateTime.Now.ToShortDateString();
                 }
             }
             catch (Exception ex)
@@ -4684,6 +4679,46 @@ namespace MissionPlanner
         private void connectionOptionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             new ConnectionOptions().Show(this);
+        }
+
+        private void checkFmtUpdate(object state)
+        {
+            try
+            {
+                using (var client = new WebClient())
+                {
+                    client.Headers[HttpRequestHeader.UserAgent] = "FeiMaoTecPlanner/" +
+                                                                  FMT.FmtAuthentication.ProductVersion;
+                    var json = client.DownloadString(
+                        "https://api.github.com/repos/FMT-Wade-hong/MP-GPTT/releases/latest");
+                    dynamic release = JsonConvert.DeserializeObject(json);
+                    var tag = Convert.ToString(release.tag_name);
+                    var latestText = Regex.Match(tag ?? string.Empty, @"\d+\.\d+\.\d+").Value;
+                    Version latest = null;
+                    Version current = null;
+                    if (!Version.TryParse(latestText, out latest) ||
+                        !Version.TryParse(FMT.FmtAuthentication.ProductVersion, out current) || latest <= current)
+                        return;
+
+                    var page = Convert.ToString(release.html_url);
+                    var notes = Convert.ToString(release.body);
+                    if (notes != null && notes.Length > 700)
+                        notes = notes.Substring(0, 700) + "…";
+                    BeginInvoke((Action)(() =>
+                    {
+                        if (CustomMessageBox.Show(
+                                "FeiMaoTecPlanner 有新版本 V" + latest + "。\r\n\r\n" + notes +
+                                "\r\n\r\n是否開啟飛貓科技版本下載頁？",
+                                "FMTPlanner 版本更新", MessageBoxButtons.YesNo, MessageBoxIcon.Information) ==
+                            DialogResult.Yes)
+                            Process.Start(page);
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Warn("FMT update check failed", ex);
+            }
         }
 
         private void ConfigureFmtMainMenu()

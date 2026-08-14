@@ -280,15 +280,15 @@ namespace MissionPlanner.Controls
             GraphPane myPane = zgc.GraphPane;
 
             // Set the titles and axis labels
-            myPane.Title.Text = "Elevation above ground";
-            myPane.XAxis.Title.Text = "Distance (" + CurrentState.DistanceUnit + ")";
-            myPane.YAxis.Title.Text = "Elevation (" + CurrentState.AltUnit + ")";
+            myPane.Title.Text = "飛行高度與地形剖面";
+            myPane.XAxis.Title.Text = "航線距離（" + CurrentState.DistanceUnit + "）";
+            myPane.YAxis.Title.Text = "高度（" + CurrentState.AltUnit + "）";
 
             LineItem myCurve;
 
-            myCurve = myPane.AddCurve("Planned Path", list1, Color.Red, SymbolType.None);
+            myCurve = myPane.AddCurve("規劃航線", list1, Color.Red, SymbolType.None);
             //myCurve = myPane.AddCurve("Google", list2, Color.Green, SymbolType.None);
-            myCurve = myPane.AddCurve("DEM", list3, Color.Blue, SymbolType.None);
+            myCurve = myPane.AddCurve("數值地形（DEM）", list3, Color.Blue, SymbolType.None);
 
             foreach (PointPair pp in list1)
             {

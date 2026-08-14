@@ -1,5 +1,16 @@
 # FMTPlanner release history
 
+## FMTPlanner v1.0.7 — 2026-08-14
+
+- 修正參數頁首次解鎖後仍無法修改數值，Enter 可直接解鎖並進入編輯。
+- 限禁航區依飛機位置僅顯示 50 公里範圍，新增「顯示限禁航區」開關並降低地圖負載。
+- HUD 彩色柱下新增即時油門百分比。
+- VTOL／QuadPlane 依 Q_ENABLE 正確顯示 VTOL 地圖圖示，縮小啟用外框。
+- 未解鎖飛機不再繪製飛行軌跡，上鎖後清除上一段軌跡。
+- 高度與限禁航區檢查改為可調大小、可捲動且靠左的結果視窗。
+- 高度地形曲線標題、警語、圖例及座標軸繁體中文化。
+- 任務高度模式繁體中文化，補回航點半徑、盤旋半徑及預設高度初始值。
+
 ## FMTPlanner v1.0.6 — 2026-08-14
 
 - Repositioned the flight-mode bar and fixed ALT HOLD plus VTOL/fixed-wing group indicators.

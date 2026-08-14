@@ -24,6 +24,10 @@ namespace MissionPlanner
         public static GMapMarker getMAVMarker(MAVState MAV, GMapOverlay overlay = null)
         {
             PointLatLng portlocation = MAV.cs.Location;
+            var isVtol = MAV.aptype >= MAVLink.MAV_TYPE.VTOL_DUOROTOR &&
+                         MAV.aptype <= MAVLink.MAV_TYPE.VTOL_RESERVED5 ||
+                         MAV.cs.firmware == Firmwares.ArduPlane &&
+                         MAV.param.ContainsKey("Q_ENABLE") && MAV.param["Q_ENABLE"].Value != 0;
 
             if(overlay!= null)
             {
@@ -43,8 +47,7 @@ namespace MissionPlanner
                         itemp.Target = MAV.cs.target_bearing;
                         itemp.Nav_bearing = MAV.cs.nav_bearing;
                         itemp.Radius = (float)CurrentState.fromDistDisplayUnit(MAV.cs.radius);
-                        itemp.IsVtol = MAV.aptype >= MAVLink.MAV_TYPE.VTOL_DUOROTOR &&
-                                      MAV.aptype <= MAVLink.MAV_TYPE.VTOL_RESERVED5;
+                        itemp.IsVtol = isVtol;
                         itemp.IsActive = MAV == MainV2.comPort?.MAV;
                         return null;
                     }
@@ -87,7 +90,7 @@ namespace MissionPlanner
                     MAV.cs.nav_bearing,
                     MAV.cs.target_bearing,
                     (float)CurrentState.fromDistDisplayUnit(MAV.cs.radius),
-                    MAV.aptype >= MAVLink.MAV_TYPE.VTOL_DUOROTOR && MAV.aptype <= MAVLink.MAV_TYPE.VTOL_RESERVED5)
+                    isVtol)
                 {
                     IsActive = MAV == MainV2.comPort?.MAV,
                     ToolTipText = ArduPilot.Common.speechConversion(MAV, "" + Settings.Instance["mapicondesc"]),

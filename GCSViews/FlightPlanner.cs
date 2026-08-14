@@ -243,7 +243,12 @@ namespace MissionPlanner.GCSViews
 
             CMB_altmode.DisplayMember = "Value";
             CMB_altmode.ValueMember = "Key";
-            CMB_altmode.DataSource = EnumTranslator.EnumToList<altmode>();
+            CMB_altmode.DataSource = new List<KeyValuePair<altmode, string>>
+            {
+                new KeyValuePair<altmode, string>(altmode.Relative, "相對起飛點高度"),
+                new KeyValuePair<altmode, string>(altmode.Absolute, "海拔絕對高度"),
+                new KeyValuePair<altmode, string>(altmode.Terrain, "地形高度")
+            };
 
             //set default
             CMB_altmode.SelectedItem = altmode.Relative;
@@ -354,6 +359,12 @@ namespace MissionPlanner.GCSViews
 
         private void EnsureFmtWaypointInputsVisible()
         {
+            if (string.IsNullOrWhiteSpace(TXT_WPRad.Text))
+                TXT_WPRad.Text = string.IsNullOrWhiteSpace(startupWPradius) ? "5.0" : startupWPradius;
+            if (string.IsNullOrWhiteSpace(TXT_loiterrad.Text))
+                TXT_loiterrad.Text = "30";
+            if (string.IsNullOrWhiteSpace(TXT_DefaultAlt.Text))
+                TXT_DefaultAlt.Text = (50 * CurrentState.multiplieralt).ToString("0");
             foreach (var input in new[] { TXT_WPRad, TXT_loiterrad, TXT_DefaultAlt })
             {
                 input.BackColor = SystemColors.Window;
@@ -8088,11 +8099,9 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
 
                 if (warnings.Count > 0)
                 {
-                    CustomMessageBox.Show(
+                    ShowFmtScrollableCheckResult("FMT 高度檢查",
                         (IsTraditionalChineseUi ? "高度檢查警告：\r\n" : "Height check warnings:\r\n") +
-                        string.Join("\r\n", warnings.Take(20)) +
-                        (warnings.Count > 20 ? "\r\n..." : string.Empty),
-                        "FMT Height Check", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        string.Join("\r\n", warnings));
                 }
 
                 var homeAltitude = chartPoints.FirstOrDefault(point => point.Tag == "H")?.Alt ??
@@ -8193,11 +8202,9 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                 }
                 else
                 {
-                    CustomMessageBox.Show(
+                    ShowFmtScrollableCheckResult("FMT 限禁航區檢查",
                         (IsTraditionalChineseUi ? "航線檢查警告：\r\n" : "Airspace check warnings:\r\n") +
-                        string.Join("\r\n", crossings.Take(30)) +
-                        (crossings.Count > 30 ? "\r\n..." : string.Empty),
-                        "FMT Airspace Check", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        string.Join("\r\n", crossings));
                 }
             }
             catch (Exception ex)
@@ -8209,6 +8216,50 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
             finally
             {
                 BUT_fmtAirspaceCheck.Enabled = true;
+            }
+        }
+
+        private void ShowFmtScrollableCheckResult(string title, string message)
+        {
+            using (var dialog = new Form
+            {
+                Text = title,
+                StartPosition = FormStartPosition.Manual,
+                Size = new Size(600, 500),
+                MinimumSize = new Size(440, 300),
+                ShowIcon = false,
+                ShowInTaskbar = false
+            })
+            {
+                var owner = FindForm();
+                var area = owner == null ? Screen.PrimaryScreen.WorkingArea : Screen.FromControl(owner).WorkingArea;
+                dialog.Location = new Point(area.Left + 20, area.Top + 80);
+                var resultText = new TextBox
+                {
+                    Dock = DockStyle.Fill,
+                    Multiline = true,
+                    ReadOnly = true,
+                    ScrollBars = ScrollBars.Both,
+                    WordWrap = false,
+                    Text = message,
+                    Font = new Font("Microsoft JhengHei UI", 10F),
+                    BackColor = ThemeManager.ControlBGColor,
+                    ForeColor = ThemeManager.TextColor
+                };
+                var close = new Button
+                {
+                    Dock = DockStyle.Bottom,
+                    Height = 40,
+                    Text = "關閉",
+                    DialogResult = DialogResult.OK
+                };
+                dialog.Controls.Add(resultText);
+                dialog.Controls.Add(close);
+                dialog.AcceptButton = close;
+                dialog.CancelButton = close;
+                ThemeManager.ApplyThemeTo(dialog);
+                dialog.Shown += (sender, args) => resultText.Focus();
+                dialog.ShowDialog(owner);
             }
         }
 

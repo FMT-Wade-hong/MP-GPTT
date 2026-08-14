@@ -56,8 +56,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(507, 13);
             this.label1.TabIndex = 31;
-            this.label1.Text = "NOTE: The ground height data is pulled from Google Earth at 100m intervals. You u" +
-                "se this at your own risk";
+            this.label1.Text = "注意：地形高度資料以約 100 公尺間距取樣，僅供飛行規劃參考，請搭配正式地形與航管資料確認。";
             // 
             // ElevationProfile
             // 

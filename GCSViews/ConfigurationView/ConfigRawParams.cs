@@ -41,10 +41,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private string filterPrefix = "";
 
         private NaturalStringComparer naturalsorter = new NaturalStringComparer();
+        private bool fmtEditingUnlocked;
 
         public ConfigRawParams()
         {
             InitializeComponent();
+            Params.CellClick += Params_FmtCellClick;
         }
 
         internal void ApplyFmtReadableTheme()
@@ -105,7 +107,24 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             Params.ReadOnly = false;
             Value.ReadOnly = false;
             Params.EditMode = DataGridViewEditMode.EditOnKeystrokeOrF2;
-            Params.Enabled = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
+            // The FMT password gate is the authority for this page.  MAVLinkInterface.ReadOnly
+            // is also used by a few connection modes and was incorrectly leaving a normally
+            // connected vehicle's value cells locked after a successful unlock.
+            fmtEditingUnlocked = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
+            foreach (DataGridViewRow row in Params.Rows)
+                row.Cells[Value.Index].ReadOnly = !fmtEditingUnlocked;
+            Params.Enabled = fmtEditingUnlocked;
+            BUT_writePIDS.Enabled = fmtEditingUnlocked;
+            Params.Focus();
+        }
+
+        private void Params_FmtCellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (!fmtEditingUnlocked || e.RowIndex < 0 || e.ColumnIndex != Value.Index)
+                return;
+
+            Params.CurrentCell = Params[e.ColumnIndex, e.RowIndex];
+            Params.BeginEdit(true);
         }
 
         public void Activate()
@@ -159,6 +178,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         public void Deactivate()
         {
+            fmtEditingUnlocked = false;
+            Params.EndEdit();
+            Params.Enabled = false;
             foreach (DataGridViewColumn col in Params.Columns)
             {
                 // Don't need to save the width of a fill column

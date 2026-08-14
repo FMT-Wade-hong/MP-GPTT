@@ -58,6 +58,10 @@ namespace MissionPlanner.GCSViews
         private readonly GMapOverlay taiwanCaaOverlay = new GMapOverlay("Taiwan CAA Airspace");
         private readonly HashSet<string> taiwanCaaZoneIds = new HashSet<string>();
         private readonly FmtFlightModeBar fmtFlightModeBar;
+        private readonly CheckBox chkFmtAirspace;
+        private DateTime fmtLastAirspaceRefresh = DateTime.MinValue;
+        private bool fmtAirspaceRefreshRunning;
+        private const double FmtAirspaceDisplayRadiusKm = 50.0;
         private Firmwares fmtModeFirmware = (Firmwares)(-1);
         private bool fmtModeIsQuadPlane;
         private bool fmtModeListLoaded;
@@ -155,6 +159,7 @@ namespace MissionPlanner.GCSViews
         private Propagation prop;
 
         GMapRoute route;
+        private bool fmtTrackWasArmed;
         GMapOverlay routes;
         GMapOverlay adsbais;
 
@@ -253,6 +258,20 @@ namespace MissionPlanner.GCSViews
             log.Info("Ctor Start");
 
             InitializeComponent();
+
+            chkFmtAirspace = new CheckBox
+            {
+                Name = "CHK_fmtAirspace",
+                AutoSize = true,
+                Text = "顯示限禁航區",
+                Checked = Settings.Instance.GetBoolean("FMT_ShowAirspace", true),
+                Location = new Point(CHK_autopan.Right + 12, CHK_autopan.Top),
+                Anchor = AnchorStyles.Left | AnchorStyles.Bottom,
+                UseVisualStyleBackColor = true
+            };
+            chkFmtAirspace.CheckedChanged += CHK_fmtAirspace_CheckedChanged;
+            panel1.Controls.Add(chkFmtAirspace);
+            chkFmtAirspace.BringToFront();
 
             fmtFlightModeBar = new FmtFlightModeBar();
             fmtFlightModeBar.ModeRequested += (sender, mode) => RequestFmtFlightMode(mode);
@@ -3314,26 +3333,13 @@ namespace MissionPlanner.GCSViews
             }
             else
             {
-                // setup a ballon with home distance
+                // FMT: do not attach the legacy "Dist to Home" balloon to the mouse.
+                // Distance-to-home remains available in the fixed telemetry panel.
                 if (marker != null)
                 {
                     if (routes.Markers.Contains(marker))
                         routes.Markers.Remove(marker);
-                }
-
-                if (Settings.Instance.GetBoolean("CHK_disttohomeflightdata") != false)
-                {
-                    PointLatLng point = gMapControl1.FromLocalToLatLng(e.X, e.Y);
-
-                    marker = new GMapMarkerRect(point);
-                    marker.ToolTip = new GMapToolTip(marker);
-                    marker.ToolTipMode = MarkerTooltipMode.Always;
-                    marker.ToolTipText = "Dist to Home: " +
-                                         ((gMapControl1.MapProvider.Projection.GetDistance(point,
-                                              MainV2.comPort.MAV.cs.HomeLocation.Point()) * 1000) *
-                                          CurrentState.multiplierdist).ToString("0");
-
-                    routes.Markers.Add(marker);
+                    marker = null;
                 }
             }
         }
@@ -3367,7 +3373,7 @@ namespace MissionPlanner.GCSViews
         {
             center.Position = point;
 
-            _ = UpdateTaiwanCaaAirspace(point);
+            RefreshFmtAirspaceForAircraft(false);
 
             UpdateOverlayVisibility();
         }
@@ -3376,16 +3382,24 @@ namespace MissionPlanner.GCSViews
         {
             try
             {
+                if (chkFmtAirspace == null || !chkFmtAirspace.Checked || !IsFmtValidLocation(point))
+                    return;
+
                 var zones = await TaiwanCaaAirspace.LoadNearbyAsync(point);
                 if (IsDisposed)
                     return;
 
                 this.BeginInvokeIfRequired((Action)(() =>
                 {
+                    taiwanCaaOverlay.Polygons.Clear();
+                    taiwanCaaZoneIds.Clear();
                     foreach (var zone in zones)
                     {
                         for (var index = 0; index < zone.Polygons.Count; index++)
                         {
+                            if (!FmtAirspacePolygonWithinRadius(point, zone.Polygons[index],
+                                    FmtAirspaceDisplayRadiusKm))
+                                continue;
                             var id = zone.Id + "-" + index;
                             if (!taiwanCaaZoneIds.Add(id))
                                 continue;
@@ -3400,13 +3414,81 @@ namespace MissionPlanner.GCSViews
                         }
                     }
                     taiwanCaaOverlay.ForceUpdate();
-                    gMapControl1.Refresh();
+                    gMapControl1.Invalidate(false);
                 }));
             }
             catch (Exception ex)
             {
                 log.Warn("Unable to update Taiwan CAA airspace", ex);
             }
+        }
+
+        private void CHK_fmtAirspace_CheckedChanged(object sender, EventArgs e)
+        {
+            Settings.Instance["FMT_ShowAirspace"] = chkFmtAirspace.Checked.ToString();
+            taiwanCaaOverlay.IsVisibile = chkFmtAirspace.Checked;
+            if (!chkFmtAirspace.Checked)
+            {
+                taiwanCaaOverlay.Polygons.Clear();
+                taiwanCaaZoneIds.Clear();
+                gMapControl1.Invalidate(false);
+                return;
+            }
+
+            RefreshFmtAirspaceForAircraft(true);
+        }
+
+        private void RefreshFmtAirspaceForAircraft(bool force)
+        {
+            if (chkFmtAirspace == null || !chkFmtAirspace.Checked || fmtAirspaceRefreshRunning)
+                return;
+
+            var aircraft = MainV2.comPort.MAV.cs.Location;
+            var point = new PointLatLng(aircraft.Lat, aircraft.Lng);
+            if (!IsFmtValidLocation(point) ||
+                !force && DateTime.UtcNow - fmtLastAirspaceRefresh < TimeSpan.FromSeconds(5))
+                return;
+
+            fmtLastAirspaceRefresh = DateTime.UtcNow;
+            fmtAirspaceRefreshRunning = true;
+            var refresh = UpdateTaiwanCaaAirspace(point);
+            refresh.ContinueWith(task =>
+            {
+                fmtAirspaceRefreshRunning = false;
+                if (task.IsFaulted)
+                    log.Warn("FMT aircraft airspace refresh failed", task.Exception);
+            }, TaskScheduler.Default);
+        }
+
+        private static bool IsFmtValidLocation(PointLatLng point)
+        {
+            return Math.Abs(point.Lat) > 0.000001 || Math.Abs(point.Lng) > 0.000001;
+        }
+
+        private bool FmtAirspacePolygonWithinRadius(PointLatLng centerPoint,
+            IList<PointLatLng> polygon, double radiusKm)
+        {
+            if (polygon == null || polygon.Count < 3)
+                return false;
+            if (FmtPointInsidePolygon(centerPoint, polygon))
+                return true;
+
+            return polygon.Any(vertex =>
+                gMapControl1.MapProvider.Projection.GetDistance(centerPoint, vertex) <= radiusKm);
+        }
+
+        private static bool FmtPointInsidePolygon(PointLatLng point, IList<PointLatLng> polygon)
+        {
+            var inside = false;
+            for (int current = 0, previous = polygon.Count - 1; current < polygon.Count; previous = current++)
+            {
+                var a = polygon[current];
+                var b = polygon[previous];
+                if ((a.Lat > point.Lat) != (b.Lat > point.Lat) &&
+                    point.Lng < (b.Lng - a.Lng) * (point.Lat - a.Lat) / (b.Lat - a.Lat) + a.Lng)
+                    inside = !inside;
+            }
+            return inside;
         }
 
         private void gMapControl1_Resize(object sender, EventArgs e)
@@ -4127,8 +4209,14 @@ namespace MissionPlanner.GCSViews
                                 route.Points.Count - numTrackLength);
                         }
 
-                        // add new route point
-                        if (MainV2.comPort.MAV.cs.lat != 0 && MainV2.comPort.MAV.cs.lng != 0)
+                        // FMT: a disarmed aircraft must not create the blue flight trail.
+                        // Clear the previous session on the armed -> disarmed transition.
+                        if (!MainV2.comPort.MAV.cs.armed && fmtTrackWasArmed)
+                            route.Points.Clear();
+                        fmtTrackWasArmed = MainV2.comPort.MAV.cs.armed;
+
+                        // add new route point only after arming
+                        if (fmtTrackWasArmed && MainV2.comPort.MAV.cs.lat != 0 && MainV2.comPort.MAV.cs.lng != 0)
                         {
                             route.Points.Add(currentloc);
                         }
@@ -4575,6 +4663,7 @@ namespace MissionPlanner.GCSViews
 
                             // Draw the active aircraft
                             addMAVMarker(MainV2.comPort.MAV);
+                            RefreshFmtAirspaceForAircraft(false);
 
                             if (route.Points.Count == 0 || route.Points[route.Points.Count - 1].Lat != 0 &&
                                 (mapupdate.AddSeconds(3) < DateTime.Now) && CHK_autopan.Checked)
