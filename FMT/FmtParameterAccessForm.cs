@@ -36,6 +36,7 @@ namespace MissionPlanner.FMT
             });
             password.Location = new Point(29, 91);
             password.Width = 370;
+            password.KeyDown += Password_KeyDown;
             Controls.Add(password);
             error.Location = new Point(29, 122);
             Controls.Add(error);
@@ -57,6 +58,16 @@ namespace MissionPlanner.FMT
             unlock.Click += (sender, args) => Unlock();
             Controls.Add(unlock);
             AcceptButton = unlock;
+        }
+
+        private void Password_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter)
+                return;
+
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+            Unlock();
         }
 
         private void Unlock()

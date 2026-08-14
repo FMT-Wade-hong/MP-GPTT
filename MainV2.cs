@@ -588,6 +588,9 @@ namespace MissionPlanner
         private ToolStripControlHost MenuFmtGpsStatus;
         private Label FmtGpsPrimaryLabel;
         private Label FmtGpsDopLabel;
+        private ToolStripControlHost MenuFmtFlightTime;
+        private Label FmtFlightTimeLabel;
+        private Label FmtTotalFlightTimeLabel;
 
         private Form connectionStatsForm;
         private ConnectionStats _connectionStats;
@@ -4628,7 +4631,7 @@ namespace MissionPlanner
                     continue;
                 }
 
-                if (item == MenuFmtGpsStatus)
+                if (item == MenuFmtGpsStatus || item == MenuFmtFlightTime)
                 {
                     item.BackgroundImage = null;
                     item.BackColor = Color.FromArgb(24, 24, 24);
@@ -4687,6 +4690,7 @@ namespace MissionPlanner
         {
             MainMenu.Items.Remove(MenuSimulation);
             MainMenu.Items.Remove(MenuHelp);
+            MenuFlightPlanner.Text = "任務規劃";
 
             MenuFmtArmDisarm = new ToolStripButton
             {
@@ -4853,6 +4857,52 @@ namespace MissionPlanner
                 ToolTipText = "GPS satellites, fix status, HDOP and VDOP"
             };
             MainMenu.Items.Add(MenuFmtGpsStatus);
+
+            var flightTimePanel = new Panel
+            {
+                Name = "FmtFlightTimePanel",
+                BackColor = Color.FromArgb(24, 24, 24),
+                Size = new Size(178, 35),
+                Margin = Padding.Empty
+            };
+            FmtFlightTimeLabel = new Label
+            {
+                Name = "FmtFlightTimeLabel",
+                Location = new Point(3, 1),
+                Size = new Size(172, 17),
+                ForeColor = Color.LightSkyBlue,
+                BackColor = Color.Transparent,
+                Font = new Font(SystemFonts.MenuFont.FontFamily, 8.25f, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = "飛行時間：00:00:00"
+            };
+            FmtTotalFlightTimeLabel = new Label
+            {
+                Name = "FmtTotalFlightTimeLabel",
+                Location = new Point(3, 17),
+                Size = new Size(172, 16),
+                ForeColor = Color.Gainsboro,
+                BackColor = Color.Transparent,
+                Font = new Font(SystemFonts.MenuFont.FontFamily, 8.0f, FontStyle.Regular),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = "飛控總飛時：-- 小時"
+            };
+            flightTimePanel.Controls.Add(FmtFlightTimeLabel);
+            flightTimePanel.Controls.Add(FmtTotalFlightTimeLabel);
+            MenuFmtFlightTime = new ToolStripControlHost(flightTimePanel)
+            {
+                Name = "MenuFmtFlightTime",
+                Alignment = ToolStripItemAlignment.Right,
+                AutoSize = false,
+                Size = new Size(178, 35),
+                Margin = new Padding(2, 0, 2, 0),
+                Padding = Padding.Empty,
+                BackColor = Color.FromArgb(24, 24, 24),
+                ToolTipText = "飛行時間與飛控累計總飛行時間"
+            };
+            // Right-aligned ToolStrip items are laid out in reverse insertion order.
+            // Adding this after GPS places the flight-time panel immediately to its left.
+            MainMenu.Items.Add(MenuFmtFlightTime);
             UpdateFmtQuickActionButtons();
         }
 
@@ -4882,6 +4932,9 @@ namespace MissionPlanner
             var satCount = connected ? comPort.MAV.cs.satcount : 0;
             var hdop = connected ? comPort.MAV.cs.gpshdop : 0;
             var vdop = connected ? comPort.MAV.cs.gpsvdop : 0;
+            var flightSeconds = connected ? Math.Max(0, comPort.MAV.cs.timeInAir) : 0;
+            double totalFlightSeconds = 0;
+            var hasTotalFlightTime = connected && TryGetFmtTotalFlightSeconds(out totalFlightSeconds);
             this.BeginInvokeIfRequired((Action)(() =>
             {
                 MenuFmtArmDisarm.Text = IsFmtTraditionalChineseUi
@@ -4894,7 +4947,43 @@ namespace MissionPlanner
                 ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
                 ApplyFmtQuickActionButtonStyle(MenuFmtQnh);
                 UpdateFmtGpsStatus(connected, gpsStatus, satCount, hdop, vdop);
+                UpdateFmtFlightTime(connected, flightSeconds,
+                    hasTotalFlightTime ? (double?)totalFlightSeconds : null);
             }));
+        }
+
+        private bool TryGetFmtTotalFlightSeconds(out double seconds)
+        {
+            seconds = 0;
+            try
+            {
+                if (comPort.MAV.param.ContainsKey("STAT_FLTTIME"))
+                {
+                    seconds = Math.Max(0, comPort.MAV.param["STAT_FLTTIME"].Value);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Debug("Unable to read STAT_FLTTIME", ex);
+            }
+            return false;
+        }
+
+        private void UpdateFmtFlightTime(bool connected, double flightSeconds, double? totalFlightSeconds)
+        {
+            if (FmtFlightTimeLabel == null || FmtTotalFlightTimeLabel == null)
+                return;
+
+            var seconds = connected ? Math.Max(0L, (long)Math.Round(flightSeconds)) : 0L;
+            FmtFlightTimeLabel.Text = string.Format(CultureInfo.InvariantCulture,
+                "飛行時間：{0:00}:{1:00}:{2:00}", seconds / 3600, (seconds / 60) % 60, seconds % 60);
+            FmtFlightTimeLabel.ForeColor = connected ? Color.LightSkyBlue : Color.Gray;
+            FmtTotalFlightTimeLabel.Text = totalFlightSeconds.HasValue
+                ? string.Format(CultureInfo.InvariantCulture, "飛控總飛時：{0:0.0} 小時",
+                    totalFlightSeconds.Value / 3600.0)
+                : "飛控總飛時：-- 小時";
+            FmtTotalFlightTimeLabel.ForeColor = connected ? Color.Gainsboro : Color.Gray;
         }
 
         private void UpdateFmtGpsStatus(bool connected, float gpsStatus, float satCount, float hdop, float vdop)

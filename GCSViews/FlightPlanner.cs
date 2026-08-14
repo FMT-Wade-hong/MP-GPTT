@@ -115,6 +115,7 @@ namespace MissionPlanner.GCSViews
         private bool isMouseClickOffMenu;
         private bool isMouseDown;
         private bool isMouseDraging;
+        private int fmtLastWaypointDragRenderTick;
         public GMapOverlay kmlpolygonsoverlay;
         private string startupWPradius = "5.0";
 
@@ -247,8 +248,16 @@ namespace MissionPlanner.GCSViews
             //set default
             CMB_altmode.SelectedItem = altmode.Relative;
 
-            cmb_missiontype.DataSource = new List<MAVLink.MAV_MISSION_TYPE>()
-                {MAVLink.MAV_MISSION_TYPE.MISSION, MAVLink.MAV_MISSION_TYPE.FENCE, MAVLink.MAV_MISSION_TYPE.RALLY};
+            cmb_missiontype.DisplayMember = "Value";
+            cmb_missiontype.ValueMember = "Key";
+            cmb_missiontype.DataSource = new List<KeyValuePair<MAVLink.MAV_MISSION_TYPE, string>>
+            {
+                new KeyValuePair<MAVLink.MAV_MISSION_TYPE, string>(MAVLink.MAV_MISSION_TYPE.MISSION, "任務"),
+                new KeyValuePair<MAVLink.MAV_MISSION_TYPE, string>(MAVLink.MAV_MISSION_TYPE.FENCE, "電子圍籬"),
+                new KeyValuePair<MAVLink.MAV_MISSION_TYPE, string>(MAVLink.MAV_MISSION_TYPE.RALLY, "集結點")
+            };
+            cmb_missiontype.DrawMode = DrawMode.OwnerDrawFixed;
+            cmb_missiontype.DrawItem += CmbMissionType_DrawItem;
 
             updateCMDParams();
 
@@ -330,6 +339,30 @@ namespace MissionPlanner.GCSViews
             BUT_fmtAirspaceCheck.BringToFront();
         }
 
+        private void CmbMissionType_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            e.DrawBackground();
+            if (e.Index >= 0)
+            {
+                var text = cmb_missiontype.GetItemText(cmb_missiontype.Items[e.Index]);
+                TextRenderer.DrawText(e.Graphics, text, e.Font, e.Bounds, e.ForeColor,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.SingleLine);
+            }
+            e.DrawFocusRectangle();
+        }
+
+        private void EnsureFmtWaypointInputsVisible()
+        {
+            foreach (var input in new[] { TXT_WPRad, TXT_loiterrad, TXT_DefaultAlt })
+            {
+                input.BackColor = SystemColors.Window;
+                input.ForeColor = SystemColors.WindowText;
+                input.TextAlign = HorizontalAlignment.Center;
+                input.Width = Math.Max(48, input.Width);
+            }
+        }
+
         public static FlightPlanner instance { get; set; }
 
         public List<PointLatLngAlt> pointlist { get; set; } = new List<PointLatLngAlt>();
@@ -337,6 +370,7 @@ namespace MissionPlanner.GCSViews
 
         public void Activate()
         {
+            EnsureFmtWaypointInputsVisible();
             timer1.Start();
 
             // hide altmode if old copter version
@@ -7534,48 +7568,53 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                     }
 
                     PointLatLng pnew = MainMap.FromLocalToLatLng(e.X, e.Y);
+                    var renderWaypointRoute = unchecked(Environment.TickCount - fmtLastWaypointDragRenderTick) >= 24;
 
                     // Keep the waypoint marker and the visible route attached to the mouse.
-                    try
+                    if (renderWaypointRoute)
                     {
-                        var oldPosition = CurentRectMarker.Position;
-                        var waypointTag = CurentRectMarker.InnerMarker == null
-                            ? null
-                            : Convert.ToString(CurentRectMarker.InnerMarker.Tag, CultureInfo.InvariantCulture);
-
-                        if (wpOverlay != null && !string.IsNullOrEmpty(waypointTag))
+                        fmtLastWaypointDragRenderTick = Environment.TickCount;
+                        try
                         {
-                            var missionPoint = wpOverlay.pointlist.FirstOrDefault(candidate =>
-                                candidate != null && string.Equals(candidate.Tag, waypointTag,
-                                    StringComparison.Ordinal));
-                            if (missionPoint != null)
-                            {
-                                missionPoint.Lat = pnew.Lat;
-                                missionPoint.Lng = pnew.Lng;
-                            }
+                            var oldPosition = CurentRectMarker.Position;
+                            var waypointTag = CurentRectMarker.InnerMarker == null
+                                ? null
+                                : Convert.ToString(CurentRectMarker.InnerMarker.Tag, CultureInfo.InvariantCulture);
 
-                            foreach (var route in wpOverlay.overlay.Routes)
+                            if (wpOverlay != null && !string.IsNullOrEmpty(waypointTag))
                             {
-                                var changed = false;
-                                for (var routeIndex = 0; routeIndex < route.Points.Count; routeIndex++)
+                                var missionPoint = wpOverlay.pointlist.FirstOrDefault(candidate =>
+                                    candidate != null && string.Equals(candidate.Tag, waypointTag,
+                                        StringComparison.Ordinal));
+                                if (missionPoint != null)
                                 {
-                                    var routePoint = route.Points[routeIndex];
-                                    if (Math.Abs(routePoint.Lat - oldPosition.Lat) < 0.0000001 &&
-                                        Math.Abs(routePoint.Lng - oldPosition.Lng) < 0.0000001)
-                                    {
-                                        route.Points[routeIndex] = pnew;
-                                        changed = true;
-                                    }
+                                    missionPoint.Lat = pnew.Lat;
+                                    missionPoint.Lng = pnew.Lng;
                                 }
 
-                                if (changed)
-                                    MainMap.UpdateRouteLocalPosition(route);
+                                foreach (var route in wpOverlay.overlay.Routes)
+                                {
+                                    var changed = false;
+                                    for (var routeIndex = 0; routeIndex < route.Points.Count; routeIndex++)
+                                    {
+                                        var routePoint = route.Points[routeIndex];
+                                        if (Math.Abs(routePoint.Lat - oldPosition.Lat) < 0.0000001 &&
+                                            Math.Abs(routePoint.Lng - oldPosition.Lng) < 0.0000001)
+                                        {
+                                            route.Points[routeIndex] = pnew;
+                                            changed = true;
+                                        }
+                                    }
+
+                                    if (changed)
+                                        MainMap.UpdateRouteLocalPosition(route);
+                                }
                             }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        log.Error(ex);
+                        catch (Exception ex)
+                        {
+                            log.Error(ex);
+                        }
                     }
 
                     // update rect and marker pos.
@@ -7594,7 +7633,8 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                     MainMap.UpdateMarkerLocalPosition(CurentRectMarker);
                     if (CurentRectMarker.InnerMarker != null)
                         MainMap.UpdateMarkerLocalPosition(CurentRectMarker.InnerMarker);
-                    MainMap.Invalidate(false);
+                    if (renderWaypointRoute)
+                        MainMap.Invalidate(false);
                 }
                 else if (CurrentPOIMarker != null)
                 {

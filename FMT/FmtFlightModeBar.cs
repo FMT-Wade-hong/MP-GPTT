@@ -52,7 +52,7 @@ namespace MissionPlanner.FMT
             Name = "fmtFlightModeBar";
             BackColor = Background;
             Padding = new Padding(5, 4, 5, 4);
-            Dock = DockStyle.Top;
+            Dock = DockStyle.None;
             MinimumSize = new Size(0, 92);
 
             statusLabel = new Label
@@ -89,11 +89,13 @@ namespace MissionPlanner.FMT
         internal void UpdateVehicle(Firmwares firmware, bool isQuadPlane, bool isConnected,
             string activeMode, IEnumerable<string> supportedModes)
         {
-            var supported = new HashSet<string>(supportedModes ?? Enumerable.Empty<string>(),
-                StringComparer.OrdinalIgnoreCase);
+            var supported = (supportedModes ?? Enumerable.Empty<string>())
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .GroupBy(NormalizeModeName)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
             var groups = GetModeGroups(firmware, isQuadPlane);
             var signature = firmware + "|" + isQuadPlane + "|" +
-                            string.Join(",", supported.OrderBy(value => value, StringComparer.OrdinalIgnoreCase));
+                            string.Join(",", supported.Values.OrderBy(value => value, StringComparer.OrdinalIgnoreCase));
 
             connected = isConnected;
             currentMode = activeMode ?? string.Empty;
@@ -112,14 +114,25 @@ namespace MissionPlanner.FMT
 
             foreach (var pair in modeButtons)
             {
-                var isActive = string.Equals(pair.Key, currentMode, StringComparison.OrdinalIgnoreCase);
+                var isActive = string.Equals(NormalizeModeName(pair.Key), NormalizeModeName(currentMode),
+                    StringComparison.OrdinalIgnoreCase);
                 pair.Value.BackColor = isActive ? ActiveGreen : Color.FromArgb(39, 54, 64);
                 pair.Value.FlatAppearance.BorderColor = isActive ? Color.LimeGreen : SkyBlue;
                 pair.Value.Enabled = connected && pair.Value.Tag != null;
             }
+
+            foreach (var groupLabel in modesPanel.Controls.OfType<Label>())
+            {
+                var group = groupLabel.Tag as ModeGroup;
+                var groupActive = connected && group != null && group.Modes.Any(definition =>
+                    string.Equals(NormalizeModeName(definition.Mode), NormalizeModeName(currentMode),
+                        StringComparison.OrdinalIgnoreCase));
+                groupLabel.Text = (groupActive ? "● " : "○ ") + (group == null ? string.Empty : group.Title);
+                groupLabel.ForeColor = groupActive ? Color.LimeGreen : Color.Gainsboro;
+            }
         }
 
-        private void RebuildButtons(HashSet<string> supported)
+        private void RebuildButtons(Dictionary<string, string> supported)
         {
             modesPanel.SuspendLayout();
             modesPanel.Controls.Clear();
@@ -132,7 +145,8 @@ namespace MissionPlanner.FMT
                     AutoSize = false,
                     Height = 20,
                     Width = Math.Max(120, modesPanel.ClientSize.Width - 14),
-                    Text = "● " + group.Title,
+                    Text = "○ " + group.Title,
+                    Tag = group,
                     ForeColor = Color.Gainsboro,
                     BackColor = PanelBackground,
                     TextAlign = ContentAlignment.MiddleLeft,
@@ -143,8 +157,8 @@ namespace MissionPlanner.FMT
 
                 foreach (var definition in group.Modes)
                 {
-                    var actualMode = supported.FirstOrDefault(value =>
-                        string.Equals(value, definition.Mode, StringComparison.OrdinalIgnoreCase));
+                    string actualMode;
+                    supported.TryGetValue(NormalizeModeName(definition.Mode), out actualMode);
                     var button = new Button
                     {
                         Name = "fmtMode_" + definition.Mode,
@@ -257,6 +271,14 @@ namespace MissionPlanner.FMT
         private static ModeDefinition Mode(string mode, string caption)
         {
             return new ModeDefinition(mode, caption);
+        }
+
+        internal static string NormalizeModeName(string mode)
+        {
+            return new string((mode ?? string.Empty)
+                .Where(char.IsLetterOrDigit)
+                .Select(char.ToUpperInvariant)
+                .ToArray());
         }
 
         private static string GetVehicleName(Firmwares firmware, bool isQuadPlane)

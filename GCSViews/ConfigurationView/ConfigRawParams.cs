@@ -97,6 +97,17 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             Params.Invalidate();
         }
 
+        internal void EnableFmtEditingAfterUnlock()
+        {
+            // The first activation builds the shared row cache while startup is true.
+            // Complete that transition before accepting the user's first edit.
+            startup = false;
+            Params.ReadOnly = false;
+            Value.ReadOnly = false;
+            Params.EditMode = DataGridViewEditMode.EditOnKeystrokeOrF2;
+            Params.Enabled = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
+        }
+
         public void Activate()
         {
             if ((rowlist.Count == 0) || (!Settings.Instance.GetBoolean("SlowMachine", false))) startup = true;

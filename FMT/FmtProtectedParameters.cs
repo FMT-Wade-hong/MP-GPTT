@@ -45,6 +45,7 @@ namespace MissionPlanner.FMT
                 parameterControl.ApplyFmtReadableTheme();
                 parameterControl.Activate();
                 parameterControl.ApplyFmtReadableTheme();
+                parameterControl.EnableFmtEditingAfterUnlock();
             }
             finally
             {

@@ -1,5 +1,14 @@
 # FMTPlanner release history
 
+## FMTPlanner v1.0.6 — 2026-08-14
+
+- Repositioned the flight-mode bar and fixed ALT HOLD plus VTOL/fixed-wing group indicators.
+- Added session and controller total flight time to the top toolbar.
+- Moved Motor Test into Mandatory Hardware.
+- Added Enter-to-unlock and reliable first-entry parameter editing.
+- Reduced waypoint drag redraw frequency and renamed Flight Planner to 任務規劃.
+- Localized and centered mission types, and restored radius/default-altitude value visibility.
+
 ## FMTPlanner v1.0.5 — 2026-08-14
 
 ### Flight interface

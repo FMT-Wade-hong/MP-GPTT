@@ -257,7 +257,9 @@ namespace MissionPlanner.GCSViews
             fmtFlightModeBar = new FmtFlightModeBar();
             fmtFlightModeBar.ModeRequested += (sender, mode) => RequestFmtFlightMode(mode);
             SubMainLeft.Panel2.Controls.Add(fmtFlightModeBar);
-            fmtFlightModeBar.BringToFront();
+            fmtFlightModeBar.SizeChanged += (sender, args) => LayoutFmtFlightModeArea();
+            SubMainLeft.Panel2.Resize += (sender, args) => LayoutFmtFlightModeArea();
+            LayoutFmtFlightModeArea();
 
             // GPS satellite count and HDOP are shown in the FMT top toolbar.
             // Hide the duplicate map-overlay values to keep the lower legend clear.
@@ -1876,8 +1878,10 @@ namespace MissionPlanner.GCSViews
                 }
             }
 
+            var normalizedMode = FmtFlightModeBar.NormalizeModeName(mode);
             var supportedMode = fmtSupportedModes.FirstOrDefault(value =>
-                string.Equals(value, mode, StringComparison.OrdinalIgnoreCase));
+                string.Equals(FmtFlightModeBar.NormalizeModeName(value), normalizedMode,
+                    StringComparison.OrdinalIgnoreCase));
             if (supportedMode == null)
             {
                 CustomMessageBox.Show("目前連線構型不支援模式：" + mode, "FMT 飛行模式");
@@ -1920,6 +1924,26 @@ namespace MissionPlanner.GCSViews
             var connected = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
             fmtFlightModeBar.UpdateVehicle(firmware, isQuadPlane, connected,
                 MainV2.comPort.MAV.cs.mode, fmtSupportedModes);
+        }
+
+        private void LayoutFmtFlightModeArea()
+        {
+            if (fmtFlightModeBar == null || fmtFlightModeBar.IsDisposed ||
+                tabControlactions == null || SubMainLeft.Panel2.ClientSize.Width <= 0)
+                return;
+
+            var top = panel_persistent != null && panel_persistent.Visible
+                ? panel_persistent.Bottom
+                : 0;
+            fmtFlightModeBar.SetBounds(0, top, SubMainLeft.Panel2.ClientSize.Width,
+                fmtFlightModeBar.Height);
+
+            var tabsTop = fmtFlightModeBar.Bottom;
+            tabControlactions.Dock = DockStyle.None;
+            tabControlactions.SetBounds(0, tabsTop, SubMainLeft.Panel2.ClientSize.Width,
+                Math.Max(0, SubMainLeft.Panel2.ClientSize.Height - tabsTop));
+            tabControlactions.Anchor = AnchorStyles.Top | AnchorStyles.Bottom |
+                                       AnchorStyles.Left | AnchorStyles.Right;
         }
 
         private void BUT_setwp_Click(object sender, EventArgs e)

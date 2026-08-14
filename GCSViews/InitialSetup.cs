@@ -224,6 +224,10 @@ namespace MissionPlanner.GCSViews
             {
                 AddBackstageViewPage(typeof(ConfigESCCalibration), "ESC Calibration", isConnected && gotAllParams, mand);
             }
+            if (MainV2.DisplayConfiguration.displayMotorTest)
+            {
+                AddBackstageViewPage(typeof(ConfigMotorTest), "馬達測試", isConnected && gotAllParams, mand);
+            }
             if (MainV2.DisplayConfiguration.displayFlightModes)
             {
                 AddBackstageViewPage(typeof(ConfigFlightModes), rm.GetString("backstageViewPageflmode.Text"), isConnected && gotAllParams, mand);
@@ -316,10 +320,6 @@ namespace MissionPlanner.GCSViews
             if (MainV2.DisplayConfiguration.displayAntennaTracker)
             {
                 AddBackstageViewPage(typeof(ConfigAntennaTracker), rm.GetString("backstageViewPageAntTrack.Text"), isTracker, opt);
-            }
-            if (MainV2.DisplayConfiguration.displayMotorTest)
-            {
-                AddBackstageViewPage(typeof(ConfigMotorTest), rm.GetString("backstageViewPageMotorTest.Text"), isConnected && gotAllParams, opt);
             }
             if (MainV2.DisplayConfiguration.displayBluetooth)
             {
