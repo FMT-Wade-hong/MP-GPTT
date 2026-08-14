@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
+using System.Reflection;
 using GMap.NET;
 using GMap.NET.WindowsForms;
 using MissionPlanner.Utilities;
@@ -9,7 +11,10 @@ namespace MissionPlanner.Maps
     [Serializable]
     public class GMapMarkerPlane : GMapMarkerBase
     {
-        private readonly Bitmap icon = global::MissionPlanner.Maps.Resources.planeicon;
+        private static readonly Bitmap FixedWingIcon = LoadFmtIcon("FMTMapFixedWing.png");
+        private static readonly Bitmap FixedWingGlowIcon = LoadFmtIcon("FMTMapFixedWingGlow.png");
+        private static readonly Bitmap VtolIcon = LoadFmtIcon("FMTMapVtol.png");
+        private static readonly Bitmap VtolGlowIcon = LoadFmtIcon("FMTMapVtolGlow.png");
 
         static SolidBrush shadow = new SolidBrush(Color.FromArgb(50, Color.Black));
 
@@ -52,9 +57,10 @@ namespace MissionPlanner.Maps
         float radius = -1;
         float target = -1;
         int which = 0;
+        public bool IsVtol { get; set; }
 
         public GMapMarkerPlane(int which, PointLatLng p, float heading, float cog, float nav_bearing, float target,
-            float radius)
+            float radius, bool isVtol = false)
             : base(p)
         {
             this.heading = heading;
@@ -63,7 +69,9 @@ namespace MissionPlanner.Maps
             this.nav_bearing = nav_bearing;
             this.radius = radius;
             this.which = which;
-            Size = icon.Size;
+            IsVtol = isVtol;
+            Size = FixedWingGlowIcon.Size;
+            Offset = new Point(-Size.Width / 2, -Size.Height / 2);
         }
 
         public float Cog { get => cog; set => cog = value; }
@@ -83,6 +91,12 @@ namespace MissionPlanner.Maps
             g.TranslateTransform(LocalPosition.X, LocalPosition.Y);
 
             g.RotateTransform(-Overlay.Control.Bearing);
+
+            if (IsActive)
+            {
+                using (var activeRing = new Pen(Color.FromArgb(45, 169, 220), 3F))
+                    g.DrawArc(activeRing, -34, -34, 68, 68, 0, 360);
+            }
 
             // anti NaN
             try
@@ -161,39 +175,24 @@ namespace MissionPlanner.Maps
             {
             }
 
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            // the shadow
-            g.TranslateTransform(-26, -26);
-
-            g.FillPolygon(shadow, plane);
-
-            // the plane
-            g.TranslateTransform(-2, -2);
-
-            var color = Color.White;
-            if (which % 7 == 0)
-                color = Color.Red;
-            if (which % 7 == 1)
-                color = Color.Black;
-            if (which % 7 == 2)
-                color = Color.Blue;
-            if (which % 7 == 3)
-                color = Color.LimeGreen;
-            if (which % 7 == 4)
-                color = Color.Yellow;
-            if (which % 7 == 5)
-                color = Color.Orange;
-            if (which % 7 == 6)
-                color = Color.Pink;
-
-            if(IsTransparent)
-            {
-                color = Color.FromArgb(100, color);
-            }
-
-            g.FillPolygon(new SolidBrush(color), plane);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            var fmtIcon = IsVtol
+                ? (IsActive ? VtolGlowIcon : VtolIcon)
+                : (IsActive ? FixedWingGlowIcon : FixedWingIcon);
+            g.DrawImage(fmtIcon, -fmtIcon.Width / 2, -fmtIcon.Height / 2, fmtIcon.Width, fmtIcon.Height);
 
             g.Transform = temp;
+        }
+
+        private static Bitmap LoadFmtIcon(string fileName)
+        {
+            var stream = typeof(GMapMarkerPlane).GetTypeInfo().Assembly
+                .GetManifestResourceStream("MissionPlanner.Maps." + fileName);
+            if (stream == null)
+                return global::MissionPlanner.Maps.Resources.planeicon;
+            using (stream)
+            using (var source = new Bitmap(stream))
+                return new Bitmap(source);
         }
     }
 }

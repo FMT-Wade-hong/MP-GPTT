@@ -166,6 +166,12 @@ union px4_custom_mode {
                     firmware.ToString());
                 return flightModes;
             }
+            else if (firmware == Firmwares.ArduSub)
+            {
+                return Enum.GetValues(typeof(MAVLink.SUB_MODE)).Cast<MAVLink.SUB_MODE>()
+                    .Select(mode => new KeyValuePair<int, string>((int) mode, mode.ToString()))
+                    .ToList();
+            }
             else if (firmware == Firmwares.ArduTracker)
             {
                 var temp = new List<KeyValuePair<int, string>>();

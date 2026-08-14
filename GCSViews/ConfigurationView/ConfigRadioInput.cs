@@ -25,6 +25,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         public ConfigRadioInput()
         {
             InitializeComponent();
+            ApplyFmtRadioLayout();
 
             // setup rc calib extents
             for (var a = 0; a < rcmin.Length; a++)
@@ -107,10 +108,10 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             BAR16.DataBindings.Add(new Binding("Value", currentStateBindingSource, "ch16in", true));
 
             //Add channel to pitch/roll/throttle/yaw bars labels
-            BARroll.Label = BARroll.Label + " (rc" + chroll.ToString() + ")";
-            BARpitch.Label = BARpitch.Label + " (rc" + chpitch.ToString() + ")";
-            BARthrottle.Label = BARthrottle.Label + " (rc" + chthro.ToString() + ")";
-            BARyaw.Label = BARyaw.Label + " (rc" + chyaw.ToString() + ")";
+            BARroll.Label = "橫滾 Roll (RC" + chroll + ")";
+            BARpitch.Label = "俯仰 Pitch (RC" + chpitch + ")";
+            BARthrottle.Label = "油門 Throttle (RC" + chthro + ")";
+            BARyaw.Label = "偏航 Yaw (RC" + chyaw + ")";
 
             try
             {
@@ -174,6 +175,81 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             }
 
             startup = false;
+        }
+
+        private void ApplyFmtRadioLayout()
+        {
+            SuspendLayout();
+            AutoScroll = true;
+            BackColor = Color.FromArgb(18, 28, 35);
+
+            foreach (Control control in Controls)
+                control.Top += 56;
+
+            var header = new Panel
+            {
+                Name = "fmtRadioHeader",
+                Location = new Point(0, 0),
+                Size = new Size(Math.Max(640, ClientSize.Width), 50),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                BackColor = Color.FromArgb(27, 39, 47)
+            };
+            header.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Location = new Point(14, 8),
+                Text = "遙控器輸入校正  Radio Calibration",
+                ForeColor = Color.White,
+                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 12F, FontStyle.Bold)
+            });
+            header.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Location = new Point(15, 30),
+                Text = "即時確認搖桿、開關與通道方向；校正前請先移除槳葉。",
+                ForeColor = Color.FromArgb(255, 174, 72)
+            });
+            Controls.Add(header);
+            header.BringToFront();
+
+            var bars = new HorizontalProgressBar2[]
+            {
+                BARroll, BARpitch, BARthrottle, BARyaw, BAR5, BAR6, BAR7, BAR8,
+                BAR9, BAR10, BAR11, BAR12, BAR13, BAR14, BAR15, BAR16
+            };
+            foreach (var bar in bars)
+            {
+                bar.BackgroundColor = Color.FromArgb(55, 57, 59);
+                bar.ValueColor = Color.FromArgb(255, 153, 45);
+                bar.BorderColor = Color.FromArgb(135, 140, 143);
+                bar.ForeColor = Color.White;
+                bar.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.5F, FontStyle.Bold);
+            }
+
+            BAR5.Label = "CH 5";
+            BAR6.Label = "CH 6";
+            BAR7.Label = "CH 7";
+            BAR8.Label = "CH 8";
+            BAR9.Label = "CH 9";
+            BAR10.Label = "CH 10";
+            BAR11.Label = "CH 11";
+            BAR12.Label = "CH 12";
+            BAR13.Label = "CH 13";
+            BAR14.Label = "CH 14";
+            BAR15.Label = "CH 15";
+            BAR16.Label = "CH 16";
+
+            groupBox1.Text = "DSM 接收機綁定";
+            groupBoxElevons.Text = "固定翼混控設定";
+            groupBox1.ForeColor = Color.White;
+            groupBoxElevons.ForeColor = Color.White;
+
+            BUT_Calibrateradio.Text = "開始遙控器校正";
+            BUT_Calibrateradio.BackColor = Color.FromArgb(255, 153, 45);
+            BUT_Calibrateradio.ForeColor = Color.Black;
+            BUT_Calibrateradio.UseVisualStyleBackColor = false;
+
+            ResumeLayout(true);
         }
 
         public void Deactivate()

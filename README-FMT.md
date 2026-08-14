@@ -1,4 +1,4 @@
-# FeiMaoTecPlanner V1.0.4（FMTPlanner）使用手冊
+# FeiMaoTecPlanner V1.0.5（FMTPlanner）使用手冊
 
 <p align="center">
   <img src="FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="360">
@@ -6,7 +6,7 @@
 
 **FeiMaoTecPlanner** 是由 **FMT 飛貓科技**以 ArduPilot Mission Planner 為基礎製作的客製化地面站軟體，重點包含 FMT 品牌介面、飛行快捷操作、TitanPlanner 風格姿態儀、台灣限禁航區、任務安全檢查、參數保護及繁體中文介面。
 
-> 本手冊對應 GitHub 正式發布版 [`FMTPlanner-v1.0.4`](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.4)，包含 QNH、GPS 狀態、參數頁面顯示修正及多旋翼／定翼機／VTOL 三構型常用設定。
+> 本手冊對應 GitHub 正式發布版 [`FMTPlanner-v1.0.5`](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.5)，包含動態飛行模式、Titan 風格設定頁、發光飛行器圖示、QNH、GPS 狀態與繁體中文遙測介面。
 
 ## 目錄
 
@@ -33,6 +33,10 @@
 | 主題 | 固定使用 FMT 天空藍深色主題，減少不同主題造成的文字可讀性問題 |
 | 語言 | 預設英文；中文介面採繁體中文與台灣用語，不顯示簡體中文選項 |
 | 姿態儀 | 採用 TitanPlanner 風格配置，集中顯示姿態、航向、速度、高度及解鎖狀態 |
+| 飛行模式 | HUD 與資訊列之間顯示常用模式按鈕，依多旋翼、定翼機、VTOL、車／船或潛航器自動切換 |
+| 設定頁 | 遙控器校正、馬達測試與舵機輸出採 TitanPlanner 風格重新配置，保留原安全流程 |
+| 地圖飛行器 | 定翼機、多旋翼及 VTOL 使用專用頂視圖；目前使用中的飛行器加上天空藍背光 |
+| 遙測中文 | 欄位選擇視窗、儀表板指標、單位與分頁採繁體中文，底層 MAVLink 鍵值保持相容 |
 | 快捷操作 | 工具列加入解鎖／上鎖、空速計歸零及 QNH 校正按鈕 |
 | GPS | 工具列右側顯示衛星數量、定位型態、HDOP 與 VDOP |
 | 任務規劃 | 地圖顯示相鄰航點距離；拖曳航點時，點位與航線會跟隨滑鼠更新 |
@@ -76,6 +80,14 @@
 3. **QNH 校正**（目前開發分支功能）
 
 右側 FMT Logo 可點擊開啟 [FMT 飛貓科技官網](https://www.feimaotec.com)。
+
+### 常用飛行模式
+
+HUD 下方會顯示目前連線構型與模式。可用按鈕由飛控回報的模式清單決定，無法使用的模式會停用；點擊切換前仍會執行連線、解鎖狀態與模式支援檢查。VTOL／QuadPlane 同時顯示 Q 模式與固定翼模式，車／船及潛航器則使用各自的常用模式。
+
+### 儀表板與遙測欄位
+
+在「儀表板」數值方框上按兩下可開啟「選擇顯示項目」。V1.0.5 將加速度、氣壓、電池、ESC、GPS、測距儀、通道輸入／輸出、飛行時間、空速、風速、航向及返航點距離等可見名稱改為繁體中文。畫面只翻譯顯示文字，儲存設定所使用的 CurrentState 屬性名稱不會改變。
 
 ### 飛行模式頁常用設定
 

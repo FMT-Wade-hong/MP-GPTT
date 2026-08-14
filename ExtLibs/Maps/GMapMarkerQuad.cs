@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Reflection;
 using GMap.NET;
 using GMap.NET.WindowsForms;
 using MissionPlanner.Utilities;
@@ -10,7 +11,8 @@ namespace MissionPlanner.Maps
     [Serializable]
     public class GMapMarkerQuad : GMapMarkerBase
     {
-        private readonly Bitmap icon = global::MissionPlanner.Maps.Resources.quadicon;
+        private static readonly Bitmap Icon = LoadFmtIcon("FMTMapMultirotor.png");
+        private static readonly Bitmap GlowIcon = LoadFmtIcon("FMTMapMultirotorGlow.png");
 
         float heading = 0;
         float cog = -1;
@@ -116,9 +118,9 @@ namespace MissionPlanner.Maps
             this.Cog = cog;
             this.Target = target;
             this.Sysid = sysid;
-            Size = icon.Size;
+            Size = GlowIcon.Size;
             // for hitzone
-            Offset = new Point(-icon.Width / 2, -icon.Width / 2);
+            Offset = new Point(-Size.Width / 2, -Size.Height / 2);
         }
 
         public override void OnRender(IGraphics g)
@@ -132,6 +134,12 @@ namespace MissionPlanner.Maps
             g.TranslateTransform(LocalPosition.X, LocalPosition.Y);
             g.TranslateTransform(-Offset.X, -Offset.Y);
             g.RotateTransform(-Overlay.Control.Bearing);
+
+            if (IsActive)
+            {
+                using (var activeRing = new Pen(Color.FromArgb(45, 169, 220), 3F))
+                    g.DrawArc(activeRing, -38, -38, 76, 76, 0, 360);
+            }
 
             // anti NaN
             try
@@ -165,32 +173,11 @@ namespace MissionPlanner.Maps
 
             //g.DrawImageUnscaled(icon, icon.Width / -2 + 2, icon.Height / -2);
 
-            {
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-                g.RotateTransform(framerotation);
-
-                //motors
-                g.DrawArc(thisgreenpen, 35f - 10 + Offset.X, 12f - 10 + Offset.Y, 20, 20, 0, 360);
-                g.DrawArc(thisgreenpen, 35f - 10 + Offset.X, 57f - 10 + Offset.Y, 20, 20, 0, 360);
-                g.DrawArc(thisgreenpen, 57f - 10 + Offset.X, 35f - 10 + Offset.Y, 20, 20, 0, 360);
-                g.DrawArc(thisgreenpen, 12f - 10 + Offset.X, 35f - 10 + Offset.Y, 20, 20, 0, 360);
-
-                g.DrawArc(thisgreenpen, 35f - 2.5f + Offset.X, 12f - 2.5f + Offset.Y, 5, 5, 0, 360);
-                g.DrawArc(thisgreenpen, 35f - 2.5f + Offset.X, 57f - 2.5f + Offset.Y, 5, 5, 0, 360);
-                g.DrawArc(thisgreenpen, 57f - 2.5f + Offset.X, 35f - 2.5f + Offset.Y, 5, 5, 0, 360);
-                g.DrawArc(thisgreenpen, 12f - 2.5f + Offset.X, 35f - 2.5f + Offset.Y, 5, 5, 0, 360);
-                                
-                g.DrawLine(thisbluepen, 35 + Offset.X, 12 + Offset.Y, 35 + Offset.X, 35 + Offset.Y);
-                g.DrawLine(thisgreenpen, 35 + Offset.X, 36 + Offset.Y, 35 + Offset.X, 57 + Offset.Y);
-                g.DrawLine(thisgreenpen, 57 + Offset.X, 35 + Offset.Y, 12 + Offset.X, 35 + Offset.Y);
-
-                g.FillRectangle(thisgreenbrush, 32 + Offset.X, 30 + Offset.Y, 5, 8);
-
-                g.RotateTransform(-framerotation);
-            }
-
-            g.DrawString(Sysid.ToString(), new Font(FontFamily.GenericMonospace, 15, FontStyle.Bold), thistextbrush, -8, -8);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            g.RotateTransform(framerotation);
+            var fmtIcon = IsActive ? GlowIcon : Icon;
+            g.DrawImage(fmtIcon, Offset.X, Offset.Y, fmtIcon.Width, fmtIcon.Height);
+            g.RotateTransform(-framerotation);
 
             g.Transform = temp;
 
@@ -232,6 +219,17 @@ namespace MissionPlanner.Maps
                             markerDimension, markerDimension), 0,
                         360);
             }
+        }
+
+        private static Bitmap LoadFmtIcon(string fileName)
+        {
+            var stream = typeof(GMapMarkerQuad).GetTypeInfo().Assembly
+                .GetManifestResourceStream("MissionPlanner.Maps." + fileName);
+            if (stream == null)
+                return global::MissionPlanner.Maps.Resources.quadicon;
+            using (stream)
+            using (var source = new Bitmap(stream))
+                return new Bitmap(source);
         }
     }
 }

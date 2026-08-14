@@ -1,5 +1,24 @@
 # FMTPlanner release history
 
+## FMTPlanner v1.0.5 — 2026-08-14
+
+### Flight interface
+
+- Added a vehicle-aware common flight-mode panel between the HUD and telemetry information. Multirotor, Fixed Wing, VTOL/QuadPlane, Rover, and Sub use their own safe mode sets.
+- Added a TitanPlanner-inspired visual refresh for Radio Calibration, Motor Setup, and Servo Output while retaining the original MAVLink parameter and calibration paths.
+- Added dedicated fixed-wing, multirotor, and VTOL map markers based on the supplied FMT aircraft images. The active vehicle uses a cyan glow for visibility over satellite maps.
+
+### Traditional Chinese telemetry
+
+- Changed all three telemetry field-selection windows to the Traditional Chinese title `選擇顯示項目`.
+- Localized visible CurrentState field names, QuickView dashboard labels, units, and Flight Data tab names. Internal MAVLink and CurrentState keys remain unchanged for compatibility.
+- Added readable terminology for acceleration, pressure, battery cells, ESC telemetry, GPS accuracy, range finders, channels, flight time, airspeed, wind, heading, and distance-to-home values.
+
+### Branding and compatibility
+
+- Added a stable Windows AppUserModelID so the running taskbar icon groups under FMTPlanner.
+- Added ArduSub flight-mode lookup support and kept all quick mode changes behind connected/armed-state safety checks.
+
 ## FMTPlanner v1.0.4 — 2026-08-13
 
 ### Parameter interface

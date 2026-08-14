@@ -57,6 +57,11 @@ namespace MissionPlanner.GCSViews
         internal GMapMarker CurrentGMapMarker;
         private readonly GMapOverlay taiwanCaaOverlay = new GMapOverlay("Taiwan CAA Airspace");
         private readonly HashSet<string> taiwanCaaZoneIds = new HashSet<string>();
+        private readonly FmtFlightModeBar fmtFlightModeBar;
+        private Firmwares fmtModeFirmware = (Firmwares)(-1);
+        private bool fmtModeIsQuadPlane;
+        private bool fmtModeListLoaded;
+        private List<string> fmtSupportedModes = new List<string>();
 
         internal PointLatLng MouseDownStart;
         internal Point MouseDownStartLocal;
@@ -249,6 +254,11 @@ namespace MissionPlanner.GCSViews
 
             InitializeComponent();
 
+            fmtFlightModeBar = new FmtFlightModeBar();
+            fmtFlightModeBar.ModeRequested += (sender, mode) => RequestFmtFlightMode(mode);
+            SubMainLeft.Panel2.Controls.Add(fmtFlightModeBar);
+            fmtFlightModeBar.BringToFront();
+
             // GPS satellite count and HDOP are shown in the FMT top toolbar.
             // Hide the duplicate map-overlay values to keep the lower legend clear.
             lbl_hdop.Visible = false;
@@ -260,6 +270,26 @@ namespace MissionPlanner.GCSViews
                 label3.Text = "直飛目前航點";
                 label5.Text = "目標航向";
                 label6.Text = "GPS 航跡（黑色）";
+            }
+
+            if (IsFmtTraditionalChineseUi)
+            {
+                label4.Text = "目前航向";
+                label3.Text = "直飛目前航點";
+                label5.Text = "目標航向";
+                label6.Text = "GPS 航跡（黑色）";
+                tabActions.Text = "動作";
+                tabPagemessages.Text = "訊息";
+                tabPagePreFlight.Text = "起飛前檢查";
+                tabStatus.Text = "狀態";
+                tabServo.Text = "舵機";
+                tabAuxFunction.Text = "輔助功能";
+                tabPayload.Text = "酬載控制";
+                tabTLogs.Text = "數傳記錄";
+                tablogbrowse.Text = "飛行記錄";
+                tabQuick.Text = "儀表板";
+                tabGauges.Text = "儀表";
+                tabTransponder.Text = "應答機";
             }
 
             log.Info("Components Done");
@@ -311,7 +341,8 @@ namespace MissionPlanner.GCSViews
                             CurrentState.custom_field_names.Add(name, option.Substring(12));
                         }
                     }
-                    string desc = MainV2.comPort.MAV.cs.GetNameandUnit(name);
+                    string desc = FmtTelemetryLocalization.Display(name,
+                        MainV2.comPort.MAV.cs.GetNameandUnit(name));
                     using (var cb = new CheckBox {Name = name, Checked = true, Text = desc})
                     {
                         chk_box_tunningCheckedChanged(cb, EventArgs.Empty);
@@ -446,6 +477,8 @@ namespace MissionPlanner.GCSViews
 
             tabControlactions.Multiline = Settings.Instance.GetBoolean("tabControlactions_Multiline", false);
 
+            UpdateFmtFlightModeBar();
+
         }
 
         public void Activate()
@@ -491,7 +524,8 @@ namespace MissionPlanner.GCSViews
                         string desc = Settings.Instance["quickView" + f];
                         if (QV.Tag == null)
                             QV.Tag = desc;
-                        QV.desc = MainV2.comPort.MAV.cs.GetNameandUnit(desc);
+                        QV.desc = FmtTelemetryLocalization.Display(desc,
+                            MainV2.comPort.MAV.cs.GetNameandUnit(desc));
 
                         // set databinding for value
                         QV.DataBindings.Clear();
@@ -522,7 +556,8 @@ namespace MissionPlanner.GCSViews
                             string desc = QV.desc;
                             if (QV.Tag == null)
                                 QV.Tag = desc;
-                            QV.desc = MainV2.comPort.MAV.cs.GetNameandUnit(QV.Tag.ToString());
+                            QV.desc = FmtTelemetryLocalization.Display(QV.Tag.ToString(),
+                                MainV2.comPort.MAV.cs.GetNameandUnit(QV.Tag.ToString()));
                         }
                     }
                     catch (Exception ex)
@@ -567,6 +602,8 @@ namespace MissionPlanner.GCSViews
 
             // update tabs displayed
             updateDisplayView();
+
+            UpdateFmtFlightModeBar();
 
             hud1.doResize();
         }
@@ -1816,16 +1853,73 @@ namespace MissionPlanner.GCSViews
 
         private void BUT_setmode_Click(object sender, EventArgs e)
         {
+            RequestFmtFlightMode(CMB_modes.Text);
+        }
+
+        private void RequestFmtFlightMode(string mode)
+        {
+            if (string.IsNullOrWhiteSpace(mode))
+                return;
+
+            if (MainV2.comPort.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
+            {
+                CustomMessageBox.Show("尚未連線飛控，無法切換飛行模式。", "FMT 飛行模式");
+                return;
+            }
+
             if (MainV2.comPort.MAV.cs.failsafe)
             {
-                if (CustomMessageBox.Show("You are in failsafe, are you sure?", "Failsafe", MessageBoxButtons.YesNo) !=
+                if (CustomMessageBox.Show("飛控目前處於 Failsafe，仍要切換模式嗎？", "Failsafe", MessageBoxButtons.YesNo) !=
                     (int) DialogResult.Yes)
                 {
                     return;
                 }
             }
 
-            MainV2.comPort.setMode(CMB_modes.Text);
+            var supportedMode = fmtSupportedModes.FirstOrDefault(value =>
+                string.Equals(value, mode, StringComparison.OrdinalIgnoreCase));
+            if (supportedMode == null)
+            {
+                CustomMessageBox.Show("目前連線構型不支援模式：" + mode, "FMT 飛行模式");
+                return;
+            }
+
+            try
+            {
+                MainV2.comPort.setMode(supportedMode);
+                CMB_modes.Text = supportedMode;
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+                CustomMessageBox.Show(Strings.CommandFailed + "\n" + ex.Message, Strings.ERROR);
+            }
+        }
+
+        private void UpdateFmtFlightModeBar()
+        {
+            if (fmtFlightModeBar == null || fmtFlightModeBar.IsDisposed)
+                return;
+
+            var firmware = MainV2.comPort.MAV.cs.firmware;
+            var isQuadPlane = firmware == Firmwares.ArduPlane &&
+                              MainV2.comPort.MAV.param.ContainsKey("Q_ENABLE") &&
+                              MainV2.comPort.MAV.param["Q_ENABLE"].Value != 0;
+
+            if (!fmtModeListLoaded || fmtModeFirmware != firmware || fmtModeIsQuadPlane != isQuadPlane)
+            {
+                fmtModeFirmware = firmware;
+                fmtModeIsQuadPlane = isQuadPlane;
+                fmtModeListLoaded = true;
+                var modes = ArduPilot.Common.getModesList(firmware);
+                fmtSupportedModes = modes == null
+                    ? new List<string>()
+                    : modes.Select(pair => pair.Value).Where(value => !string.IsNullOrWhiteSpace(value)).ToList();
+            }
+
+            var connected = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
+            fmtFlightModeBar.UpdateVehicle(firmware, isQuadPlane, connected,
+                MainV2.comPort.MAV.cs.mode, fmtSupportedModes);
         }
 
         private void BUT_setwp_Click(object sender, EventArgs e)
@@ -2660,7 +2754,8 @@ namespace MissionPlanner.GCSViews
                 string desc = checkbox.Name;
                 ((QuickView) checkbox.Tag).Tag = desc;
 
-                desc = MainV2.comPort.MAV.cs.GetNameandUnit(desc);
+                desc = FmtTelemetryLocalization.Display(desc,
+                    MainV2.comPort.MAV.cs.GetNameandUnit(desc));
 
                 ((QuickView) checkbox.Tag).desc = desc;
 
@@ -3024,6 +3119,8 @@ namespace MissionPlanner.GCSViews
             {
                 modifyandSetLoiterRad.Enabled = false;
             }
+
+            UpdateFmtFlightModeBar();
         }
 
         private void FlightData_Resize(object sender, EventArgs e)
@@ -3403,7 +3500,7 @@ namespace MissionPlanner.GCSViews
                 Name = "select",
                 Width = 50,
                 Height = 50,
-                Text = "Display This",
+                Text = "選擇顯示項目",
                 AutoSize = true,
                 StartPosition = FormStartPosition.CenterParent,
                 MaximizeBox = false,
@@ -3433,15 +3530,17 @@ namespace MissionPlanner.GCSViews
                 {
                     if (CurrentState.custom_field_names.ContainsKey(field.Name))
                     {
-                        string name = CurrentState.custom_field_names[field.Name];
+                        string name = FmtTelemetryLocalization.Field(field.Name,
+                            CurrentState.custom_field_names[field.Name]);
                         max_length = Math.Max(max_length, TextRenderer.MeasureText(name, selectform.Font).Width);
                         fields.Add((field.Name, name));
                     }
                 }
                 else
                 {
-                    max_length = Math.Max(max_length, TextRenderer.MeasureText(field.Name, selectform.Font).Width);
-                    fields.Add((field.Name, field.Name));
+                    string name = FmtTelemetryLocalization.Field(field.Name);
+                    max_length = Math.Max(max_length, TextRenderer.MeasureText(name, selectform.Font).Width);
+                    fields.Add((field.Name, name));
                 }
             }
 
@@ -4767,7 +4866,7 @@ namespace MissionPlanner.GCSViews
                 Name = "select",
                 Width = MainV2.instance.Width - 100,
                 Height = MainV2.instance.Height - 100,
-                Text = "Display This",
+                Text = "選擇顯示項目",
                 AutoSize = false,
                 StartPosition = FormStartPosition.CenterParent,
                 MaximizeBox = false,
@@ -4805,14 +4904,16 @@ namespace MissionPlanner.GCSViews
                 {
                     if (CurrentState.custom_field_names.ContainsKey(field.Name))
                     {
-                        string name = CurrentState.custom_field_names[field.Name];
+                        string name = FmtTelemetryLocalization.Field(field.Name,
+                            CurrentState.custom_field_names[field.Name]);
                         max_length = Math.Max(max_length, TextRenderer.MeasureText(name, selectform.Font).Width);
                         fields.Add((field.Name, name));
                     }
                 }
                 else
                 {
-                    var fieldDesc = MainV2.comPort.MAV.cs.GetFieldDesc(field.Name);
+                    var fieldDesc = FmtTelemetryLocalization.Field(field.Name,
+                        MainV2.comPort.MAV.cs.GetFieldDesc(field.Name));
                     max_length = Math.Max(max_length, TextRenderer.MeasureText(fieldDesc, selectform.Font).Width);
                     fields.Add((field.Name, fieldDesc));
                 }
@@ -5675,6 +5776,7 @@ namespace MissionPlanner.GCSViews
                     //Console.Write("bindingSourceHud ");
                     MainV2.comPort.MAV.cs.UpdateCurrentSettings(
                         bindingSourceHud.UpdateDataSource(MainV2.comPort.MAV.cs));
+                    UpdateFmtFlightModeBar();
                     //Console.WriteLine("DONE ");
 
                     if (tabControlactions.SelectedTab == tabStatus)
@@ -5886,7 +5988,7 @@ namespace MissionPlanner.GCSViews
                 Name = "select",
                 Width = 50,
                 Height = 50,
-                Text = "Display This",
+                Text = "選擇顯示項目",
                 AutoSize = true,
                 StartPosition = FormStartPosition.CenterParent,
                 MaximizeBox = false,
@@ -5916,15 +6018,17 @@ namespace MissionPlanner.GCSViews
                 {
                     if (CurrentState.custom_field_names.ContainsKey(field.Name))
                     {
-                        string name = CurrentState.custom_field_names[field.Name];
+                        string name = FmtTelemetryLocalization.Field(field.Name,
+                            CurrentState.custom_field_names[field.Name]);
                         max_length = Math.Max(max_length, TextRenderer.MeasureText(name, selectform.Font).Width);
                         fields.Add((field.Name, name));
                     }
                 }
                 else
                 {
-                    max_length = Math.Max(max_length, TextRenderer.MeasureText(field.Name, selectform.Font).Width);
-                    fields.Add((field.Name, field.Name));
+                    string name = FmtTelemetryLocalization.Field(field.Name);
+                    max_length = Math.Max(max_length, TextRenderer.MeasureText(name, selectform.Font).Width);
+                    fields.Add((field.Name, name));
                 }
             }
 

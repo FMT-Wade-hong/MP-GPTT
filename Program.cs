@@ -160,6 +160,7 @@ namespace MissionPlanner
             Thread = Thread.CurrentThread;
 
             System.Windows.Forms.Application.EnableVisualStyles();
+            FMT.FmtBranding.ApplyTaskbarIdentity();
             XmlConfigurator.Configure(LogManager.GetRepository(Assembly.GetCallingAssembly()));
             if (Environment.OSVersion.Platform == PlatformID.Unix)
             {

@@ -43,6 +43,8 @@ namespace MissionPlanner
                         itemp.Target = MAV.cs.target_bearing;
                         itemp.Nav_bearing = MAV.cs.nav_bearing;
                         itemp.Radius = (float)CurrentState.fromDistDisplayUnit(MAV.cs.radius);
+                        itemp.IsVtol = MAV.aptype >= MAVLink.MAV_TYPE.VTOL_DUOROTOR &&
+                                      MAV.aptype <= MAVLink.MAV_TYPE.VTOL_RESERVED5;
                         itemp.IsActive = MAV == MainV2.comPort?.MAV;
                         return null;
                     }
@@ -84,7 +86,8 @@ namespace MissionPlanner
                     MAV.cs.groundcourse,
                     MAV.cs.nav_bearing,
                     MAV.cs.target_bearing,
-                    (float)CurrentState.fromDistDisplayUnit(MAV.cs.radius))
+                    (float)CurrentState.fromDistDisplayUnit(MAV.cs.radius),
+                    MAV.aptype >= MAVLink.MAV_TYPE.VTOL_DUOROTOR && MAV.aptype <= MAVLink.MAV_TYPE.VTOL_RESERVED5)
                 {
                     IsActive = MAV == MainV2.comPort?.MAV,
                     ToolTipText = ArduPilot.Common.speechConversion(MAV, "" + Settings.Instance["mapicondesc"]),
