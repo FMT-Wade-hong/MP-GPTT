@@ -18,6 +18,10 @@ namespace MissionPlanner.Plugin
     public class PluginLoader
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly object FileCacheLock = new object();
+        private static int assemblyResolverRegistered;
+        private static int loadAllStarted;
+        private static int scriptCompilationPending;
 
         static PluginLoader()
         {
@@ -36,6 +40,49 @@ namespace MissionPlanner.Plugin
 
         public static Dictionary<string, string> ErrorInfo = new Dictionary<string, string>();
 
+        public static bool RequiresRunner
+        {
+            get
+            {
+                lock (Plugins)
+                    return Plugins.Count > 0 || Volatile.Read(ref scriptCompilationPending) != 0;
+            }
+        }
+
+        private static void RegisterAssemblyResolverOnce()
+        {
+            if (Interlocked.CompareExchange(ref assemblyResolverRegistered, 1, 0) != 0)
+                return;
+
+            AppDomain.CurrentDomain.AssemblyResolve += LoadFromSameFolder;
+        }
+
+        private static string[] GetCachedAssemblyFiles(string folderPath)
+        {
+            if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+                return new string[0];
+
+            lock (FileCacheLock)
+            {
+                string[] cached;
+                if (filecache.TryGetValue(folderPath, out cached))
+                    return cached;
+
+                try
+                {
+                    cached = Directory.GetFiles(folderPath, "*.dll", SearchOption.AllDirectories);
+                }
+                catch (Exception ex)
+                {
+                    log.Warn("Unable to index assemblies in " + folderPath, ex);
+                    cached = new string[0];
+                }
+
+                filecache[folderPath] = cached;
+                return cached;
+            }
+        }
+
         static Assembly LoadFromSameFolder(object sender, ResolveEventArgs args)
         {
             if (args.RequestingAssembly == null)
@@ -43,19 +90,8 @@ namespace MissionPlanner.Plugin
 
             // check install folder
             string folderPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            if (filecache.ContainsKey(folderPath))
-            {
-
-            }
-            else
-            {
-                string[] search1 = Directory.GetFiles(folderPath, "*.dll",
-                    SearchOption.AllDirectories);
-
-                filecache[folderPath] = search1;
-            }
-
-            foreach (var file in filecache[folderPath].Where(a => a.ToLower().Contains(new AssemblyName(args.Name).Name.ToLower() + ".dll")))
+            foreach (var file in GetCachedAssemblyFiles(folderPath).Where(a =>
+                         a.EndsWith(new AssemblyName(args.Name).Name + ".dll", StringComparison.OrdinalIgnoreCase)))
             {
                 try
                 {
@@ -68,19 +104,8 @@ namespace MissionPlanner.Plugin
 
             // check local directory
             folderPath = Path.GetDirectoryName(args.RequestingAssembly.Location);
-            if (filecache.ContainsKey(folderPath))
-            {
-
-            }
-            else
-            {
-                string[] search1 = Directory.GetFiles(folderPath, "*.dll",
-                    SearchOption.AllDirectories);
-
-                filecache[folderPath] = search1;
-            }
-
-            foreach (var file in filecache[folderPath].Where(a => a.ToLower().Contains(new AssemblyName(args.Name).Name.ToLower() + ".dll")))
+            foreach (var file in GetCachedAssemblyFiles(folderPath).Where(a =>
+                         a.EndsWith(new AssemblyName(args.Name).Name + ".dll", StringComparison.OrdinalIgnoreCase)))
             {
                 try
                 {
@@ -118,8 +143,7 @@ namespace MissionPlanner.Plugin
                                                  Path.DirectorySeparatorChar + Path.GetFileName(file)))
                 return;
 
-            AppDomain currentDomain = AppDomain.CurrentDomain;
-            currentDomain.AssemblyResolve += new ResolveEventHandler(LoadFromSameFolder);
+            RegisterAssemblyResolverOnce();
 
             Assembly asm = null;
 
@@ -202,6 +226,12 @@ namespace MissionPlanner.Plugin
 
         public static void LoadAll()
         {
+            if (Interlocked.CompareExchange(ref loadAllStarted, 1, 0) != 0)
+            {
+                log.Info("Plugin loading has already been started; duplicate request ignored.");
+                return;
+            }
+
             string path = Settings.GetRunningDirectory() + "plugins" +
                           Path.DirectorySeparatorChar;
 
@@ -210,96 +240,94 @@ namespace MissionPlanner.Plugin
             if (!Directory.Exists(path))
                 return;
 
+            RegisterAssemblyResolverOnce();
+
+            String[] csFiles = Directory.GetFiles(path, "*.cs");
+
             // cs plugins are background compiled, and loaded in the ui thread
-            Task.Run(() =>
+            if (csFiles.Length > 0)
             {
-                String[] csFiles = Directory.GetFiles(path, "*.cs");
-
-                foreach (var csFile in csFiles)
+                Interlocked.Exchange(ref scriptCompilationPending, 1);
+                Task.Run(() =>
                 {
-                    log.Info("Plugin: " + csFile);
-                    //Check if it is disabled (moved out from the previous IF, to make it loggable)
-                    if (DisabledPluginNames.Contains(Path.GetFileName(csFile).ToLower()))
-                    { 
-                        log.InfoFormat("Plugin {0} is disabled in config.xml", Path.GetFileName(csFile));
-                        continue;
-                    }
-
-                    //loadassembly: MissionPlanner.WebAPIs
-                    var content = File.ReadAllText(csFile);
-
-                    var matches = Regex.Matches(content, @"^\/\/loadassembly: (.*)$", RegexOptions.Multiline);
-                    foreach (Match m in matches)
-                    {
-                        try
-                        {
-                            log.Info("Try load " + m.Groups[1].Value.Trim());
-                            Assembly.Load(m.Groups[1].Value.Trim());
-                        }
-                        catch (Exception ex)
-                        {
-                            log.Error(ex);
-                        }
-                    }
-
                     try
                     {
-                        // csharp 8
-                        var ans = CodeGenRoslyn.BuildCode(csFile);
-
-                        if (CodeGenRoslyn.lasterror != "")
-                            lock(ErrorInfo)
-                                ErrorInfo[csFile] = CodeGenRoslyn.lasterror;
-
-                        InitPlugin(ans, Path.GetFileName(csFile));
-
-                        log.Info("CodeGenRoslyn: " + csFile);
-                        if (Program.MONO)
-                            Thread.Sleep(2000);
-                        continue;
-                    }
-                    catch (Exception ex)
-                    {
-                        log.Error(ex);
-                    }
-
-
-                    try
-                    {
-                        //csharp 5 max
-
-                        // create a compiler
-                        var compiler = CodeGen.CreateCompiler();
-                        // get all the compiler parameters
-                        var parms = CodeGen.CreateCompilerParameters();
-                        // compile the code into an assembly
-                        var results = CodeGen.CompileCodeFile(compiler, parms, csFile);
-
-                        if (CodeGenRoslyn.lasterror != "")
-                            lock (ErrorInfo)
-                                ErrorInfo[csFile] = CodeGen.lasterror;
-
-                        InitPlugin(results?.CompiledAssembly, Path.GetFileName(csFile));
-
-                        if (results?.CompiledAssembly != null)
+                        foreach (var csFile in csFiles)
                         {
-                            log.Info("CodeGen: " + csFile);
-                            if (Program.MONO)
-                                Thread.Sleep(2000);
-                            continue;
+                            log.Info("Plugin: " + csFile);
+                            if (DisabledPluginNames.Contains(Path.GetFileName(csFile).ToLower()))
+                            {
+                                log.InfoFormat("Plugin {0} is disabled in config.xml", Path.GetFileName(csFile));
+                                continue;
+                            }
+
+                            var content = File.ReadAllText(csFile);
+                            var matches = Regex.Matches(content, @"^\/\/loadassembly: (.*)$", RegexOptions.Multiline);
+                            foreach (Match m in matches)
+                            {
+                                try
+                                {
+                                    log.Info("Try load " + m.Groups[1].Value.Trim());
+                                    Assembly.Load(m.Groups[1].Value.Trim());
+                                }
+                                catch (Exception ex)
+                                {
+                                    log.Error(ex);
+                                }
+                            }
+
+                            try
+                            {
+                                var ans = CodeGenRoslyn.BuildCode(csFile);
+
+                                if (CodeGenRoslyn.lasterror != "")
+                                    lock(ErrorInfo)
+                                        ErrorInfo[csFile] = CodeGenRoslyn.lasterror;
+
+                                InitPlugin(ans, Path.GetFileName(csFile));
+
+                                log.Info("CodeGenRoslyn: " + csFile);
+                                if (Program.MONO)
+                                    Thread.Sleep(2000);
+                                continue;
+                            }
+                            catch (Exception ex)
+                            {
+                                log.Error(ex);
+                            }
+
+                            try
+                            {
+                                var compiler = CodeGen.CreateCompiler();
+                                var parms = CodeGen.CreateCompilerParameters();
+                                var results = CodeGen.CompileCodeFile(compiler, parms, csFile);
+
+                                if (CodeGenRoslyn.lasterror != "")
+                                    lock (ErrorInfo)
+                                        ErrorInfo[csFile] = CodeGen.lasterror;
+
+                                InitPlugin(results?.CompiledAssembly, Path.GetFileName(csFile));
+
+                                if (results?.CompiledAssembly != null)
+                                {
+                                    log.Info("CodeGen: " + csFile);
+                                    if (Program.MONO)
+                                        Thread.Sleep(2000);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                log.Error(ex);
+                            }
                         }
                     }
-                    catch (Exception ex)
+                    finally
                     {
-                        log.Error(ex);
+                        MainV2.instance.BeginInvokeIfRequired(PluginInit);
+                        Interlocked.Exchange(ref scriptCompilationPending, 0);
                     }
-                }
-
-                MainV2.instance.BeginInvokeIfRequired(() =>
-                {
-                    PluginInit();
                 });
-            });
+            }
 
             String[] files = Directory.GetFiles(path, "*.dll");
             foreach (var s in files)

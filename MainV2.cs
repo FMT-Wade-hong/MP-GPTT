@@ -3286,14 +3286,21 @@ namespace MissionPlanner
             log.Info("start plugin thread");
             try
             {
-                // setup main plugin thread
-                pluginthread = new Thread(PluginThread)
+                // Empty or absent plugin directories must not create an idle worker.
+                if (Plugin.PluginLoader.RequiresRunner)
                 {
-                    IsBackground = true,
-                    Name = "plugin runner thread",
-                    Priority = ThreadPriority.BelowNormal
-                };
-                pluginthread.Start();
+                    pluginthread = new Thread(PluginThread)
+                    {
+                        IsBackground = true,
+                        Name = "plugin runner thread",
+                        Priority = ThreadPriority.BelowNormal
+                    };
+                    pluginthread.Start();
+                }
+                else
+                {
+                    log.Info("No runnable plugins; plugin runner thread was not started.");
+                }
             }
             catch (NotSupportedException ex)
             {
