@@ -405,10 +405,14 @@ namespace MissionPlanner
             {
                 if (_comPort == value)
                     return;
+
+                var previousPort = _comPort;
+                if (instance != null && previousPort != null)
+                    previousPort.MavChanged -= instance.comPort_MavChanged;
+
                 _comPort = value;
                 if (instance == null)
                     return;
-                _comPort.MavChanged -= instance.comPort_MavChanged;
                 _comPort.MavChanged += instance.comPort_MavChanged;
                 instance.comPort_MavChanged(null, null);
             }
@@ -1037,7 +1041,7 @@ namespace MissionPlanner
 
             Warnings.CustomWarning.defaultsrc = comPort.MAV.cs;
             Warnings.WarningEngine.Start(speechEnable ? speechEngine : null);
-            Warnings.WarningEngine.WarningMessage += (sender, s) => { MainV2.comPort.MAV.cs.messageHigh = s; };
+            Warnings.WarningEngine.WarningMessage += WarningEngine_WarningMessage;
             Warnings.WarningEngine.QuickPanelColoring += WarningEngine_QuickPanelColoring;
 
             if (CurrentState.rateattitudebackup == 0) // initilised to 10, configured above from save
@@ -2001,6 +2005,16 @@ namespace MissionPlanner
             base.OnClosing(e);
 
             log.Info("MainV2_FormClosing");
+
+            LayoutChanged -= updateLayout;
+            MainV2.comPort.MavChanged -= comPort_MavChanged;
+            Warnings.WarningEngine.WarningMessage -= WarningEngine_WarningMessage;
+            Warnings.WarningEngine.QuickPanelColoring -= WarningEngine_QuickPanelColoring;
+#if !NETSTANDARD2_0
+#if !NETCOREAPP2_0
+            Microsoft.Win32.SystemEvents.PowerModeChanged -= SystemEvents_PowerModeChanged;
+#endif
+#endif
 
             log.Info("GMaps write cache");
             // speed up tile saving on exit
@@ -5329,6 +5343,11 @@ namespace MissionPlanner
                     break;
                 }
             }
+        }
+
+        private void WarningEngine_WarningMessage(object sender, string message)
+        {
+            MainV2.comPort.MAV.cs.messageHigh = message;
         }
     }
 }

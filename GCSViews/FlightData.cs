@@ -3014,6 +3014,12 @@ namespace MissionPlanner.GCSViews
         {
             threadrun = false;
 
+            MainV2.comPort.ParamListChanged -= FlightData_ParentChanged;
+            POI.POIModified -= POI_POIModified;
+            NoFly.NoFly.NoFlyEvent -= NoFly_NoFlyEvent;
+            if (MainV2.cam != null)
+                MainV2.cam.camimage -= cam_camimage;
+
             DateTime end = DateTime.Now.AddSeconds(5);
 
             if (thisthread == null)
@@ -3103,6 +3109,7 @@ namespace MissionPlanner.GCSViews
         {
             if (MainV2.cam != null)
             {
+                MainV2.cam.camimage -= cam_camimage;
                 MainV2.cam.camimage += cam_camimage;
             }
 

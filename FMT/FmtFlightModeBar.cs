@@ -44,6 +44,7 @@ namespace MissionPlanner.FMT
             new Dictionary<string, Button>(StringComparer.OrdinalIgnoreCase);
         private List<ModeGroup> visibleGroups = new List<ModeGroup>();
         private string layoutSignature = string.Empty;
+        private string vehicleStateSignature = string.Empty;
         private bool connected;
         private string currentMode = string.Empty;
 
@@ -96,9 +97,15 @@ namespace MissionPlanner.FMT
             var groups = GetModeGroups(firmware, isQuadPlane);
             var signature = firmware + "|" + isQuadPlane + "|" +
                             string.Join(",", supported.Values.OrderBy(value => value, StringComparer.OrdinalIgnoreCase));
+            var normalizedActiveMode = NormalizeModeName(activeMode);
+            var nextVehicleStateSignature = signature + "|" + isConnected + "|" + normalizedActiveMode;
+
+            if (string.Equals(vehicleStateSignature, nextVehicleStateSignature, StringComparison.Ordinal))
+                return;
 
             connected = isConnected;
             currentMode = activeMode ?? string.Empty;
+            vehicleStateSignature = nextVehicleStateSignature;
 
             if (!string.Equals(layoutSignature, signature, StringComparison.Ordinal))
             {
