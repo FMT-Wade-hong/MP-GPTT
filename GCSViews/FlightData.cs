@@ -58,6 +58,7 @@ namespace MissionPlanner.GCSViews
         private readonly GMapOverlay taiwanCaaOverlay = new GMapOverlay("Taiwan CAA Airspace");
         private readonly HashSet<string> taiwanCaaZoneIds = new HashSet<string>();
         private readonly FmtFlightModeBar fmtFlightModeBar;
+        private readonly FmtAutoMissionPanel fmtAutoMissionPanel;
         private readonly CheckBox chkFmtAirspace;
         private DateTime fmtLastAirspaceRefresh = DateTime.MinValue;
         private bool fmtAirspaceRefreshRunning;
@@ -279,6 +280,9 @@ namespace MissionPlanner.GCSViews
             fmtFlightModeBar.SizeChanged += (sender, args) => LayoutFmtFlightModeArea();
             SubMainLeft.Panel2.Resize += (sender, args) => LayoutFmtFlightModeArea();
             LayoutFmtFlightModeArea();
+
+            fmtAutoMissionPanel = new FmtAutoMissionPanel();
+            ConfigureFmtAutoMissionPanel();
 
             // GPS satellite count and HDOP are shown in the FMT top toolbar.
             // Hide the duplicate map-overlay values to keep the lower legend clear.
@@ -625,6 +629,7 @@ namespace MissionPlanner.GCSViews
             updateDisplayView();
 
             UpdateFmtFlightModeBar();
+            fmtAutoMissionPanel.UpdateFromVehicle(true);
 
             hud1.doResize();
         }
@@ -1981,6 +1986,29 @@ namespace MissionPlanner.GCSViews
                 Math.Max(0, SubMainLeft.Panel2.ClientSize.Height - tabsTop));
             tabControlactions.Anchor = AnchorStyles.Top | AnchorStyles.Bottom |
                                        AnchorStyles.Left | AnchorStyles.Right;
+        }
+
+        private void ConfigureFmtAutoMissionPanel()
+        {
+            if (tableMap == null || splitContainer1 == null || panel1 == null || fmtAutoMissionPanel == null)
+                return;
+
+            tableMap.SuspendLayout();
+            try
+            {
+                tableMap.RowCount = 3;
+                tableMap.RowStyles.Clear();
+                tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, 56F));
+                tableMap.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+                tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, 25F));
+                tableMap.SetRow(splitContainer1, 1);
+                tableMap.SetRow(panel1, 2);
+                tableMap.Controls.Add(fmtAutoMissionPanel, 0, 0);
+            }
+            finally
+            {
+                tableMap.ResumeLayout(true);
+            }
         }
 
         private void BUT_setwp_Click(object sender, EventArgs e)
@@ -5916,6 +5944,7 @@ namespace MissionPlanner.GCSViews
                     MainV2.comPort.MAV.cs.UpdateCurrentSettings(
                         bindingSourceHud.UpdateDataSource(MainV2.comPort.MAV.cs));
                     UpdateFmtFlightModeBar();
+                    fmtAutoMissionPanel.UpdateFromVehicle();
                     //Console.WriteLine("DONE ");
 
                     if (tabControlactions.SelectedTab == tabStatus)
