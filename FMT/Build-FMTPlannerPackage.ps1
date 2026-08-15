@@ -66,6 +66,25 @@ $staleMissionPlannerOutputs = @(
     'MissionPlanner.exe.config',
     'MissionPlanner.pdb'
 )
+$excludedFiles = @()
+$excludedBytes = 0L
+
+function Get-ReleaseExclusionReason([string]$RelativePath) {
+    $extension = [IO.Path]::GetExtension($RelativePath)
+    if ($staleMissionPlannerOutputs -contains $RelativePath) {
+        return 'stale Mission Planner output'
+    }
+    if ($extension -ieq '.pdb') {
+        return 'debug symbols'
+    }
+    if ($extension -ieq '.so' -or $extension -ieq '.dylib') {
+        return 'non-Windows native library'
+    }
+    if ($RelativePath -like 'plugins\example*.cs') {
+        return 'developer example plugin source'
+    }
+    return $null
+}
 
 try {
     $stream = [IO.File]::Open($temporaryOutput, [IO.FileMode]::CreateNew)
@@ -73,10 +92,21 @@ try {
         $archive = [IO.Compression.ZipArchive]::new(
             $stream, [IO.Compression.ZipArchiveMode]::Create, $false)
         try {
-            $files = @(Get-ChildItem -LiteralPath $sourcePath -Recurse -File | Where-Object {
-                $relative = $_.FullName.Substring($sourcePath.Length).TrimStart('\', '/')
-                $staleMissionPlannerOutputs -notcontains $relative
-            })
+            $files = @()
+            foreach ($candidate in Get-ChildItem -LiteralPath $sourcePath -Recurse -File) {
+                $relative = $candidate.FullName.Substring($sourcePath.Length).TrimStart('\', '/')
+                $reason = Get-ReleaseExclusionReason $relative
+                if ($null -ne $reason) {
+                    $excludedFiles += [PSCustomObject]@{
+                        Path = $relative
+                        Reason = $reason
+                        Bytes = $candidate.Length
+                    }
+                    $excludedBytes += $candidate.Length
+                    continue
+                }
+                $files += $candidate
+            }
 
             foreach ($file in $files) {
                 $relativePath = $file.FullName.Substring($sourcePath.Length).TrimStart('\', '/')
@@ -119,6 +149,27 @@ try {
             finally {
                 $writer.Dispose()
             }
+
+            $manifestEntry = $archive.CreateEntry(
+                "$rootFolder/RELEASE-MANIFEST.txt",
+                [IO.Compression.CompressionLevel]::Optimal)
+            $manifestWriter = [IO.StreamWriter]::new($manifestEntry.Open(), [Text.UTF8Encoding]::new($true))
+            try {
+                $manifestWriter.WriteLine('FMTPlanner Windows stable package manifest')
+                $manifestWriter.WriteLine('Version: ' + $ReleaseVersion)
+                $manifestWriter.WriteLine('Runtime files: ' + $files.Count)
+                $manifestWriter.WriteLine('Excluded non-runtime/developer files: ' + $excludedFiles.Count)
+                $manifestWriter.WriteLine('Excluded bytes: ' + $excludedBytes)
+                $manifestWriter.WriteLine('')
+                $manifestWriter.WriteLine('Exclusion policy:')
+                $manifestWriter.WriteLine('- PDB debug symbols are retained in build output, not in the public ZIP.')
+                $manifestWriter.WriteLine('- macOS/Linux .dylib/.so files are not included in the Windows ZIP.')
+                $manifestWriter.WriteLine('- plugins/example*.cs developer samples remain in source control, not in the stable ZIP.')
+                $manifestWriter.WriteLine('- Operational DLL plugins, drivers, maps, languages and scripts remain bundled.')
+            }
+            finally {
+                $manifestWriter.Dispose()
+            }
         }
         finally {
             $archive.Dispose()
@@ -133,7 +184,9 @@ try {
     [PSCustomObject]@{
         Output = $outputFile.FullName
         Packaging = 'Portable ZIP (no self-extracting launcher)'
-        FilesBundled = $files.Count + $documentationFiles.Count + 1
+        FilesBundled = $files.Count + $documentationFiles.Count + 2
+        FilesExcluded = $excludedFiles.Count
+        BytesExcluded = $excludedBytes
         SizeBytes = $outputFile.Length
         SHA256 = (Get-FileHash -LiteralPath $outputFullPath -Algorithm SHA256).Hash.ToLowerInvariant()
     }
