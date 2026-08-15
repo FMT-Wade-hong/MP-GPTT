@@ -259,6 +259,11 @@ namespace MissionPlanner.GCSViews
             log.Info("Ctor Start");
 
             InitializeComponent();
+            FmtTraditionalChineseContextMenus.Apply(
+                contextMenuStripHud,
+                contextMenuStripactionstab,
+                contextMenuStripQuickView,
+                contextMenuStripMap);
 
             chkFmtAirspace = new CheckBox
             {
@@ -1268,30 +1273,34 @@ namespace MissionPlanner.GCSViews
                 return;
             }
 
-            var qnhInput = parameters[parameterName].Value.ToString("0", CultureInfo.InvariantCulture);
+            var qnhInput = (parameters[parameterName].Value / 100.0)
+                .ToString("0.00", CultureInfo.InvariantCulture);
             var prompt = IsFmtTraditionalChineseUi
-                ? "請輸入 QNH，單位為 Pa（例如：101325 Pa = 1013.25 hPa）。\r\n有效範圍：80000～110000 Pa。"
-                : "Enter QNH in pascals (for example, 101325 Pa = 1013.25 hPa).\r\nValid range: 80000-110000 Pa.";
+                ? "請輸入 QNH，單位為 hPa（百帕）。\r\n例如：1013.25 hPa。\r\n有效範圍：800～1100 hPa。"
+                : "Enter QNH in hPa (hectopascals).\r\nFor example: 1013.25 hPa.\r\nValid range: 800-1100 hPa.";
             if (InputBox.Show(title, prompt, ref qnhInput) != DialogResult.OK)
                 return;
 
-            double qnhPascals;
-            if (!TryParseFmtQnhPascals(qnhInput, out qnhPascals))
+            double qnhHectopascals;
+            if (!TryParseFmtQnhHectopascals(qnhInput, out qnhHectopascals))
             {
                 CustomMessageBox.Show(IsFmtTraditionalChineseUi
-                        ? "QNH 輸入無效，請輸入 80000～110000 Pa 之間的數字。"
-                        : "Invalid QNH. Enter a number between 80000 and 110000 Pa.",
+                        ? "QNH 輸入無效，請輸入 800～1100 hPa（百帕）之間的數字。"
+                        : "Invalid QNH. Enter a number between 800 and 1100 hPa.",
                     title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
+            // ArduPilot stores GND_ABS_PRESS/BARO1_GND_PRESS in pascals. Keep the
+            // operator-facing value in hPa and convert exactly once before writing.
+            var qnhPascals = qnhHectopascals * 100.0;
             var confirmation = IsFmtTraditionalChineseUi
                 ? string.Format(CultureInfo.CurrentCulture,
-                    "即將設定 QNH 為 {0:0} Pa（{1:0.00} hPa）。\r\n這會改變氣壓高度基準，確定要繼續嗎？",
-                    qnhPascals, qnhPascals / 100.0)
+                    "即將設定 QNH 為 {0:0.00} hPa（百帕）。\r\n這會改變氣壓高度基準，確定要繼續嗎？",
+                    qnhHectopascals)
                 : string.Format(CultureInfo.InvariantCulture,
-                    "Set QNH to {0:0} Pa ({1:0.00} hPa)?\r\nThis changes the barometric altitude reference.",
-                    qnhPascals, qnhPascals / 100.0);
+                    "Set QNH to {0:0.00} hPa?\r\nThis changes the barometric altitude reference.",
+                    qnhHectopascals);
             if (CustomMessageBox.Show(confirmation, title, MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning) != (int)DialogResult.Yes)
                 return;
@@ -1321,12 +1330,14 @@ namespace MissionPlanner.GCSViews
             }
         }
 
-        internal static bool TryParseFmtQnhPascals(string value, out double qnhPascals)
+        internal static bool TryParseFmtQnhHectopascals(string value, out double qnhHectopascals)
         {
-            var parsed = double.TryParse(value, NumberStyles.Float, CultureInfo.CurrentCulture, out qnhPascals) ||
-                         double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out qnhPascals);
-            return parsed && !double.IsNaN(qnhPascals) && !double.IsInfinity(qnhPascals) &&
-                   qnhPascals >= 80000 && qnhPascals <= 110000;
+            var parsed = double.TryParse(value, NumberStyles.Float, CultureInfo.CurrentCulture,
+                             out qnhHectopascals) ||
+                         double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture,
+                             out qnhHectopascals);
+            return parsed && !double.IsNaN(qnhHectopascals) && !double.IsInfinity(qnhHectopascals) &&
+                   qnhHectopascals >= 800 && qnhHectopascals <= 1100;
         }
 
         private static bool IsFmtTraditionalChineseUi =>
@@ -7044,9 +7055,9 @@ namespace MissionPlanner.GCSViews
             }
         }
 
-        ToolStripMenuItem gimbalVideoShowMiniMap = new ToolStripMenuItem("Mini map");
-        ToolStripMenuItem gimbalVideoSwapPosition = new ToolStripMenuItem("Swap with map");
-        ToolStripMenuItem gimbalVideoClose = new ToolStripMenuItem("Close");
+        ToolStripMenuItem gimbalVideoShowMiniMap = new ToolStripMenuItem("小地圖");
+        ToolStripMenuItem gimbalVideoSwapPosition = new ToolStripMenuItem("與地圖交換位置");
+        ToolStripMenuItem gimbalVideoClose = new ToolStripMenuItem("關閉");
         bool gimbalMenuHandlersInitialized = false;
         GimbalVideoControl _gimbalVideoControl;
         GimbalVideoControl gimbalVideoControl

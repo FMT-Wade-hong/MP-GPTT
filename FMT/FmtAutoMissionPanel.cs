@@ -80,13 +80,17 @@ namespace MissionPlanner.FMT
             executeButton = new Button
             {
                 Name = "fmtMissionExecute",
-                Text = "執行",
+                Text = "跳轉航點",
                 Dock = DockStyle.Fill,
                 Margin = new Padding(0, 3, 7, 3),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = SkyBlue,
+                BackColor = FieldBackground,
                 ForeColor = Color.White,
-                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 9F, FontStyle.Bold),
+                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.5F, FontStyle.Bold),
+                Image = CreateJumpWaypointIcon(),
+                ImageAlign = ContentAlignment.MiddleLeft,
+                TextAlign = ContentAlignment.MiddleCenter,
+                TextImageRelation = TextImageRelation.ImageBeforeText,
                 Cursor = Cursors.Hand,
                 UseVisualStyleBackColor = false,
                 Enabled = false
@@ -131,7 +135,7 @@ namespace MissionPlanner.FMT
                 ColumnCount = 9
             };
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            ConfigureColumns(220, 230, 72, 100, 35F, 58, 65F, 90, 82);
+            ConfigureColumns(220, 230, 112, 100, 35F, 58, 65F, 90, 82);
             layout.Controls.Add(currentActionLabel, 0, 0);
             layout.Controls.Add(missionCombo, 1, 0);
             layout.Controls.Add(executeButton, 2, 0);
@@ -464,7 +468,7 @@ namespace MissionPlanner.FMT
             var enabled = !busy && connected && missionItems.Count > 0 && target != null &&
                           target.Sequence > 0 && target.Sequence != GetCurrentSequence();
             var reason = enabled
-                ? "選擇任務項目後，按下執行並完成一次確認。"
+                ? "選擇任務項目後，按下「跳轉航點」並完成一次確認。"
                 : GetDisabledReason(connected, target);
             var signature = busy + "|" + connected + "|" + missionItems.Count + "|" +
                             (target == null ? -1 : target.Sequence) + "|" + GetCurrentSequence() + "|" +
@@ -474,7 +478,7 @@ namespace MissionPlanner.FMT
 
             executeStateSignature = signature;
             executeButton.Enabled = enabled;
-            executeButton.BackColor = enabled ? SkyBlue : Color.FromArgb(58, 70, 77);
+            executeButton.BackColor = enabled ? FieldBackground : Color.FromArgb(58, 70, 77);
             toolTip.SetToolTip(executeButton, reason);
         }
 
@@ -498,7 +502,7 @@ namespace MissionPlanner.FMT
             busy = value;
             executeStateSignature = string.Empty;
             missionCombo.Enabled = !value;
-            executeButton.Text = value ? "切換中…" : "執行";
+            executeButton.Text = value ? "跳轉中…" : "跳轉航點";
             UpdateExecuteState();
         }
 
@@ -542,19 +546,19 @@ namespace MissionPlanner.FMT
 
             if (ClientSize.Width >= 1200)
             {
-                ConfigureColumns(220, 230, 72, 100, 35F, 58, 65F, 90, 82);
+                ConfigureColumns(220, 230, 112, 100, 35F, 58, 65F, 90, 82);
                 etaLabel.Visible = true;
                 distanceLabel.Visible = !string.IsNullOrEmpty(distanceLabel.Text);
             }
             else if (ClientSize.Width >= 930)
             {
-                ConfigureColumns(185, 195, 68, 90, 35F, 52, 65F, 78, 70);
+                ConfigureColumns(185, 195, 106, 90, 35F, 52, 65F, 78, 70);
                 etaLabel.Visible = true;
                 distanceLabel.Visible = !string.IsNullOrEmpty(distanceLabel.Text);
             }
             else
             {
-                ConfigureColumns(165, 170, 64, 88, 42F, 50, 58F, 0, 0);
+                ConfigureColumns(165, 170, 100, 88, 42F, 50, 58F, 0, 0);
                 distanceLabel.Visible = false;
                 etaLabel.Visible = false;
             }
@@ -591,6 +595,39 @@ namespace MissionPlanner.FMT
                 Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 9F, style),
                 Margin = new Padding(4, 0, 4, 0)
             };
+        }
+
+        private static Image CreateJumpWaypointIcon()
+        {
+            var image = new Bitmap(25, 25);
+            using (var graphics = Graphics.FromImage(image))
+            using (var routePen = new Pen(SkyBlue, 2.2F))
+            using (var nodeBrush = new SolidBrush(Background))
+            using (var nodePen = new Pen(SkyBlue, 2F))
+            {
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                graphics.Clear(Color.Transparent);
+                routePen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                routePen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+
+                var points = new[]
+                {
+                    new PointF(5F, 20F), new PointF(10F, 14F),
+                    new PointF(7F, 8F), new PointF(15F, 5F)
+                };
+                graphics.DrawLines(routePen, points);
+                foreach (var point in points)
+                {
+                    graphics.FillEllipse(nodeBrush, point.X - 2.3F, point.Y - 2.3F, 4.6F, 4.6F);
+                    graphics.DrawEllipse(nodePen, point.X - 2.3F, point.Y - 2.3F, 4.6F, 4.6F);
+                }
+
+                // Direction arrow identifies this as a jump-to-waypoint action.
+                graphics.DrawLine(routePen, 14F, 13F, 21F, 18F);
+                graphics.DrawLine(routePen, 21F, 18F, 16F, 19F);
+                graphics.DrawLine(routePen, 21F, 18F, 20F, 13F);
+            }
+            return image;
         }
 
         private static int GetCurrentSequence()

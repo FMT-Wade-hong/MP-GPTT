@@ -60,6 +60,7 @@ namespace MissionPlanner
         public temp()
         {
             InitializeComponent();
+            ApplyFmtAdvancedToolsLayout();
 
             Tracking.AddPage(
                 MethodBase.GetCurrentMethod().DeclaringType.ToString(),
@@ -667,18 +668,15 @@ namespace MissionPlanner
 
         private void BUT_QNH_Click(object sender, EventArgs e)
         {
-            var paramname = MainV2.comPort.MAV.param.ContainsKey("GND_ABS_PRESS") ? "GND_ABS_PRESS" : "BARO1_GND_PRESS";
+            if (!EnsureFmtAdvancedVehicleReady("QNH 氣壓校正", true, true))
+                return;
 
-            var currentQNH = MainV2.comPort.GetParam(paramname).ToString();
-
-            if (InputBox.Show("QNH", "Enter the QNH in pascals (103040 = 1030.4 hPa)", ref currentQNH) ==
-                DialogResult.OK)
-            {
-                var newQNH = double.Parse(currentQNH);
-
-                MainV2.comPort.setParam((byte) MainV2.comPort.sysidcurrent, (byte) MainV2.comPort.compidcurrent,
-                    paramname, newQNH);
-            }
+            // Reuse the guarded hPa implementation shown on the main toolbar.
+            if (FlightData.instance != null)
+                FlightData.instance.ExecuteFmtQnh();
+            else
+                CustomMessageBox.Show("飛行資料頁面尚未完成載入，請稍後再試。",
+                    "FMT QNH", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void but_trimble_Click(object sender, EventArgs e)
@@ -1168,11 +1166,22 @@ namespace MissionPlanner
 
         private void but_acbarohight_Click(object sender, EventArgs e)
         {
-            var paramname = MainV2.comPort.MAV.param.ContainsKey("GND_ABS_PRESS") ? "GND_ABS_PRESS" : "BARO1_GND_PRESS";
+            if (!EnsureFmtAdvancedVehicleReady("調整飛行器氣壓高度", true, true))
+                return;
 
-            var currentQNH = MainV2.comPort.GetParam(paramname).ToString();
+            var paramname = MainV2.comPort.MAV.param.ContainsKey("GND_ABS_PRESS") ? "GND_ABS_PRESS" : "BARO1_GND_PRESS";
+            if (!MainV2.comPort.MAV.param.ContainsKey(paramname))
+            {
+                CustomMessageBox.Show("目前飛控未提供可用的氣壓基準參數。",
+                    "FMTPlanner 進階工具", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var currentQNH = MainV2.comPort.MAV.param[paramname].Value
+                .ToString(CultureInfo.InvariantCulture);
             //338.6388 pa => 100' = 30.48m
-            CustomMessageBox.Show("use at your own risk!!!");
+            CustomMessageBox.Show("此功能會修改飛行器氣壓高度基準，請確認飛機已上鎖並謹慎操作。",
+                "氣壓高度調整", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
             NumericUpDown mavlinkNumericUpDown = new NumericUpDown();
             mavlinkNumericUpDown.Minimum = -100;
@@ -1266,7 +1275,11 @@ namespace MissionPlanner
 
         private void but_paramrestore_Click(object sender, EventArgs e)
         {
-            CustomMessageBox.Show("This process make take a some time");
+            if (!EnsureFmtAdvancedVehicleReady("參數復原", true, true))
+                return;
+
+            CustomMessageBox.Show("參數復原可能需要一些時間，過程中請勿中斷連線。",
+                "參數復原", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             using (var ofd = new OpenFileDialog
             {

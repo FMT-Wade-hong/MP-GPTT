@@ -118,10 +118,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             CMB_language.DisplayMember = "DisplayName";
             CMB_language.DataSource = _languages;
             var currentUiCulture = Thread.CurrentThread.CurrentUICulture;
+            var configuredCulture = CultureInfoEx.GetCultureInfo(Settings.Instance["language"]);
+            var selectedUiCulture = configuredCulture ?? currentUiCulture;
 
             for (var i = 0; i < _languages.Count; i++)
             {
-                if (currentUiCulture.IsChildOf(_languages[i]))
+                if (selectedUiCulture.IsChildOf(_languages[i]))
                 {
                     try
                     {
@@ -418,12 +420,26 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         {
             if (startup)
                 return;
-            MainV2.instance.changelanguage((CultureInfo)CMB_language.SelectedItem);
+            var selectedCulture = CMB_language.SelectedItem as CultureInfo;
+            if (selectedCulture == null)
+                return;
 
-            MessageBox.Show("Please Restart the Planner");
+            MainV2.instance.changelanguage(selectedCulture);
 
-            MainV2.instance.Close();
-            //Application.Exit();
+            var traditionalChinese = selectedCulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+            var restart = MessageBox.Show(
+                traditionalChinese
+                    ? "語言設定已儲存，必須重新啟動才會生效。\r\n\r\n是否立即重新啟動 FMTPlanner？"
+                    : "The language setting has been saved and requires a restart.\r\n\r\nRestart FMTPlanner now?",
+                traditionalChinese ? "語言設定" : "Language Settings",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Information);
+
+            if (restart == DialogResult.Yes)
+            {
+                Settings.Instance.Save();
+                Application.Restart();
+            }
         }
 
         private void CMB_osdcolor_SelectedIndexChanged(object sender, EventArgs e)

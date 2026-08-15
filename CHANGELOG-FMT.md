@@ -1,5 +1,34 @@
 # FMTPlanner release history
 
+## FMTPlanner v1.1.1 — 2026-08-16
+
+### FMT startup and login experience
+
+- Added a new embedded FMT aviation-map splash screen and matching dark login screen with V1.1.1 branding.
+- Added a functional account field, password visibility toggle, optional remembered account and gradient sign-in action while preserving the existing FMT authentication rules.
+- The splash and login artwork is embedded in `FMTPlanner.exe`, so the portable package does not depend on loose external background files.
+
+### Terrain and airspace safety presentation
+
+- Reworked the altitude/terrain profile header so planned-route and terrain ranges no longer overlap.
+- Added route-sampled terrain clearance states: red for terrain collision, yellow for clearance below 30 m and green when no terrain risk is detected. Home is excluded from the minimum-clearance threshold to avoid a false zero-clearance warning at takeoff.
+- Added high-contrast, scrollable Taiwan airspace results: prohibited-area hits use red with white text and restricted-area hits use yellow with dark text. Takeoff, mission and return segments are listed separately and duplicate entries are removed.
+- Localized fence-circle mission commands without changing their MAVLink command values.
+
+### Traditional Chinese UI and layout
+
+- Localized Flight Data and Flight Planner context menus, the advanced-tools window, sensor-status panel and multi-aircraft waypoint-control interface.
+- Reorganized the advanced-tools sensor status area and added DPI-aware scrolling so controls and descriptions remain accessible.
+- Changed QNH entry to hPa (百帕), aligned the airspeed-zero and QNH rounded buttons, added a flight-time icon and changed the AUTO action to the Traditional Chinese `跳轉航點` control.
+- Improved telemetry labels and language switching so English and Traditional Chinese can be selected without corrupting custom labels.
+
+### Stability and mission planning
+
+- Fixed localized mission-command combo initialization causing `NullReferenceException` during Flight Planner startup.
+- Fixed map clicks failing to write latitude and longitude after localized column headers were applied.
+- Added guards for disconnected parameter reads, missing optional resources and null child controls so unsupported advanced actions fail with a clear local message instead of opening the crash reporter.
+- Preserved the privacy-safe GitHub issue workflow: reports remain local and are copied/opened only after explicit operator confirmation.
+
 ## FMTPlanner v1.1.0 — 2026-08-15
 
 ### AUTO Mission Item synchronization

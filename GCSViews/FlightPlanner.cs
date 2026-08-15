@@ -64,6 +64,7 @@ namespace MissionPlanner.GCSViews
         {
             InitializeComponent();
             Init();
+            FmtTraditionalChineseContextMenus.Apply(contextMenuStrip1, contextMenuStripPoly, contextMenuStripZoom);
         }
 
 
@@ -1292,16 +1293,20 @@ namespace MissionPlanner.GCSViews
                 }
             }
 
-            if (Commands.Columns[Lat.Index].HeaderText.Equals("Lat"))
+            // Lat/Lon are coordinate columns even when their visible headers are localized
+            // (for example, "緯度" and "經度").  Do not use HeaderText to decide whether
+            // map coordinates should be written, otherwise fence points created from the map
+            // are left at 0 when the Traditional Chinese UI is active.
+            cell = Commands.Rows[selectedrow].Cells[Lat.Index] as DataGridViewTextBoxCell;
+            if (cell != null)
             {
-                cell = Commands.Rows[selectedrow].Cells[Lat.Index] as DataGridViewTextBoxCell;
                 cell.Value = lat.ToString("0.0000000");
                 cell.DataGridView.EndEdit();
             }
 
-            if (Commands.Columns[Lon.Index].HeaderText.Equals("Long"))
+            cell = Commands.Rows[selectedrow].Cells[Lon.Index] as DataGridViewTextBoxCell;
+            if (cell != null)
             {
-                cell = Commands.Rows[selectedrow].Cells[Lon.Index] as DataGridViewTextBoxCell;
                 cell.Value = lng.ToString("0.0000000");
                 cell.DataGridView.EndEdit();
             }
@@ -7262,8 +7267,8 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                     "",
                     "",
                     "",
-                    "Lat",
-                    "Long",
+                    IsTraditionalChineseUi ? "緯度" : "Lat",
+                    IsTraditionalChineseUi ? "經度" : "Long",
                     ""
                 };
                 var fenceMult = new[] {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
@@ -7271,12 +7276,12 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                 cmdParamMultipliers.Clear();
                 cmdParamNames.Add(MAVLink.MAV_CMD.FENCE_RETURN_POINT.ToString(), fenceNames.ToArray());
                 cmdParamMultipliers.Add(MAVLink.MAV_CMD.FENCE_RETURN_POINT.ToString(), fenceMult);
-                fenceNames[0] = "Points";
+                fenceNames[0] = IsTraditionalChineseUi ? "頂點數" : "Points";
                 cmdParamNames.Add(MAVLink.MAV_CMD.FENCE_POLYGON_VERTEX_INCLUSION.ToString(), fenceNames.ToArray());
                 cmdParamNames.Add(MAVLink.MAV_CMD.FENCE_POLYGON_VERTEX_EXCLUSION.ToString(), fenceNames.ToArray());
                 cmdParamMultipliers.Add(MAVLink.MAV_CMD.FENCE_POLYGON_VERTEX_INCLUSION.ToString(), fenceMult);
                 cmdParamMultipliers.Add(MAVLink.MAV_CMD.FENCE_POLYGON_VERTEX_EXCLUSION.ToString(), fenceMult);
-                fenceNames[0] = "Radius (m)"; // Don't actually convert, but make it clear it's meters
+                fenceNames[0] = IsTraditionalChineseUi ? "半徑（m）" : "Radius (m)"; // Don't actually convert, but make it clear it's meters
                 cmdParamNames.Add(MAVLink.MAV_CMD.FENCE_CIRCLE_EXCLUSION.ToString(), fenceNames.ToArray());
                 cmdParamNames.Add(MAVLink.MAV_CMD.FENCE_CIRCLE_INCLUSION.ToString(), fenceNames.ToArray());
                 cmdParamMultipliers.Add(MAVLink.MAV_CMD.FENCE_CIRCLE_EXCLUSION.ToString(), fenceMult);
@@ -7311,7 +7316,16 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
 
             cmds.Add("UNKNOWN");
 
-            Command.DataSource = cmds;
+            var commandOptions = cmds.Select(cmd => new FmtMissionCommandOption
+            {
+                Value = cmd,
+                Display = GetFmtMissionCommandDisplay(cmd)
+            }).ToList();
+            // DataGridViewComboBoxColumn in .NET Framework can throw while resolving
+            // DisplayMember when it is assigned before a data source exists.
+            Command.DataSource = commandOptions;
+            Command.DisplayMember = nameof(FmtMissionCommandOption.Display);
+            Command.ValueMember = nameof(FmtMissionCommandOption.Value);
 
             log.InfoFormat("Command item count {0} orig list {1}", Command.Items.Count, cmds.Count);
 
@@ -7336,6 +7350,38 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
             }
 
 
+        }
+
+        private static string GetFmtMissionCommandDisplay(string command)
+        {
+            if (!IsTraditionalChineseUi)
+                return command;
+
+            switch (command)
+            {
+                case "FENCE_RETURN_POINT":
+                    return "圍籬返航點";
+                case "FENCE_POLYGON_VERTEX_INCLUSION":
+                    return "多邊形納入點";
+                case "FENCE_POLYGON_VERTEX_EXCLUSION":
+                    return "多邊形排除點";
+                case "FENCE_CIRCLE_INCLUSION":
+                    return "圓形納入區";
+                case "FENCE_CIRCLE_EXCLUSION":
+                    return "圓形排除區";
+                case "RALLY_POINT":
+                    return "備降集合點";
+                case "UNKNOWN":
+                    return "未知命令";
+                default:
+                    return command;
+            }
+        }
+
+        private sealed class FmtMissionCommandOption
+        {
+            public string Value { get; set; }
+            public string Display { get; set; }
         }
 
         private void updateHomeText()
@@ -8262,9 +8308,7 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                 }
                 else
                 {
-                    ShowFmtScrollableCheckResult("FMT 限禁航區檢查",
-                        (IsTraditionalChineseUi ? "航線檢查警告：\r\n" : "Airspace check warnings:\r\n") +
-                        string.Join("\r\n", crossings));
+                    ShowFmtAirspaceCheckResult(crossings);
                 }
             }
             catch (Exception ex)
@@ -8276,6 +8320,103 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
             finally
             {
                 BUT_fmtAirspaceCheck.Enabled = true;
+            }
+        }
+
+        private void ShowFmtAirspaceCheckResult(IEnumerable<string> warnings)
+        {
+            var items = warnings
+                .Where(warning => !string.IsNullOrWhiteSpace(warning))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            using (var dialog = new Form
+            {
+                Text = IsTraditionalChineseUi ? "FMT 限禁航區檢查" : "FMT Airspace Check",
+                StartPosition = FormStartPosition.CenterParent,
+                Size = new Size(820, 520),
+                MinimumSize = new Size(560, 340),
+                ShowIcon = false,
+                ShowInTaskbar = false
+            })
+            {
+                var header = new Label
+                {
+                    Dock = DockStyle.Top,
+                    Height = 48,
+                    Padding = new Padding(14, 11, 14, 8),
+                    Font = new Font("Microsoft JhengHei UI", 11F, FontStyle.Bold),
+                    Text = IsTraditionalChineseUi
+                        ? "航線檢查警告（紅色：禁航區／黃色：限航區）"
+                        : "Route warnings (red: prohibited / yellow: restricted)"
+                };
+                var results = new DataGridView
+                {
+                    Dock = DockStyle.Fill,
+                    ReadOnly = true,
+                    AllowUserToAddRows = false,
+                    AllowUserToDeleteRows = false,
+                    AllowUserToResizeRows = false,
+                    RowHeadersVisible = false,
+                    ColumnHeadersVisible = false,
+                    MultiSelect = false,
+                    SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                    AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells,
+                    BackgroundColor = ThemeManager.ControlBGColor,
+                    BorderStyle = BorderStyle.None,
+                    ScrollBars = ScrollBars.Vertical
+                };
+                results.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+                    ReadOnly = true,
+                    DefaultCellStyle = new DataGridViewCellStyle
+                    {
+                        Font = new Font("Microsoft JhengHei UI", 10.5F),
+                        Padding = new Padding(12, 9, 12, 9),
+                        WrapMode = DataGridViewTriState.True,
+                        SelectionBackColor = Color.FromArgb(0, 145, 205),
+                        SelectionForeColor = Color.White
+                    }
+                });
+                var close = new Button
+                {
+                    Dock = DockStyle.Bottom,
+                    Height = 46,
+                    Text = IsTraditionalChineseUi ? "關閉" : "Close",
+                    DialogResult = DialogResult.OK
+                };
+
+                dialog.Controls.Add(results);
+                dialog.Controls.Add(header);
+                dialog.Controls.Add(close);
+                dialog.AcceptButton = close;
+                dialog.CancelButton = close;
+                ThemeManager.ApplyThemeTo(dialog);
+
+                foreach (var warning in items)
+                {
+                    var rowIndex = results.Rows.Add(warning);
+                    var row = results.Rows[rowIndex];
+                    var prohibited = warning.IndexOf("禁航區", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                     warning.IndexOf("Prohibited area", StringComparison.OrdinalIgnoreCase) >= 0;
+                    if (prohibited)
+                    {
+                        row.DefaultCellStyle.BackColor = Color.FromArgb(183, 28, 28);
+                        row.DefaultCellStyle.ForeColor = Color.White;
+                        row.DefaultCellStyle.SelectionBackColor = Color.FromArgb(211, 47, 47);
+                        row.DefaultCellStyle.SelectionForeColor = Color.White;
+                    }
+                    else
+                    {
+                        row.DefaultCellStyle.BackColor = Color.FromArgb(255, 193, 7);
+                        row.DefaultCellStyle.ForeColor = Color.FromArgb(30, 30, 30);
+                        row.DefaultCellStyle.SelectionBackColor = Color.FromArgb(255, 213, 79);
+                        row.DefaultCellStyle.SelectionForeColor = Color.Black;
+                    }
+                }
+
+                dialog.ShowDialog(FindForm());
             }
         }
 

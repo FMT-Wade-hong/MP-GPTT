@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace MissionPlanner.FMT
@@ -41,6 +42,24 @@ namespace MissionPlanner.FMT
             { "HomeLocation", "返航點位置" }, { "RangeFinder1 (cm)", "測距儀 1（公分）" }
         };
 
+        private static readonly Dictionary<string, string> EnglishExact =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "press_abs", "Absolute Pressure" }, { "press_abs2", "Secondary Absolute Pressure" },
+                { "DistTraveled", "Distance Traveled" }, { "DistToHome", "Distance to Home" },
+                { "Dist to Home (m)", "Distance to Home (m)" },
+                { "Time over Home (sec)", "Time over Home (sec)" },
+                { "Wind Velocity (m/s)", "Wind Velocity (m/s)" },
+                { "Yaw (deg)", "Heading (deg)" }, { "vibez", "Z-axis Vibration" },
+                { "Time in Air (min.sec)", "Flight Time (min:sec)" },
+                { "Time in Air (sec)", "Flight Time (sec)" },
+                { "AirSpeed (m/s)", "Airspeed (m/s)" }, { "airspeed", "Airspeed" },
+                { "groundspeed", "Ground Speed" }, { "Mag Field", "Magnetic Field" },
+                { "Sat Count", "Satellite Count" }, { "satcount", "Satellite Count" },
+                { "RangeFinder1 (cm)", "Rangefinder 1 (cm)" },
+                { "Accel Strength", "Acceleration Strength" }, { "load", "Load" }
+            };
+
         private static readonly Dictionary<string, string> Tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "battery", "電池" }, { "cell", "單體" }, { "voltage", "電壓" }, { "current", "電流" },
@@ -64,6 +83,9 @@ namespace MissionPlanner.FMT
 
         internal static string Field(string propertyName, string displayText = null)
         {
+            if (!UseTraditionalChinese)
+                return EnglishField(propertyName, displayText);
+
             string translated;
             if (!string.IsNullOrWhiteSpace(displayText) && Exact.TryGetValue(displayText.Trim(), out translated)) return translated;
             if (!string.IsNullOrWhiteSpace(propertyName) && Exact.TryGetValue(propertyName.Trim(), out translated)) return translated;
@@ -95,6 +117,68 @@ namespace MissionPlanner.FMT
         }
 
         internal static string Display(string propertyName, string displayText) { return Field(propertyName, displayText); }
+
+        private static bool UseTraditionalChinese
+        {
+            get
+            {
+                return CultureInfo.CurrentUICulture.Name.StartsWith(
+                    "zh", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private static string EnglishField(string propertyName, string displayText)
+        {
+            string english;
+            if (!string.IsNullOrWhiteSpace(propertyName) &&
+                EnglishExact.TryGetValue(propertyName.Trim(), out english))
+                return english;
+            if (!string.IsNullOrWhiteSpace(displayText) &&
+                EnglishExact.TryGetValue(displayText.Trim(), out english))
+                return english;
+
+            // Older FMT builds may have persisted a Chinese display label. Map it
+            // back to its stable telemetry key before producing the English text.
+            var raw = string.IsNullOrWhiteSpace(propertyName) ? displayText : propertyName;
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                foreach (var pair in Exact)
+                {
+                    if (string.Equals(raw.Trim(), pair.Value, StringComparison.OrdinalIgnoreCase))
+                    {
+                        raw = pair.Key;
+                        break;
+                    }
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(raw))
+                return "Unnamed Telemetry Field";
+            if (EnglishExact.TryGetValue(raw.Trim(), out english))
+                return english;
+
+            // CurrentState descriptions that are already readable English should
+            // be preserved, including their units.
+            if (!string.IsNullOrWhiteSpace(displayText) &&
+                Regex.IsMatch(displayText, @"^[\x00-\x7F]+$") &&
+                (displayText.IndexOf(' ') >= 0 || displayText.IndexOf('(') >= 0))
+                return displayText.Trim();
+
+            var range = Regex.Match(raw, @"^RangeFinder(\d+)$", RegexOptions.IgnoreCase);
+            if (range.Success)
+                return "Rangefinder " + range.Groups[1].Value + " (cm)";
+            var channel = Regex.Match(raw, @"^ch(\d+)(in|out|percent)$", RegexOptions.IgnoreCase);
+            if (channel.Success)
+                return "Channel " + channel.Groups[1].Value + " " +
+                       CultureInfo.InvariantCulture.TextInfo.ToTitleCase(channel.Groups[2].Value.ToLowerInvariant());
+            var esc = Regex.Match(raw, @"^esc(\d+)_(curr|rpm|temp|volt)$", RegexOptions.IgnoreCase);
+            if (esc.Success)
+                return "ESC " + esc.Groups[1].Value + " " + esc.Groups[2].Value.ToUpperInvariant();
+
+            raw = Regex.Replace(raw, "([a-z0-9])([A-Z])", "$1 $2").Replace('_', ' ');
+            raw = Regex.Replace(raw, @"\s+", " ").Trim();
+            return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(raw.ToLowerInvariant());
+        }
 
         private static string LocalizeUnits(string value)
         {

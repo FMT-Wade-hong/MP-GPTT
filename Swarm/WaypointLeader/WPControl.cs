@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using ZedGraph;
 
@@ -9,17 +10,66 @@ namespace MissionPlanner.Swarm.WaypointLeader
     {
         DroneGroup DG = new DroneGroup();
         bool threadrun;
+        readonly bool useTraditionalChinese = CultureInfo.CurrentUICulture.Name.StartsWith(
+            "zh", StringComparison.OrdinalIgnoreCase);
 
         public WPControl()
         {
             InitializeComponent();
+            ApplyFmtTraditionalChinese();
 
-            zedGraphControl1.GraphPane.AddCurve("Path", DG.path_to_fly, Color.Red, SymbolType.None);
-
-            zedGraphControl1.GraphPane.XAxis.Title.Text = "Distance";
-            zedGraphControl1.GraphPane.YAxis.Title.Text = "Altitude";
+            zedGraphControl1.GraphPane.AddCurve(useTraditionalChinese ? "航徑" : "Path",
+                DG.path_to_fly, Color.Red, SymbolType.None);
+            zedGraphControl1.GraphPane.Title.Text = useTraditionalChinese ? "編隊航徑預覽" : "Path preview";
+            zedGraphControl1.GraphPane.XAxis.Title.Text = useTraditionalChinese ? "航程距離（公尺）" : "Distance";
+            zedGraphControl1.GraphPane.YAxis.Title.Text = useTraditionalChinese ? "高度（公尺）" : "Altitude";
 
             DG.Drones.Clear();
+        }
+
+        private void ApplyFmtTraditionalChinese()
+        {
+            if (!useTraditionalChinese)
+                return;
+
+            Text = "航點編隊控制";
+            but_master.Text = "設定地面主機";
+            but_airmaster.Text = "設定空中領航機";
+            but_start.Text = "開始";
+            but_resetmode.Text = "重設模式";
+            but_rth.Text = "切換返航";
+            but_setmoderltland.Text = "返航並降落\r\n（放棄任務）";
+            label1.Text = "隊形間距（公尺）";
+            label2.Text = "領航提前量（公尺）";
+            label3.Text = "離線觸發距離（公尺）";
+            label4.Text = "高度間距（公尺）";
+            label5.Text = "航點加速度（m/s²）";
+            chk_V.Text = "V 字隊形";
+            chk_alt_interleave.Text = "高度交錯排列";
+            txt_mode.Text = "待命";
+            textBox1.Text =
+                "操作方式：\r\n" +
+                "1. 先連線所有飛行器（包含地面主機與空中領航機）。\r\n" +
+                "2. 選取地面載具，按下「設定地面主機」。\r\n" +
+                "3. 選取空中載具，按下「設定空中領航機」。\r\n" +
+                "4. 將任務航徑上傳至空中領航機。\r\n" +
+                "5. 設定隊形間距、領航提前量及高度交錯等選項。\r\n" +
+                "6. 等待所有飛行器取得 GPS 定位並完成校正。\r\n" +
+                "7. 確認地面主機已就緒，並等待航徑開始。\r\n" +
+                "8. 按下「開始」。";
+
+            toolTip1.SetToolTip(numericUpDown1, "飛行器在空中的橫向間距。");
+            toolTip1.SetToolTip(numericUpDown2, "空中領航機相對地面主機的提前距離。");
+            toolTip1.SetToolTip(num_useroffline, "超過此偏離距離時，觸發編隊返航保護。");
+            toolTip1.SetToolTip(num_rtl_alt, "起飛及降落時各飛行器的高度間距。");
+            toolTip1.SetToolTip(num_wpnav_accel, "編隊使用的航點導航加速度。");
+            toolTip1.SetToolTip(PNL_status, "顯示所有已連線飛行器的狀態。");
+            toolTip1.SetToolTip(but_master, "將目前選取的載具設為地面主機。");
+            toolTip1.SetToolTip(but_airmaster, "將目前選取的載具設為空中領航機。");
+            toolTip1.SetToolTip(but_start, "開始或停止向編隊傳送控制命令。");
+            toolTip1.SetToolTip(but_resetmode, "清除內部狀態並回到待命模式。");
+            toolTip1.SetToolTip(but_rth, "命令編隊切換為返航模式。");
+            toolTip1.SetToolTip(but_setmoderltland, "放棄目前任務，命令編隊返航並降落。");
         }
 
         private void but_master_Click(object sender, EventArgs e)
@@ -77,7 +127,7 @@ namespace MissionPlanner.Swarm.WaypointLeader
             if (threadrun == true)
             {
                 threadrun = false;
-                but_start.Text = Strings.Start;
+                but_start.Text = useTraditionalChinese ? "開始" : Strings.Start;
                 return;
             }
 
@@ -87,7 +137,10 @@ namespace MissionPlanner.Swarm.WaypointLeader
                 {
                     if (MAV.cs.armed && MAV.cs.alt > 1)
                     {
-                        var result = CustomMessageBox.Show("There appears to be a drone in the air at the moment. Are you sure you want to continue?", "continue", MessageBoxButtons.YesNo);
+                        var result = CustomMessageBox.Show(useTraditionalChinese
+                                ? "偵測到目前有飛行器正在空中，確定要繼續嗎？"
+                                : "There appears to be a drone in the air at the moment. Are you sure you want to continue?",
+                            useTraditionalChinese ? "確認操作" : "continue", MessageBoxButtons.YesNo);
                         if (result == (int)DialogResult.Yes)
                             break;
                         return;
@@ -100,7 +153,7 @@ namespace MissionPlanner.Swarm.WaypointLeader
             //if (SwarmInterface != null)
             {
                 new System.Threading.Thread(mainloop) { IsBackground = true }.Start();
-                but_start.Text = Strings.Stop;
+                but_start.Text = useTraditionalChinese ? "停止" : Strings.Stop;
             }
         }
 
@@ -165,7 +218,7 @@ namespace MissionPlanner.Swarm.WaypointLeader
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            txt_mode.Text = DG.CurrentMode.ToString();
+            txt_mode.Text = useTraditionalChinese ? GetTraditionalModeName(DG.CurrentMode) : DG.CurrentMode.ToString();
 
             // clean up old
             foreach (Control ctl in PNL_status.Controls)
@@ -199,13 +252,15 @@ namespace MissionPlanner.Swarm.WaypointLeader
                             exists = true;
                             if (MAV.cs.gpsstatus < 3)
                             {
-                                ((Status)ctl).GPS.Text = "Bad";
+                                ((Status)ctl).GPS.Text = useTraditionalChinese ? "定位不良" : "Bad";
                             }
                             else if (MAV.cs.gpsstatus >= 3)
                             {
                                 ((Status)ctl).GPS.Text = "OK " + Math.Max(MAV.cs.gpsstatus, MAV.cs.gpsstatus2);
                             }
-                            ((Status)ctl).Armed.Text = MAV.cs.armed.ToString();
+                            ((Status)ctl).Armed.Text = useTraditionalChinese
+                                ? (MAV.cs.armed ? "已解鎖" : "已上鎖")
+                                : MAV.cs.armed.ToString();
                             ((Status)ctl).Mode.Text = MAV.cs.mode;
                             ((Status)ctl).MAV.Text = String.Format("MAV {0}-{1}", MAV.sysid, MAV.compid);
                             ((Status)ctl).Guided.Text = MAV.GuidedMode.x / 1e7 + "," + MAV.GuidedMode.y / 1e7 + "," +
@@ -215,10 +270,12 @@ namespace MissionPlanner.Swarm.WaypointLeader
                             ((Status)ctl).Speed.Text = MAV.cs.groundspeed.ToString("0.00");
 
                             if (MAV == DG.airmaster)
-                                ((Status)ctl).MAV.Text = String.Format("MAV {0}-{1} airmaster", MAV.sysid, MAV.compid);
+                                ((Status)ctl).MAV.Text = String.Format(useTraditionalChinese
+                                    ? "MAV {0}-{1} 空中領航機" : "MAV {0}-{1} airmaster", MAV.sysid, MAV.compid);
 
                             if (MAV == DG.groundmaster)
-                                ((Status)ctl).MAV.Text = String.Format("MAV {0}-{1} groundmaster", MAV.sysid, MAV.compid);
+                                ((Status)ctl).MAV.Text = String.Format(useTraditionalChinese
+                                    ? "MAV {0}-{1} 地面主機" : "MAV {0}-{1} groundmaster", MAV.sysid, MAV.compid);
 
                             if (MAV == DG.airmaster || MAV == DG.groundmaster)
                             {
@@ -234,6 +291,8 @@ namespace MissionPlanner.Swarm.WaypointLeader
                     if (!exists)
                     {
                         Status newstatus = new Status();
+                        if (useTraditionalChinese)
+                            newstatus.ApplyTraditionalChinese();
                         newstatus.Tag = MAV;
                         PNL_status.Controls.Add(newstatus);
                     }
@@ -299,7 +358,10 @@ namespace MissionPlanner.Swarm.WaypointLeader
                 {
                     if (MAV.cs.armed && MAV.cs.alt > 1)
                     {
-                        var result = CustomMessageBox.Show("There appears to be a drone in the air at the moment. Are you sure you want to continue?", "continue", MessageBoxButtons.YesNo);
+                        var result = CustomMessageBox.Show(useTraditionalChinese
+                                ? "偵測到目前有飛行器正在空中，確定要重設模式嗎？"
+                                : "There appears to be a drone in the air at the moment. Are you sure you want to continue?",
+                            useTraditionalChinese ? "確認操作" : "continue", MessageBoxButtons.YesNo);
                         if (result == (int)DialogResult.Yes)
                             break;
                         return;
@@ -308,6 +370,17 @@ namespace MissionPlanner.Swarm.WaypointLeader
             }
 
             DG.CurrentMode = DroneGroup.Mode.idle;
+        }
+
+        private static string GetTraditionalModeName(DroneGroup.Mode mode)
+        {
+            switch (mode)
+            {
+                case DroneGroup.Mode.idle: return "待命";
+                case DroneGroup.Mode.RTH: return "返航";
+                case DroneGroup.Mode.LandAlt: return "返航並降落";
+                default: return mode.ToString();
+            }
         }
 
         private void but_rth_Click(object sender, EventArgs e)

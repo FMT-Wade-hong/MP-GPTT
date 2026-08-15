@@ -258,7 +258,9 @@ namespace MissionPlanner
             }
 
             Splash = new MissionPlanner.Splash();
-            if (SplashBG != null)
+            // The FMT splash is embedded and versioned with the application.  Retain the
+            // legacy external override only as a fallback when no branded image is present.
+            if (SplashBG != null && Splash.BackgroundImage == null)
             {
                 Splash.BackgroundImage = SplashBG;
                 Splash.pictureBox1.Visible = false;

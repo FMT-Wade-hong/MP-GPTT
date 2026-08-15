@@ -43,5 +43,15 @@ namespace MissionPlanner.Swarm
         {
             InitializeComponent();
         }
+
+        public void ApplyTraditionalChinese()
+        {
+            label1.Text = "GPS";
+            label2.Text = "解鎖";
+            label3.Text = "模式";
+            label4.Text = "導引目標";
+            label6.Text = "位置";
+            label8.Text = "速度";
+        }
     }
 }

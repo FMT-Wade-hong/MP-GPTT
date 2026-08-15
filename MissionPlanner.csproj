@@ -6,10 +6,10 @@
     <OutputType>WinExe</OutputType>
     <StartupObject>MissionPlanner.Program</StartupObject>
     <Authors>FMT飛貓科技; Mission Planner contributors</Authors>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Company>FMT飛貓科技</Company>
     <Product>FeiMaoTecPlanner</Product>
-    <Description>FeiMaoTecPlanner V1.1.0 stable ground control station for ArduPilot</Description>
+    <Description>FeiMaoTecPlanner V1.1.1 stable ground control station for ArduPilot</Description>
     <Copyright>Mission Planner contributors; FMT飛貓科技 customization</Copyright>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -1207,5 +1207,30 @@
     <EmbeddedResource Include="FMT\Assets\fmt-logo.png" LogicalName="MissionPlanner.FMT.Assets.fmt-logo.png" />
     <EmbeddedResource Include="FMT\Assets\fmt-app-icon-source.png" LogicalName="MissionPlanner.FMT.Assets.fmt-app-icon-source.png" />
     <EmbeddedResource Include="FMT\Assets\fmt-satellite-icon.png" LogicalName="MissionPlanner.FMT.Assets.fmt-satellite-icon.png" />
+    <EmbeddedResource Include="FMT\Assets\fmt-splash-v111.png" LogicalName="MissionPlanner.FMT.Assets.fmt-splash-v111.png" />
+    <EmbeddedResource Include="FMT\Assets\fmt-login-v111.png" LogicalName="MissionPlanner.FMT.Assets.fmt-login-v111.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--
+      The translation editor sources live at the project root while their
+      WinForms type is resedit.Form1.  SDK-style resource naming would
+      otherwise embed these as FMTPlanner.ResEdit.resources, causing
+      ComponentResourceManager(typeof(resedit.Form1)) to fail at runtime.
+    -->
+    <EmbeddedResource Update="ResEdit.resx">
+      <LogicalName>resedit.Form1.resources</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Update="ResEdit.ko-KR.resx">
+      <LogicalName>resedit.Form1.resources</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Update="ResEdit.zh-Hans.resx">
+      <LogicalName>resedit.Form1.resources</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Update="ResEdit.zh-Hant.resx">
+      <LogicalName>resedit.Form1.resources</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Update="ResEdit.zh-TW.resx">
+      <LogicalName>resedit.Form1.resources</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

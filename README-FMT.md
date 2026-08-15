@@ -1,4 +1,4 @@
-﻿# FeiMaoTecPlanner V1.1.0（FMTPlanner）使用手冊
+﻿# FeiMaoTecPlanner V1.1.1（FMTPlanner）使用手冊
 
 <p align="center">
   <img src="FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="360">
@@ -6,7 +6,7 @@
 
 **FeiMaoTecPlanner** 是由 **FMT 飛貓科技**以 ArduPilot Mission Planner 為基礎製作的客製化地面站軟體，重點包含 FMT 品牌介面、飛行快捷操作、TitanPlanner 風格姿態儀、台灣限禁航區、任務安全檢查、參數保護及繁體中文介面。
 
-> 本手冊對應 V1.1.0 穩定版。V1.1.0 延續 V1.0.10 的 AUTO 任務控制與隱私改善，補強 Mission Item 數量即時同步、清單位置進度計算、地圖飛行器定位與任務規劃欄位配置，並通過 ArduCopter、ArduPlane 及 QuadPlane SITL 整合測試。
+> 本手冊對應 V1.1.1 穩定版。V1.1.1 加入全新的 FMT 啟動／登入介面、地形撞地與淨空風險提示、限禁航區高對比結果，並修正繁體中文化、語言切換、進階工具、任務地圖點擊與多項錯誤處理。
 
 ## 目錄
 
@@ -50,11 +50,19 @@
 | 穩定版清理 | 外掛空目錄不再建立無效工作；修正重複事件與 Theme 套用；更新視窗改為 UTF-8 可捲動介面；Windows ZIP 排除偵錯與非 Windows 檔案 |
 | 錯誤回報 | 移除原第三方 HTTP 自動回報；改為本機預覽、去識別化並由使用者自行送出 GitHub Issue |
 
-![FMTPlanner V1.1.0 飛行資料主畫面](FMT/ManualImages/v110-flight-data.png)
+![FMTPlanner V1.1.1 飛行資料主畫面](FMT/ManualImages/v110-flight-data.png)
 
 主畫面左側為 TitanPlanner 風格姿態儀與資料區，右側為地圖及台灣限禁航區圖層；上方提供飛行快捷按鈕、GPS 狀態、FMT Logo、連線埠與傳輸速率。
 
 ## 下載、啟動與登入
+
+### 啟動畫面
+
+![FMTPlanner V1.1.1 啟動畫面](FMT/Assets/fmt-splash-v111.png)
+
+### 登入畫面
+
+![FMTPlanner V1.1.1 登入畫面](FMT/Assets/fmt-login-v111.png)
 
 1. 到 GitHub 專案右側的 **Releases／發布**下載最新版 `FMTPlanner-VX.X.X.zip`。
 2. 將 ZIP 完整解壓縮到可寫入的資料夾，不要直接在壓縮檔內執行。
@@ -146,12 +154,12 @@ QNH 用來設定當地換算到平均海平面的氣壓，使氣壓高度基準�
 
 1. 從當地機場 ATIS、METAR 或可信任的氣象資料取得 QNH。
 2. 按下 **QNH 校正／QNH**。
-3. 以 **Pa（帕斯卡）**輸入數值：
+3. 以 **hPa（百帕）**直接輸入數值：
 
-   - `1013.25 hPa` 應輸入 `101325 Pa`
-   - `996.99 hPa` 應輸入 `99699 Pa`
+   - 標準氣壓可輸入 `1013.25`
+   - 當地 QNH 為 `996.99 hPa` 時輸入 `996.99`
 
-4. FMTPlanner 接受 `80000～110000 Pa`，超出範圍或非數字輸入會被拒絕。
+4. FMTPlanner 接受 `800～1100 hPa`，超出範圍或非數字輸入會被拒絕；寫入飛控時會自動換算成飛控參數所需單位。
 5. 確認換算後數值及高度基準變更警告，再寫入飛控。
 
 部分新版 ArduPilot 韌體會將 `BARO1_GND_PRESS` 設為唯讀。遇到飛控拒絕時，FMTPlanner 會顯示錯誤；請勿以強制方式覆寫唯讀參數。
@@ -176,7 +184,7 @@ DOP 數值通常越低越好，但是否可執行任務仍應依飛控 EKF、GPS
 5. 拖曳航點時，航點標記及路線會跟隨滑鼠移動；放開後才提交新位置。
 6. 完成任務後先執行高度與限禁航區檢查，再按 **Write／上傳**寫入飛控。
 
-![FMTPlanner V1.1.0 任務規劃畫面](FMT/ManualImages/v110-mission-planning.png)
+![FMTPlanner V1.1.1 任務規劃畫面](FMT/ManualImages/v110-mission-planning.png)
 
 ## 限禁航區與任務檢查
 

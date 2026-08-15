@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
 
@@ -10,22 +11,24 @@ namespace MissionPlanner
         {
             InitializeComponent();
 
-            Text = FMT.FmtAuthentication.ProductName;
-            label1.Text = FMT.FmtAuthentication.CompanyName;
-            BackColor = System.Drawing.Color.FromArgb(41, 171, 226);
+            Text = FMT.FmtAuthentication.ProductTitle;
+            AutoScaleMode = AutoScaleMode.None;
+            MinimumSize = Size.Empty;
+            MaximumSize = Size.Empty;
+            ClientSize = new Size(920, 532);
+            BackColor = Color.Black;
+            BackgroundImage = FMT.FmtVisualAssets.LoadClientBackground(FMT.FmtVisualAssets.SplashBackground, 86);
+            BackgroundImageLayout = ImageLayout.Stretch;
+
+            // Product, company and version are part of the approved FMT splash artwork.
+            // Hide the legacy Mission Planner overlays so the design stays uncluttered.
+            label1.Visible = false;
+            TXT_version.Visible = false;
+            pictureBox1.Visible = false;
 
             string strVersion = typeof(Splash).GetType().Assembly.GetName().Version.ToString();
 
-            TXT_version.Text = "Version: " + Application.ProductVersion; // +" Build " + strVersion;
-
             Console.WriteLine(strVersion);
-
-            if (Program.Logo != null)
-            {
-                pictureBox1.BackgroundImage = MissionPlanner.Properties.Resources.bgdark;
-                pictureBox1.Image = Program.Logo;
-                pictureBox1.Visible = true;
-            }
 
             Console.WriteLine("Splash .ctor");
         }

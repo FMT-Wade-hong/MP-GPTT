@@ -10,6 +10,11 @@ using ZedGraph; // GE xml alt reader
 
 namespace MissionPlanner.Controls
 {
+    [PreventTheming]
+    internal sealed class FmtTerrainRiskLabel : System.Windows.Forms.Label
+    {
+    }
+
     public partial class ElevationProfile : Form
     {
         List<PointLatLngAlt> gelocs = new List<PointLatLngAlt>();
@@ -283,12 +288,15 @@ namespace MissionPlanner.Controls
             myPane.Title.Text = "飛行高度與地形剖面";
             myPane.XAxis.Title.Text = "航線距離（" + CurrentState.DistanceUnit + "）";
             myPane.YAxis.Title.Text = "高度（" + CurrentState.AltUnit + "）";
+            myPane.Legend.IsVisible = false;
 
             LineItem myCurve;
 
             myCurve = myPane.AddCurve("規劃航線", list1, Color.Red, SymbolType.None);
             //myCurve = myPane.AddCurve("Google", list2, Color.Green, SymbolType.None);
             myCurve = myPane.AddCurve("數值地形（DEM）", list3, Color.Blue, SymbolType.None);
+
+            UpdateFmtTerrainClearanceSummary(myPane);
 
             foreach (PointPair pp in list1)
             {
@@ -337,6 +345,157 @@ namespace MissionPlanner.Controls
             catch
             {
             }
+        }
+
+        private void UpdateFmtTerrainClearanceSummary(GraphPane pane)
+        {
+            var planStats = GetFmtStats(list1);
+            var terrainStats = GetFmtStats(list3);
+            labelPlanSummary.Text = string.Format("規劃航線（紅）\r\n最低 {0:0.0}／最高 {1:0.0} {2}",
+                planStats.Min, planStats.Max, CurrentState.AltUnit);
+            labelTerrainSummary.Text = string.Format("地形剖面（藍）\r\n最低 {0:0.0}／最高 {1:0.0} {2}",
+                terrainStats.Min, terrainStats.Max, CurrentState.AltUnit);
+
+            var collisionPoints = new PointPairList();
+            var minimumClearance = double.MaxValue;
+            var collisionCount = 0;
+            var riskStart = GetFmtFirstMissionDistance();
+            var riskEnd = GetFmtLastMissionDistance();
+            foreach (PointPair terrainPoint in list3)
+            {
+                // Home is normally located on the ground. Including the Home-to-first-WP
+                // origin in the 30 m test creates a permanent false warning near 0 m AGL.
+                if (terrainPoint.X < riskStart || terrainPoint.X > riskEnd)
+                    continue;
+
+                var plannedAltitude = InterpolateFmtPlannedAltitude(terrainPoint.X);
+                if (double.IsNaN(plannedAltitude))
+                    continue;
+
+                var clearance = plannedAltitude - terrainPoint.Y;
+                minimumClearance = Math.Min(minimumClearance, clearance);
+                if (clearance <= 0)
+                {
+                    collisionCount++;
+                    collisionPoints.Add(terrainPoint.X, terrainPoint.Y);
+                }
+            }
+
+            if (collisionPoints.Count > 0)
+            {
+                var danger = pane.AddCurve("撞地風險", collisionPoints, Color.Yellow, SymbolType.Circle);
+                danger.Line.IsVisible = false;
+                danger.Symbol.Size = 5F;
+                danger.Symbol.Fill = new Fill(Color.Red);
+                danger.Symbol.Border.Color = Color.Yellow;
+            }
+
+            if (minimumClearance == double.MaxValue)
+            {
+                labelCollisionWarning.BackColor = Color.FromArgb(80, 88, 96);
+                labelCollisionWarning.ForeColor = Color.White;
+                labelCollisionWarning.Text = "無足夠任務航段資料\r\n無法計算地形淨空";
+            }
+            else if (collisionCount > 0)
+            {
+                labelCollisionWarning.BackColor = Color.FromArgb(183, 28, 28);
+                labelCollisionWarning.ForeColor = Color.White;
+                labelCollisionWarning.Text = string.Format("⚠ 任務航段撞地警告\r\n{0} 個取樣點地形高於航線，最差淨空 {1:0.0} {2}",
+                    collisionCount, minimumClearance, CurrentState.AltUnit);
+            }
+            else if (minimumClearance < 30 * CurrentState.multiplieralt)
+            {
+                labelCollisionWarning.BackColor = Color.FromArgb(255, 196, 0);
+                labelCollisionWarning.ForeColor = Color.FromArgb(20, 24, 28);
+                labelCollisionWarning.Text = string.Format("⚠ 任務航段淨空不足\r\n最低淨空 {0:0.0} {1}（建議至少 30 m）",
+                    minimumClearance, CurrentState.AltUnit);
+            }
+            else
+            {
+                labelCollisionWarning.BackColor = Color.FromArgb(0, 120, 70);
+                labelCollisionWarning.ForeColor = Color.White;
+                labelCollisionWarning.Text = string.Format("✓ 任務航段未偵測撞地風險\r\n最低地形淨空 {0:0.0} {1}",
+                    minimumClearance, CurrentState.AltUnit);
+            }
+        }
+
+        private double GetFmtFirstMissionDistance()
+        {
+            foreach (PointPair point in list1)
+            {
+                var tag = point.Tag as string;
+                if (!string.Equals(tag, "H", StringComparison.OrdinalIgnoreCase))
+                    return point.X;
+            }
+
+            return list1.Count > 0 ? list1[0].X : 0;
+        }
+
+        private double GetFmtLastMissionDistance()
+        {
+            for (var index = list1.Count - 1; index >= 0; index--)
+            {
+                var point = list1[index];
+                var tag = point.Tag as string;
+                if (!string.Equals(tag, "H", StringComparison.OrdinalIgnoreCase))
+                    return point.X;
+            }
+
+            return list1.Count > 0 ? list1[list1.Count - 1].X : 0;
+        }
+
+        private double InterpolateFmtPlannedAltitude(double distanceAlongRoute)
+        {
+            if (list1.Count == 0)
+                return double.NaN;
+            if (distanceAlongRoute <= list1[0].X)
+                return list1[0].Y;
+
+            for (var index = 1; index < list1.Count; index++)
+            {
+                var previous = list1[index - 1];
+                var current = list1[index];
+                if (distanceAlongRoute > current.X)
+                    continue;
+
+                var span = current.X - previous.X;
+                if (Math.Abs(span) < double.Epsilon)
+                    return current.Y;
+                var ratio = (distanceAlongRoute - previous.X) / span;
+                return previous.Y + ((current.Y - previous.Y) * ratio);
+            }
+
+            return list1[list1.Count - 1].Y;
+        }
+
+        private static FmtElevationStats GetFmtStats(PointPairList points)
+        {
+            if (points == null || points.Count == 0)
+                return new FmtElevationStats();
+
+            var minimum = double.MaxValue;
+            var maximum = double.MinValue;
+            var total = 0.0;
+            foreach (PointPair point in points)
+            {
+                minimum = Math.Min(minimum, point.Y);
+                maximum = Math.Max(maximum, point.Y);
+                total += point.Y;
+            }
+
+            return new FmtElevationStats
+            {
+                Min = minimum,
+                Max = maximum,
+                Mean = total / points.Count
+            };
+        }
+
+        private struct FmtElevationStats
+        {
+            public double Min;
+            public double Max;
+            public double Mean;
         }
     }
 }

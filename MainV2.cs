@@ -600,6 +600,8 @@ namespace MissionPlanner
         private ToolStripControlHost MenuFmtFlightTime;
         private Label FmtFlightTimeLabel;
         private Label FmtTotalFlightTimeLabel;
+        private readonly Dictionary<string, Image> FmtQuickActionBackgrounds =
+            new Dictionary<string, Image>(StringComparer.Ordinal);
 
         private Form connectionStatsForm;
         private ConnectionStats _connectionStats;
@@ -715,7 +717,7 @@ namespace MissionPlanner
 
             if (Settings.Instance.ContainsKey("language") && !string.IsNullOrEmpty(Settings.Instance["language"]))
             {
-                changelanguage(CultureInfoEx.GetCultureInfo(Settings.Instance["language"]));
+                ApplyConfiguredLanguageAtStartup(CultureInfoEx.GetCultureInfo(Settings.Instance["language"]));
             }
 
             InitializeComponent();
@@ -2216,6 +2218,10 @@ namespace MissionPlanner
 
                 joystick.Dispose(); //proper clean up of joystick.
             }
+
+            foreach (var image in FmtQuickActionBackgrounds.Values)
+                image.Dispose();
+            FmtQuickActionBackgrounds.Clear();
         }
 
         private void LoadConfig()
@@ -4244,36 +4250,33 @@ namespace MissionPlanner
 
         public event ProcessCmdKeyHandler ProcessCmdKeyCallback;
 
+        private static void ApplyConfiguredLanguageAtStartup(CultureInfo ci)
+        {
+            if (ci == null)
+                return;
+
+            // The UI culture must be selected before InitializeComponent creates
+            // any localized controls. Live resource re-application remains
+            // intentionally disabled because it can corrupt custom WinForms views.
+            Thread.CurrentThread.CurrentUICulture = ci;
+            CultureInfo.DefaultThreadCurrentUICulture = ci;
+            L10N.ConfigLang = ci;
+            Strings.Culture = ci;
+        }
+
         public void changelanguage(CultureInfo ci)
         {
-            log.Info("change lang to " + ci.ToString() + " current " +
-                     Thread.CurrentThread.CurrentUICulture.ToString());
+            if (ci == null)
+                return;
 
-            if (ci != null && !Thread.CurrentThread.CurrentUICulture.Equals(ci))
-            {
-                Thread.CurrentThread.CurrentUICulture = ci;
-                Settings.Instance["language"] = ci.Name;
-                //System.Threading.Thread.CurrentThread.CurrentCulture = ci;
+            log.Info("change lang to " + ci + " current " +
+                     Thread.CurrentThread.CurrentUICulture);
 
-                HashSet<Control> views = new HashSet<Control> {this, FlightData, FlightPlanner, Simulation};
-
-                foreach (Control view in MyView.Controls)
-                    views.Add(view);
-
-                foreach (Control view in views)
-                {
-                    if (view != null)
-                    {
-                        ComponentResourceManager rm = new ComponentResourceManager(view.GetType());
-                        foreach (Control ctrl in view.Controls)
-                        {
-                            rm.ApplyResource(ctrl);
-                        }
-
-                        rm.ApplyResources(view, "$this");
-                    }
-                }
-            }
+            // Apply the language on the next startup. Re-applying resources to
+            // live customized controls can invoke incompatible or disposed
+            // WinForms properties and raise TargetInvocationException.
+            Settings.Instance["language"] = ci.Name;
+            Settings.Instance.Save();
         }
 
 
@@ -4814,7 +4817,7 @@ namespace MissionPlanner
                 Alignment = ToolStripItemAlignment.Left,
                 DisplayStyle = ToolStripItemDisplayStyle.Text,
                 AutoSize = false,
-                Size = new Size(112, 35),
+                Size = new Size(116, 35),
                 Margin = new Padding(0, 0, 4, 0),
                 Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
                 ToolTipText = IsFmtTraditionalChineseUi
@@ -4830,7 +4833,7 @@ namespace MissionPlanner
                 Alignment = ToolStripItemAlignment.Left,
                 DisplayStyle = ToolStripItemDisplayStyle.Text,
                 AutoSize = false,
-                Size = new Size(82, 35),
+                Size = new Size(116, 35),
                 Margin = new Padding(0, 0, 4, 0),
                 Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
                 ToolTipText = IsFmtTraditionalChineseUi
@@ -4961,14 +4964,24 @@ namespace MissionPlanner
             {
                 Name = "FmtFlightTimePanel",
                 BackColor = Color.FromArgb(24, 24, 24),
-                Size = new Size(178, 35),
+                Size = new Size(205, 35),
                 Margin = Padding.Empty
+            };
+            var flightTimeIconBox = new PictureBox
+            {
+                Name = "FmtFlightTimeIcon",
+                Location = new Point(3, 3),
+                Size = new Size(29, 29),
+                BackColor = Color.Transparent,
+                Image = CreateFmtFlightTimeIcon(),
+                SizeMode = PictureBoxSizeMode.CenterImage,
+                TabStop = false
             };
             FmtFlightTimeLabel = new Label
             {
                 Name = "FmtFlightTimeLabel",
-                Location = new Point(3, 1),
-                Size = new Size(172, 17),
+                Location = new Point(35, 1),
+                Size = new Size(167, 17),
                 ForeColor = Color.LightSkyBlue,
                 BackColor = Color.Transparent,
                 Font = new Font(SystemFonts.MenuFont.FontFamily, 8.25f, FontStyle.Bold),
@@ -4978,14 +4991,15 @@ namespace MissionPlanner
             FmtTotalFlightTimeLabel = new Label
             {
                 Name = "FmtTotalFlightTimeLabel",
-                Location = new Point(3, 17),
-                Size = new Size(172, 16),
+                Location = new Point(35, 17),
+                Size = new Size(167, 16),
                 ForeColor = Color.Gainsboro,
                 BackColor = Color.Transparent,
                 Font = new Font(SystemFonts.MenuFont.FontFamily, 8.0f, FontStyle.Regular),
                 TextAlign = ContentAlignment.MiddleLeft,
                 Text = "飛控總飛時：-- 小時"
             };
+            flightTimePanel.Controls.Add(flightTimeIconBox);
             flightTimePanel.Controls.Add(FmtFlightTimeLabel);
             flightTimePanel.Controls.Add(FmtTotalFlightTimeLabel);
             MenuFmtFlightTime = new ToolStripControlHost(flightTimePanel)
@@ -4993,7 +5007,7 @@ namespace MissionPlanner
                 Name = "MenuFmtFlightTime",
                 Alignment = ToolStripItemAlignment.Right,
                 AutoSize = false,
-                Size = new Size(178, 35),
+                Size = new Size(205, 35),
                 Margin = new Padding(2, 0, 2, 0),
                 Padding = Padding.Empty,
                 BackColor = Color.FromArgb(24, 24, 24),
@@ -5003,6 +5017,48 @@ namespace MissionPlanner
             // Adding this after GPS places the flight-time panel immediately to its left.
             MainMenu.Items.Add(MenuFmtFlightTime);
             UpdateFmtQuickActionButtons();
+        }
+
+        private static Image CreateFmtFlightTimeIcon()
+        {
+            var image = new Bitmap(29, 29);
+            using (var graphics = Graphics.FromImage(image))
+            using (var arrowPen = new Pen(Color.LightSkyBlue, 2.1F))
+            using (var handPen = new Pen(Color.WhiteSmoke, 2.0F))
+            using (var aircraftBrush = new SolidBrush(Color.WhiteSmoke))
+            using (var aircraftPath = new System.Drawing.Drawing2D.GraphicsPath())
+            {
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                graphics.Clear(Color.Transparent);
+                arrowPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                arrowPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+                handPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                handPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+
+                // Clock and return arrow, matching the supplied aircraft/time reference
+                // while remaining readable on the dark FMT toolbar at 29 px.
+                graphics.DrawArc(arrowPen, new RectangleF(7.5F, 2.5F, 18.5F, 18.5F), 205F, 248F);
+                graphics.DrawLine(arrowPen, 24.0F, 17.5F, 24.2F, 22.2F);
+                graphics.DrawLine(arrowPen, 24.0F, 22.0F, 19.8F, 20.4F);
+                graphics.DrawLine(handPen, 17.0F, 6.0F, 17.0F, 12.2F);
+                graphics.DrawLine(handPen, 17.0F, 12.2F, 21.0F, 15.0F);
+
+                aircraftPath.AddPolygon(new[]
+                {
+                    new PointF(25.5F, 18.8F), new PointF(18.0F, 16.8F),
+                    new PointF(14.3F, 12.2F), new PointF(12.3F, 12.2F),
+                    new PointF(13.8F, 17.0F), new PointF(7.0F, 17.8F),
+                    new PointF(3.9F, 15.2F), new PointF(2.4F, 15.6F),
+                    new PointF(3.9F, 19.5F), new PointF(2.5F, 23.2F),
+                    new PointF(4.0F, 23.7F), new PointF(7.1F, 21.0F),
+                    new PointF(13.8F, 21.5F), new PointF(12.2F, 26.4F),
+                    new PointF(14.3F, 26.4F), new PointF(18.1F, 21.8F),
+                    new PointF(25.5F, 20.2F)
+                });
+                graphics.FillPath(aircraftBrush, aircraftPath);
+            }
+
+            return image;
         }
 
         private static Image CreateFmtParameterMenuIcon()
@@ -5035,11 +5091,74 @@ namespace MissionPlanner
             if (item == null)
                 return;
 
-            item.BackgroundImage = null;
+            Color fill;
+            Color border;
+            if (!item.Enabled)
+            {
+                fill = Color.FromArgb(54, 64, 70);
+                border = Color.FromArgb(105, 117, 124);
+            }
+            else if (item == MenuFmtArmDisarm)
+            {
+                fill = Color.FromArgb(196, 32, 32);
+                border = Color.FromArgb(255, 102, 102);
+            }
+            else
+            {
+                // Calibration buttons use the FMT dark/sky-blue treatment so they
+                // cannot be confused with the red safety-critical arm control.
+                fill = Color.FromArgb(18, 50, 65);
+                border = Color.FromArgb(65, 194, 235);
+            }
+
+            // Match the toolbar behind the transparent bitmap corners so the
+            // rounded silhouette remains clean on every ToolStrip renderer.
+            item.BackColor = Color.FromArgb(24, 24, 24);
             item.ForeColor = Color.White;
-            item.BackColor = item == MenuFmtArmDisarm
-                ? Color.FromArgb(196, 32, 32)
-                : Color.FromArgb(41, 171, 226);
+            item.BackgroundImageLayout = ImageLayout.Stretch;
+            item.BackgroundImage = GetFmtRoundedButtonBackground(item.Size, fill, border);
+        }
+
+        private Image GetFmtRoundedButtonBackground(Size size, Color fill, Color border)
+        {
+            var width = Math.Max(1, size.Width);
+            var height = Math.Max(1, size.Height);
+            var key = width + "x" + height + ":" + fill.ToArgb() + ":" + border.ToArgb();
+            Image existing;
+            if (FmtQuickActionBackgrounds.TryGetValue(key, out existing))
+                return existing;
+
+            var image = new Bitmap(width, height);
+            using (var graphics = Graphics.FromImage(image))
+            using (var path = CreateFmtRoundedRectanglePath(new RectangleF(1, 1, width - 2, height - 2), 7F))
+            using (var fillBrush = new SolidBrush(fill))
+            using (var borderPen = new Pen(border, 1.4F))
+            {
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                graphics.Clear(Color.Transparent);
+                graphics.FillPath(fillBrush, path);
+                graphics.DrawPath(borderPen, path);
+            }
+
+            FmtQuickActionBackgrounds[key] = image;
+            return image;
+        }
+
+        private static System.Drawing.Drawing2D.GraphicsPath CreateFmtRoundedRectanglePath(
+            RectangleF bounds, float radius)
+        {
+            var path = new System.Drawing.Drawing2D.GraphicsPath();
+            var diameter = Math.Min(radius * 2F, Math.Min(bounds.Width, bounds.Height));
+            var arc = new RectangleF(bounds.X, bounds.Y, diameter, diameter);
+            path.AddArc(arc, 180, 90);
+            arc.X = bounds.Right - diameter;
+            path.AddArc(arc, 270, 90);
+            arc.Y = bounds.Bottom - diameter;
+            path.AddArc(arc, 0, 90);
+            arc.X = bounds.X;
+            path.AddArc(arc, 90, 90);
+            path.CloseFigure();
+            return path;
         }
 
         private void UpdateFmtQuickActionButtons()
