@@ -26,6 +26,7 @@ using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -428,6 +429,9 @@ namespace MissionPlanner
         public delegate void WMDeviceChangeEventHandler(WM_DEVICECHANGE_enum cause);
 
         public event WMDeviceChangeEventHandler DeviceChanged;
+        private readonly ConditionalWeakTable<Form, object> themedChildForms =
+            new ConditionalWeakTable<Form, object>();
+        private static readonly object ThemeAppliedMarker = new object();
 
         /// <summary>
         /// other planes in the area from adsb
@@ -4610,10 +4614,13 @@ namespace MissionPlanner
 
                     var child = Control.FromHandle(m.LParam);
 
-                    if (child is Form)
+                    var childForm = child as Form;
+                    object themeMarker;
+                    if (childForm != null && !themedChildForms.TryGetValue(childForm, out themeMarker))
                     {
-                        log.Debug("ApplyThemeTo " + child.Name);
-                        ThemeManager.ApplyThemeTo(child);
+                        log.Debug("ApplyThemeTo " + childForm.Name);
+                        ThemeManager.ApplyThemeTo(childForm);
+                        themedChildForms.Add(childForm, ThemeAppliedMarker);
                     }
 
                     break;
