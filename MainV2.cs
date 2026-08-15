@@ -4723,6 +4723,7 @@ namespace MissionPlanner
             {
                 using (var client = new WebClient())
                 {
+                    client.Encoding = Encoding.UTF8;
                     client.Headers[HttpRequestHeader.UserAgent] = "FeiMaoTecPlanner/" +
                                                                   FMT.FmtAuthentication.ProductVersion;
                     var json = client.DownloadString(
@@ -4738,16 +4739,15 @@ namespace MissionPlanner
 
                     var page = Convert.ToString(release.html_url);
                     var notes = Convert.ToString(release.body);
-                    if (notes != null && notes.Length > 700)
-                        notes = notes.Substring(0, 700) + "…";
                     BeginInvoke((Action)(() =>
                     {
-                        if (CustomMessageBox.Show(
-                                "FeiMaoTecPlanner 有新版本 V" + latest + "。\r\n\r\n" + notes +
-                                "\r\n\r\n是否開啟飛貓科技版本下載頁？",
-                                "FMTPlanner 版本更新", MessageBoxButtons.YesNo, MessageBoxIcon.Information) ==
-                            DialogResult.Yes)
-                            Process.Start(page);
+                        using (var updateForm = new FMT.FmtUpdateForm(latest.ToString(), notes))
+                        {
+                            ThemeManager.ApplyThemeTo(updateForm);
+                            if (updateForm.ShowDialog(this) == System.Windows.Forms.DialogResult.Yes &&
+                                !string.IsNullOrWhiteSpace(page))
+                                Process.Start(page);
+                        }
                     }));
                 }
             }
