@@ -1,5 +1,32 @@
 # FMTPlanner release history
 
+## FMTPlanner v1.0.10 — 2026-08-15
+
+### Performance
+
+- Plugin assembly resolution is registered once per process and assembly directory indexes are cached safely.
+- Missing or empty plugin directories no longer create a C# compilation task or permanent plugin runner thread.
+- The common flight-mode bar no longer reapplies labels, colors and button state when vehicle state has not changed.
+- Child forms no longer receive a complete repeated Theme pass on every non-client activation.
+
+### Stability
+
+- Fixed active MAVLink interface replacement leaving callbacks attached to the previous interface.
+- MainV2 now detaches static layout, warning-engine and Windows power events during shutdown.
+- Flight Data detaches parameter, POI, no-fly and camera events, and prevents duplicate camera callbacks after parameter refresh.
+- Replaced the release-update message box with a typed, DPI-aware, scrollable Traditional Chinese dialog using explicit UTF-8; fixed the `RuntimeBinderException` caused by comparing an integer return value with `DialogResult`.
+
+### Cleanup
+
+- The public Windows ZIP excludes PDB debug symbols, macOS/Linux native libraries and developer `plugins/example*.cs` samples without deleting their source or build outputs.
+- Added a package manifest, repeatable performance measurement script, V1.0.9 baseline and stable-audit report.
+- Retained DLL plugins, drivers, maps, language fallback resources, parameter/firmware metadata, Python tools and all V1.0.9 FMT features.
+
+### Validation boundary
+
+- Automated Release build, startup/login smoke, disconnected HUD/map resource measurement, static regression checks and package-content checks are documented with results.
+- USB Serial, UDP, TCP and ArduCopter/ArduPlane/QuadPlane connected-state validation still requires representative hardware or an approved repeatable endpoint and is not claimed by this release audit.
+
 ## FMTPlanner v1.0.9 — 2026-08-14
 
 - 修正飛行資料主畫面未建立飛行軌跡時不顯示飛機位置，未解鎖狀態仍會顯示即時飛行器圖示。
