@@ -52,6 +52,12 @@ Test-Source 'Waypoint distance retained' 'ExtLibs\Controls\HUD.cs' 'WP 航點距
 Test-Source 'Airspace check retained' 'GCSViews\FlightPlanner.cs' 'FMT Airspace Check'
 Test-Source 'Altitude check retained' 'GCSViews\FlightPlanner.cs' 'FMT Height Check'
 Test-Source 'Traditional Chinese updater retained' 'FMT\FmtUpdateForm.cs' '是否開啟飛貓科技版本下載頁？'
+Test-SourceAbsent 'No legacy third-party HTTP crash report' 'Program.cs' 'http://vps.oborne.me/mail.php'
+Test-Source 'GitHub crash report form' 'Program.cs' 'new FMT.FmtCrashReportForm(ex)'
+Test-Source 'Crash report requires manual GitHub submission' 'FMT\FmtCrashReportForm.cs' '複製並開啟 GitHub'
+Test-Source 'Crash report is editable before submission' 'FMT\FmtCrashReportForm.cs' 'reportPreview.Text.Trim()'
+Test-Source 'Crash report de-identifies user profile' 'FMT\FmtCrashReportForm.cs' '%USERPROFILE%'
+Test-Source 'Crash report does not embed GitHub credentials' 'FMT\FmtCrashReportForm.cs' 'https://github.com/FMT-Wade-hong/MP-GPTT/issues/new'
 
 $exe = Join-Path $ProjectRoot 'bin\Release\net461\FMTPlanner.exe'
 if (Test-Path -LiteralPath $exe) {

@@ -2,6 +2,13 @@
 
 ## FMTPlanner v1.0.10 — 2026-08-15
 
+### Flight operations and interface
+
+- Added the FMT AUTO mission control panel above the Flight Data map with the current mission item, selectable next item, progress and ETA.
+- AUTO mission jumps require an active connection, a valid mission selection and an explicit confirmation; higher-risk takeoff, landing and RTL commands receive an additional warning.
+- Improved flight-mode button contrast and aligned the map options into a consistent horizontal row.
+- Updated the GitHub home page and Traditional Chinese manual with V1.0.10 screenshots for Flight Data, mission planning, Taiwan airspace, terrain profile, route warnings and parameter access.
+
 ### Performance
 
 - Plugin assembly resolution is registered once per process and assembly directory indexes are cached safely.
@@ -15,6 +22,12 @@
 - MainV2 now detaches static layout, warning-engine and Windows power events during shutdown.
 - Flight Data detaches parameter, POI, no-fly and camera events, and prevents duplicate camera callbacks after parameter refresh.
 - Replaced the release-update message box with a typed, DPI-aware, scrollable Traditional Chinese dialog using explicit UTF-8; fixed the `RuntimeBinderException` caused by comparing an integer return value with `DialogResult`.
+
+### Security and privacy
+
+- Removed the legacy unencrypted crash-report upload to the third-party `vps.oborne.me` endpoint.
+- Crash reports are now generated locally, de-identified and editable. Nothing is uploaded automatically: the operator must explicitly copy the report, open the FMTPlanner GitHub Issue page, review the public content and submit it.
+- GitHub credentials or access tokens are never requested or embedded in FMTPlanner.
 
 ### Cleanup
 
