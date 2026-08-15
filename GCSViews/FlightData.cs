@@ -271,8 +271,7 @@ namespace MissionPlanner.GCSViews
                 UseVisualStyleBackColor = true
             };
             chkFmtAirspace.CheckedChanged += CHK_fmtAirspace_CheckedChanged;
-            panel1.Controls.Add(chkFmtAirspace);
-            chkFmtAirspace.BringToFront();
+            ConfigureFmtMapOptionsPanel();
 
             fmtFlightModeBar = new FmtFlightModeBar();
             fmtFlightModeBar.ModeRequested += (sender, mode) => RequestFmtFlightMode(mode);
@@ -2000,7 +1999,7 @@ namespace MissionPlanner.GCSViews
                 tableMap.RowStyles.Clear();
                 tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, 56F));
                 tableMap.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-                tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, 25F));
+                tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
                 tableMap.SetRow(splitContainer1, 1);
                 tableMap.SetRow(panel1, 2);
                 tableMap.Controls.Add(fmtAutoMissionPanel, 0, 0);
@@ -2009,6 +2008,39 @@ namespace MissionPlanner.GCSViews
             {
                 tableMap.ResumeLayout(true);
             }
+        }
+
+        private FlowLayoutPanel ConfigureFmtMapOptionsPanel()
+        {
+            var options = new FlowLayoutPanel
+            {
+                Name = "fmtMapOptionsPanel",
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = false,
+                FlowDirection = FlowDirection.LeftToRight,
+                Location = new Point(CB_tuning.Left, 0),
+                Anchor = AnchorStyles.Left | AnchorStyles.Top,
+                BackColor = Color.Transparent,
+                Padding = new Padding(0, 2, 0, 0),
+                Margin = Padding.Empty,
+                Height = panel1.Height
+            };
+
+            var controls = new[] { CB_tuning, CHK_autopan, chkFmtAirspace };
+            foreach (var checkBox in controls)
+            {
+                checkBox.Anchor = AnchorStyles.None;
+                checkBox.AutoSize = true;
+                checkBox.Margin = new Padding(0, 2, 18, 0);
+                checkBox.Padding = Padding.Empty;
+                checkBox.TextAlign = ContentAlignment.MiddleLeft;
+                options.Controls.Add(checkBox);
+            }
+
+            panel1.Controls.Add(options);
+            options.BringToFront();
+            return options;
         }
 
         private void BUT_setwp_Click(object sender, EventArgs e)

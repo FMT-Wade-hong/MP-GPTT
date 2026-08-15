@@ -33,6 +33,44 @@ namespace MissionPlanner.FMT
             internal ModeDefinition[] Modes { get; private set; }
         }
 
+        /// <summary>
+        /// WinForms normally replaces a disabled Button's foreground colour with a
+        /// low-contrast system colour. Flight-mode buttons are intentionally disabled
+        /// while disconnected, so paint their caption ourselves and keep it readable.
+        /// The display colours are separate from BackColor/ForeColor because the global
+        /// Mission Planner theme pass may rewrite those standard properties later.
+        /// </summary>
+        private sealed class HighContrastModeButton : Button
+        {
+            internal Color DisplayBackColor { get; set; } = Color.FromArgb(39, 54, 64);
+            internal Color DisplayBorderColor { get; set; } = Color.FromArgb(45, 169, 220);
+
+            internal HighContrastModeButton()
+            {
+                SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
+                         ControlStyles.ResizeRedraw | ControlStyles.UserPaint, true);
+            }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                using (var background = new SolidBrush(DisplayBackColor))
+                    e.Graphics.FillRectangle(background, ClientRectangle);
+
+                ControlPaint.DrawBorder(e.Graphics, ClientRectangle, DisplayBorderColor,
+                    ButtonBorderStyle.Solid);
+                TextRenderer.DrawText(e.Graphics, Text, Font, ClientRectangle, Color.White,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.WordBreak | TextFormatFlags.NoPadding);
+
+                if (Focused && ShowFocusCues)
+                {
+                    var focusBounds = Rectangle.Inflate(ClientRectangle, -4, -4);
+                    ControlPaint.DrawFocusRectangle(e.Graphics, focusBounds, Color.White,
+                        DisplayBackColor);
+                }
+            }
+        }
+
         private static readonly Color Background = Color.FromArgb(12, 27, 36);
         private static readonly Color PanelBackground = Color.FromArgb(20, 37, 47);
         private static readonly Color SkyBlue = Color.FromArgb(45, 169, 220);
@@ -40,8 +78,8 @@ namespace MissionPlanner.FMT
         private static readonly Color Disconnected = Color.FromArgb(196, 64, 64);
         private readonly Label statusLabel;
         private readonly FlowLayoutPanel modesPanel;
-        private readonly Dictionary<string, Button> modeButtons =
-            new Dictionary<string, Button>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, HighContrastModeButton> modeButtons =
+            new Dictionary<string, HighContrastModeButton>(StringComparer.OrdinalIgnoreCase);
         private List<ModeGroup> visibleGroups = new List<ModeGroup>();
         private string layoutSignature = string.Empty;
         private string vehicleStateSignature = string.Empty;
@@ -123,9 +161,10 @@ namespace MissionPlanner.FMT
             {
                 var isActive = string.Equals(NormalizeModeName(pair.Key), NormalizeModeName(currentMode),
                     StringComparison.OrdinalIgnoreCase);
-                pair.Value.BackColor = isActive ? ActiveGreen : Color.FromArgb(39, 54, 64);
-                pair.Value.FlatAppearance.BorderColor = isActive ? Color.LimeGreen : SkyBlue;
+                pair.Value.DisplayBackColor = isActive ? ActiveGreen : Color.FromArgb(39, 54, 64);
+                pair.Value.DisplayBorderColor = isActive ? Color.LimeGreen : SkyBlue;
                 pair.Value.Enabled = connected && pair.Value.Tag != null;
+                pair.Value.Invalidate();
             }
 
             foreach (var groupLabel in modesPanel.Controls.OfType<Label>())
@@ -166,7 +205,7 @@ namespace MissionPlanner.FMT
                 {
                     string actualMode;
                     supported.TryGetValue(NormalizeModeName(definition.Mode), out actualMode);
-                    var button = new Button
+                    var button = new HighContrastModeButton
                     {
                         Name = "fmtMode_" + definition.Mode,
                         Text = definition.Caption + Environment.NewLine + definition.Mode,
@@ -184,6 +223,8 @@ namespace MissionPlanner.FMT
                     };
                     button.FlatAppearance.BorderSize = 1;
                     button.FlatAppearance.BorderColor = actualMode == null ? Color.DimGray : SkyBlue;
+                    button.DisplayBackColor = Color.FromArgb(39, 54, 64);
+                    button.DisplayBorderColor = actualMode == null ? Color.DimGray : SkyBlue;
                     button.Click += ModeButtonClick;
                     modeButtons[definition.Mode] = button;
                     modesPanel.Controls.Add(button);
