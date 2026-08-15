@@ -1,4 +1,4 @@
-﻿# FeiMaoTecPlanner V1.0.10（FMTPlanner）使用手冊
+﻿# FeiMaoTecPlanner V1.1.0（FMTPlanner）使用手冊
 
 <p align="center">
   <img src="FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="360">
@@ -6,7 +6,7 @@
 
 **FeiMaoTecPlanner** 是由 **FMT 飛貓科技**以 ArduPilot Mission Planner 為基礎製作的客製化地面站軟體，重點包含 FMT 品牌介面、飛行快捷操作、TitanPlanner 風格姿態儀、台灣限禁航區、任務安全檢查、參數保護及繁體中文介面。
 
-> 本手冊對應 V1.0.10 正式版。V1.0.10 保留 V1.0.9 的操作功能，新增安全的 AUTO 任務控制面板，並完成啟動背景負擔、事件生命週期、重複 Theme／UI 更新、Windows 封裝及錯誤回報隱私改善。
+> 本手冊對應 V1.1.0 穩定版。V1.1.0 延續 V1.0.10 的 AUTO 任務控制與隱私改善，補強 Mission Item 數量即時同步、清單位置進度計算、地圖飛行器定位與任務規劃欄位配置，並通過 ArduCopter、ArduPlane 及 QuadPlane SITL 整合測試。
 
 ## 目錄
 
@@ -35,7 +35,7 @@
 | 語言 | 預設英文；中文介面採繁體中文與台灣用語，不顯示簡體中文選項 |
 | 姿態儀 | 採用 TitanPlanner 風格配置，集中顯示姿態、航向、速度、高度及解鎖狀態 |
 | 飛行模式 | HUD 與資訊列之間顯示常用模式按鈕，依多旋翼、定翼機、VTOL、車／船或潛航器自動切換 |
-| AUTO 任務 | 地圖上方顯示任務狀態、目前／下一航點、進度與 ETA；執行前仍須由操作者確認任務及飛控狀態 |
+| AUTO 任務 | 地圖上方顯示任務狀態、目前／下一 Mission Item、進度與 ETA；任務數量變更會立即刷新，進度依實際清單位置計算；執行前仍須由操作者確認任務及飛控狀態 |
 | 設定頁 | 遙控器校正、馬達測試與舵機輸出採 TitanPlanner 風格重新配置，保留原安全流程 |
 | 地圖飛行器 | 定翼機、多旋翼及 VTOL 使用專用頂視圖；目前使用中的飛行器加上天空藍背光 |
 | 遙測中文 | 欄位選擇視窗、儀表板指標、單位與分頁採繁體中文，底層 MAVLink 鍵值保持相容 |
@@ -50,7 +50,7 @@
 | 穩定版清理 | 外掛空目錄不再建立無效工作；修正重複事件與 Theme 套用；更新視窗改為 UTF-8 可捲動介面；Windows ZIP 排除偵錯與非 Windows 檔案 |
 | 錯誤回報 | 移除原第三方 HTTP 自動回報；改為本機預覽、去識別化並由使用者自行送出 GitHub Issue |
 
-![FMTPlanner V1.0.10 飛行資料主畫面](FMT/ManualImages/v110-flight-data.png)
+![FMTPlanner V1.1.0 飛行資料主畫面](FMT/ManualImages/v110-flight-data.png)
 
 主畫面左側為 TitanPlanner 風格姿態儀與資料區，右側為地圖及台灣限禁航區圖層；上方提供飛行快捷按鈕、GPS 狀態、FMT Logo、連線埠與傳輸速率。
 
@@ -176,7 +176,7 @@ DOP 數值通常越低越好，但是否可執行任務仍應依飛控 EKF、GPS
 5. 拖曳航點時，航點標記及路線會跟隨滑鼠移動；放開後才提交新位置。
 6. 完成任務後先執行高度與限禁航區檢查，再按 **Write／上傳**寫入飛控。
 
-![FMTPlanner V1.0.10 任務規劃畫面](FMT/ManualImages/v110-mission-planning.png)
+![FMTPlanner V1.1.0 任務規劃畫面](FMT/ManualImages/v110-mission-planning.png)
 
 ## 限禁航區與任務檢查
 

@@ -1,7 +1,7 @@
-# FeiMaoTecPlanner V1.0.10
+# FeiMaoTecPlanner V1.1.0
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.10/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
+  <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.0/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
 </p>
 
 <p align="center">
@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.10/FMTPlanner-V1.0.10.zip"><strong>下載 FMTPlanner V1.0.10</strong></a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.0/FMTPlanner-V1.1.0.zip"><strong>下載 FMTPlanner V1.1.0</strong></a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.10/README-FMT.md">繁體中文圖文操作手冊</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.1.0/README-FMT.md">繁體中文圖文操作手冊</a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.10">版本發布頁</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.0">版本發布頁</a>
 </p>
 
-![Version](https://img.shields.io/badge/version-V1.0.10-22a9dc)
+![Version](https://img.shields.io/badge/version-V1.1.0-22a9dc)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
 ![Package](https://img.shields.io/badge/package-portable%20ZIP-35a853)
 ![Language](https://img.shields.io/badge/UI-English%20%7C%20繁體中文-f0ad00)
@@ -26,7 +26,7 @@
 
 | 項目 | 內容 |
 |---|---|
-| 軟體名稱 | **FeiMaoTecPlanner V1.0.10** |
+| 軟體名稱 | **FeiMaoTecPlanner V1.1.0** |
 | 執行檔 | **FMTPlanner.exe** |
 | 公司／品牌 | **FMT 飛貓科技** |
 | 基礎專案 | ArduPilot Mission Planner |
@@ -35,14 +35,14 @@
 | 支援構型 | 多旋翼、定翼機、VTOL／QuadPlane |
 | 介面語言 | 預設英文，可使用繁體中文 |
 
-## V1.0.10 主要更新
+## V1.1.0 穩定版主要更新
 
-- 新增安全的 AUTO 任務控制面板，集中顯示任務狀態、目前／下一航點、進度及 ETA。
-- 飛行模式按鈕改為高對比白字並重新排列地圖下方選項，提升戶外及高縮放顯示可讀性。
-- 清理啟動背景工作、重複事件訂閱及 Theme 套用，降低長時間操作的資源負擔。
-- 修正版本更新視窗亂碼、按鈕遮蔽及錯誤的回傳型別處理。
-- Windows 可攜式 ZIP 排除偵錯符號、非 Windows 原生檔及開發範例，保留必要外掛、驅動、地圖與參數資料。
-- 移除傳送至第三方 HTTP 端點的舊錯誤回報；改為本機產生、去識別化、可編輯並由操作者手動送出的 GitHub Issue。
+- AUTO 面板改用正確的 `Mission Item X / X` 概念；Mission 上傳、下載或數量變更時會立即更新。
+- 進度改依 Mission Item 在實際清單中的位置計算，不再直接以 MAVLink sequence 除以總數。
+- 修正定翼機、VTOL 與多旋翼地圖圖示錨點，使圖示中心與飛控回報座標對齊。
+- 重新排列航點半徑、盤旋半徑、預設高度與高度模式，預留固定數值寬度以避免遮蔽。
+- 使用 ArduCopter、ArduPlane 及 QuadPlane SITL 完成 75 項整合檢查，涵蓋 Mission 傳輸、定位、AUTO 模式與即時進度。
+- 延續 V1.0.10 的效能、穩定性、UTF-8 更新視窗、GitHub 手動錯誤回報及可攜式 ZIP 改善。
 
 ## 主要功能
 
@@ -62,23 +62,23 @@
 
 ### 飛行資料與 AUTO 任務控制
 
-![FeiMaoTecPlanner V1.0.10 飛行資料畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.10/FMT/ManualImages/v110-flight-data.png)
+![FeiMaoTecPlanner V1.1.0 飛行資料畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.0/FMT/ManualImages/v110-flight-data.png)
 
 ### 任務規劃
 
-![任務規劃畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.10/FMT/ManualImages/v110-mission-planning.png)
+![任務規劃畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.0/FMT/ManualImages/v110-mission-planning.png)
 
 ### 限禁航區檢查
 
-![限禁航區檢查](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.10/FMT/ManualImages/v110-airspace-check.png)
+![限禁航區檢查](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.0/FMT/ManualImages/v110-airspace-check.png)
 
 ### 飛行高度與地形剖面
 
-![飛行高度與地形剖面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.0.10/FMT/ManualImages/v110-height-profile.png)
+![飛行高度與地形剖面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.0/FMT/ManualImages/v110-height-profile.png)
 
 ## 快速開始
 
-1. 下載 [FMTPlanner-V1.0.10.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.10/FMTPlanner-V1.0.10.zip)。
+1. 下載 [FMTPlanner-V1.1.0.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.0/FMTPlanner-V1.1.0.zip)。
 2. 將 ZIP **完整解壓縮**到可寫入的資料夾。
 3. 執行 **FMTPlanner.exe**，不要直接在壓縮檔內啟動。
 4. 登入後選擇正確 COM 埠與傳輸速率，再按 **CONNECT／連線**。
@@ -96,10 +96,10 @@
 
 ## 文件與下載
 
-- [V1.0.10 正式發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.0.10)
-- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.0.10/FMTPlanner-V1.0.10.zip)
-- [完整繁體中文圖文操作手冊](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.10/README-FMT.md)
-- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.0.10/CHANGELOG-FMT.md)
+- [V1.1.0 穩定版發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.0)
+- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.0/FMTPlanner-V1.1.0.zip)
+- [完整繁體中文圖文操作手冊](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.1.0/README-FMT.md)
+- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.1.0/CHANGELOG-FMT.md)
 - [FMT 飛貓科技官網](https://www.feimaotec.com)
 
 ## 安全提醒

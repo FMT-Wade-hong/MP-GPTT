@@ -1,5 +1,25 @@
 # FMTPlanner release history
 
+## FMTPlanner v1.1.0 — 2026-08-15
+
+### AUTO Mission Item synchronization
+
+- Renamed the AUTO progress display from waypoint-style `WP X/X` wording to the protocol-accurate `Mission Item X / X` concept.
+- Mission count, item and acknowledgement packets now trigger a coalesced UI refresh so uploading, downloading or replacing a Mission updates the AUTO panel immediately.
+- A received Mission count is displayed before the individual Mission Items finish downloading; Fence and Rally transfers are ignored by the AUTO panel.
+- Progress uses the Mission Item's actual ordered list index instead of dividing its MAVLink sequence directly by the total. Sparse sequences such as `1, 3, 7` now correctly show item `2 / 3` and `67%`.
+
+### Map and mission-planning layout
+
+- Corrected fixed-wing, VTOL and multirotor marker anchors so the reported aircraft coordinate aligns with the visual center of the map icon.
+- Reorganized waypoint radius, loiter radius, default altitude and altitude-mode controls with reserved value widths to prevent missing or overlapping values.
+
+### Stable validation
+
+- Ran a repeatable MAVLink/SITL integration harness and validated ArduCopter, ArduPlane and QuadPlane with the same 25-check matrix (75 checks total).
+- Verified heartbeat, vehicle type, simulated GPS position, Mission upload/download, live count changes, AUTO mode switching and List Index progress behavior.
+- Release build completed with zero compiler errors. Physical motor/servo output, real GPS/RTK reception, pitot/QNH sensors and USB hardware remain real-controller validation items.
+
 ## FMTPlanner v1.0.10 — 2026-08-15
 
 ### Flight operations and interface

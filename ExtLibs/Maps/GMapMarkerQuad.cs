@@ -176,7 +176,12 @@ namespace MissionPlanner.Maps
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             g.RotateTransform(framerotation);
             var fmtIcon = IsActive ? GlowIcon : Icon;
-            g.DrawImage(fmtIcon, Offset.X, Offset.Y, fmtIcon.Width, fmtIcon.Height);
+            // The normal icon is 72 px while the active glow icon is 100 px.
+            // Centre each bitmap using its own dimensions instead of reusing the
+            // 100 px marker hit-box offset, otherwise inactive vehicles shift by
+            // 14 px toward the upper-left of their GPS coordinate.
+            g.DrawImage(fmtIcon, -fmtIcon.Width / 2, -fmtIcon.Height / 2,
+                fmtIcon.Width, fmtIcon.Height);
             g.RotateTransform(-framerotation);
 
             g.Transform = temp;

@@ -152,6 +152,7 @@ namespace MissionPlanner.GCSViews
         {
             instance = this;
 
+            ConfigureFmtWaypointToolbar();
             ConfigureFmtPlannerActions();
 
             // config map
@@ -342,6 +343,65 @@ namespace MissionPlanner.GCSViews
             panel5.Controls.Add(BUT_fmtAirspaceCheck);
             BUT_fmtAltitudeCheck.BringToFront();
             BUT_fmtAirspaceCheck.BringToFront();
+        }
+
+        private void ConfigureFmtWaypointToolbar()
+        {
+            // Some localized resource files place the numeric inputs at Y=40, which is
+            // also where the waypoint grid begins. Keep every value box in a reserved,
+            // fixed-width slot above the grid so translations cannot hide it.
+            var traditionalChinese = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+            ConfigureWaypointValueField(LBL_WPRad, TXT_WPRad, 8,
+                traditionalChinese ? "航點半徑" : LBL_WPRad.Text);
+            ConfigureWaypointValueField(label5, TXT_loiterrad, 78,
+                traditionalChinese ? "盤旋半徑" : label5.Text);
+            ConfigureWaypointValueField(LBL_defalutalt, TXT_DefaultAlt, 148,
+                traditionalChinese ? "預設高度" : LBL_defalutalt.Text);
+
+            CMB_altmode.Location = new Point(218, 8);
+            CMB_altmode.Size = new Size(116, 21);
+
+            CHK_verifyheight.Location = new Point(342, 10);
+            CHK_verifyheight.Size = new Size(100, 20);
+            if (traditionalChinese)
+                CHK_verifyheight.Text = "高度驗證";
+
+            BUT_Add.Location = new Point(450, 7);
+            BUT_Add.Size = new Size(80, 25);
+
+            label17.AutoSize = false;
+            label17.Location = new Point(538, 3);
+            label17.Size = new Size(70, 16);
+            label17.TextAlign = ContentAlignment.MiddleCenter;
+            if (traditionalChinese)
+                label17.Text = "高度警告";
+
+            TXT_altwarn.Location = new Point(547, 19);
+            TXT_altwarn.Size = new Size(52, 20);
+            TXT_altwarn.TextAlign = HorizontalAlignment.Center;
+
+            CHK_splinedefault.Location = new Point(610, 10);
+            CHK_splinedefault.Size = new Size(70, 20);
+            chk_usemavftp.Location = new Point(688, 10);
+            chk_usemavftp.Size = new Size(78, 20);
+
+            Commands.Location = new Point(3, 42);
+            Commands.Height = Math.Max(0, panelWaypoints.ClientSize.Height - Commands.Top);
+        }
+
+        private static void ConfigureWaypointValueField(Label label, TextBox input, int left, string text)
+        {
+            label.AutoSize = false;
+            label.Location = new Point(left, 3);
+            label.Size = new Size(68, 16);
+            label.Text = text;
+            label.TextAlign = ContentAlignment.MiddleCenter;
+
+            input.Location = new Point(left + 8, 19);
+            input.Size = new Size(52, 20);
+            input.TextAlign = HorizontalAlignment.Center;
+            input.Anchor = AnchorStyles.Top | AnchorStyles.Left;
         }
 
         private void CmbMissionType_DrawItem(object sender, DrawItemEventArgs e)

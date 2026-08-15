@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace MissionPlanner.FMT
@@ -31,10 +32,13 @@ namespace MissionPlanner.FMT
         private readonly Label etaLabel;
         private readonly ToolTip toolTip;
         private readonly List<FmtMissionItem> missionItems = new List<FmtMissionItem>();
+        private readonly List<int> missionPacketSubscriptions = new List<int>();
 
         private int currentMissionSequence = -1;
         private int lastObservedMissionCount = -1;
         private int missionSignature;
+        private int missionRefreshQueued;
+        private int reportedMissionItemCount = -1;
         private bool busy;
         private string displaySignature = string.Empty;
         private string executeStateSignature = string.Empty;
@@ -90,7 +94,7 @@ namespace MissionPlanner.FMT
             executeButton.FlatAppearance.BorderColor = Color.FromArgb(95, 205, 240);
             executeButton.Click += ExecuteButtonClick;
 
-            progressTextLabel = CreateLabel("fmtMissionProgressText", "WP -- / --", FontStyle.Bold);
+            progressTextLabel = CreateLabel("fmtMissionProgressText", "Mission Item -- / --", FontStyle.Bold);
             progressTextLabel.TextAlign = ContentAlignment.MiddleCenter;
 
             progressBar = new MissionProgressBar
@@ -141,6 +145,7 @@ namespace MissionPlanner.FMT
             Controls.Add(layout);
             SizeChanged += (sender, args) => ApplyResponsiveLayout();
             RebuildMissionCombo(-1);
+            SubscribeMissionPackets();
         }
 
         internal void UpdateFromVehicle(bool forceMissionRefresh = false)
@@ -164,12 +169,16 @@ namespace MissionPlanner.FMT
             var mode = mav == null || mav.cs == null ? string.Empty : mav.cs.mode;
             var currentItem = missionItems.FirstOrDefault(item => item.Sequence == currentMissionSequence);
             var currentIndex = currentItem == null ? -1 : missionItems.IndexOf(currentItem);
+            var currentListPosition = currentIndex < 0 ? 0 : currentIndex + 1;
             var nextItem = currentIndex >= 0 && currentIndex + 1 < missionItems.Count
                 ? missionItems[currentIndex + 1]
                 : null;
-            var total = missionItems.Count;
+            var reportedTotal = Volatile.Read(ref reportedMissionItemCount);
+            var total = reportedTotal < 0
+                ? missionItems.Count
+                : Math.Max(missionItems.Count, reportedTotal);
             var progress = currentItem != null && total > 0
-                ? Math.Max(0, Math.Min(100, (int) Math.Round(currentMissionSequence * 100.0 / total)))
+                ? Math.Max(0, Math.Min(100, (int) Math.Round(currentListPosition * 100.0 / total)))
                 : 0;
 
             var currentDescription = currentItem == null
@@ -211,10 +220,10 @@ namespace MissionPlanner.FMT
                 currentActionLabel.Text = currentText;
                 currentActionLabel.ForeColor = connected && inAuto ? ActiveGreen : InactiveText;
                 progressTextLabel.Text = total == 0
-                    ? "WP -- / --"
+                    ? "Mission Item -- / --"
                     : currentItem == null
-                        ? "WP -- / " + total
-                    : "WP " + currentMissionSequence + " / " + total;
+                        ? "Mission Item -- / " + total
+                    : "Mission Item " + currentListPosition + " / " + total;
                 progressBar.Value = progress;
                 progressPercentLabel.Text = total == 0 || currentItem == null ? "--%" : progress + "%";
                 nextActionLabel.Text = nextText;
@@ -225,6 +234,81 @@ namespace MissionPlanner.FMT
             }
 
             UpdateExecuteState();
+        }
+
+        private void SubscribeMissionPackets()
+        {
+            var port = MainV2.comPort;
+            if (port == null)
+                return;
+
+            missionPacketSubscriptions.Add(port.SubscribeToPacketType(
+                MAVLink.MAVLINK_MSG_ID.MISSION_COUNT, MissionPacketReceived, 0, 0));
+            missionPacketSubscriptions.Add(port.SubscribeToPacketType(
+                MAVLink.MAVLINK_MSG_ID.MISSION_ITEM, MissionPacketReceived, 0, 0));
+            missionPacketSubscriptions.Add(port.SubscribeToPacketType(
+                MAVLink.MAVLINK_MSG_ID.MISSION_ITEM_INT, MissionPacketReceived, 0, 0));
+            missionPacketSubscriptions.Add(port.SubscribeToPacketType(
+                MAVLink.MAVLINK_MSG_ID.MISSION_ACK, MissionPacketReceived, 0, 0));
+        }
+
+        private bool MissionPacketReceived(MAVLink.MAVLinkMessage message)
+        {
+            if (message == null || IsDisposed || Disposing)
+                return true;
+
+            // Ignore fence/rally transfers. The AUTO panel represents only the main Mission list.
+            if (message.msgid == (uint) MAVLink.MAVLINK_MSG_ID.MISSION_COUNT)
+            {
+                var count = message.ToStructure<MAVLink.mavlink_mission_count_t>();
+                if (count.mission_type != (byte) MAVLink.MAV_MISSION_TYPE.MISSION)
+                    return true;
+
+                // Mission Planner keeps HOME at sequence 0; AUTO starts at sequence 1.
+                // Publish the usable Mission Item total immediately, before all items
+                // have finished downloading into the local waypoint dictionary.
+                Volatile.Write(ref reportedMissionItemCount, Math.Max(0, (int) count.count - 1));
+            }
+            else if (message.msgid == (uint) MAVLink.MAVLINK_MSG_ID.MISSION_ITEM)
+            {
+                var item = message.ToStructure<MAVLink.mavlink_mission_item_t>();
+                if (item.mission_type != (byte) MAVLink.MAV_MISSION_TYPE.MISSION)
+                    return true;
+            }
+            else if (message.msgid == (uint) MAVLink.MAVLINK_MSG_ID.MISSION_ITEM_INT)
+            {
+                var item = message.ToStructure<MAVLink.mavlink_mission_item_int_t>();
+                if (item.mission_type != (byte) MAVLink.MAV_MISSION_TYPE.MISSION)
+                    return true;
+            }
+
+            QueueMissionRefresh();
+            return true;
+        }
+
+        private void QueueMissionRefresh()
+        {
+            if (Interlocked.Exchange(ref missionRefreshQueued, 1) != 0)
+                return;
+
+            try
+            {
+                if (!IsHandleCreated || IsDisposed || Disposing)
+                {
+                    Interlocked.Exchange(ref missionRefreshQueued, 0);
+                    return;
+                }
+
+                BeginInvoke((Action) (() =>
+                {
+                    Interlocked.Exchange(ref missionRefreshQueued, 0);
+                    UpdateFromVehicle(true);
+                }));
+            }
+            catch (InvalidOperationException)
+            {
+                Interlocked.Exchange(ref missionRefreshQueued, 0);
+            }
         }
 
         private void RefreshMissionSnapshot()
@@ -599,7 +683,16 @@ namespace MissionPlanner.FMT
         protected override void Dispose(bool disposing)
         {
             if (disposing)
+            {
+                var port = MainV2.comPort;
+                if (port != null)
+                {
+                    foreach (var subscription in missionPacketSubscriptions)
+                        port.UnSubscribeToPacketType(subscription);
+                }
+                missionPacketSubscriptions.Clear();
                 toolTip.Dispose();
+            }
             base.Dispose(disposing);
         }
 

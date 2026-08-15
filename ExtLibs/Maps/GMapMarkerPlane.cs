@@ -89,6 +89,10 @@ namespace MissionPlanner.Maps
 
             var temp = g.Transform;
             g.TranslateTransform(LocalPosition.X, LocalPosition.Y);
+            // GMapControl stores LocalPosition as the geographic point plus Offset
+            // (the marker's top-left hit-box). Move back to the geographic point so
+            // the aircraft centre, heading vectors and GPS track share one anchor.
+            g.TranslateTransform(-Offset.X, -Offset.Y);
 
             g.RotateTransform(-Overlay.Control.Bearing);
 
