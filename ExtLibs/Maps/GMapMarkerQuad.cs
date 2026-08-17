@@ -13,6 +13,9 @@ namespace MissionPlanner.Maps
     {
         private static readonly Bitmap Icon = LoadFmtIcon("FMTMapMultirotor.png");
         private static readonly Bitmap GlowIcon = LoadFmtIcon("FMTMapMultirotorGlow.png");
+        // Keep the active marker ring at its original size, but reduce only the
+        // cyan backdrop beneath the aircraft so the airframe remains legible.
+        private const int ActiveBackdropSize = 68;
 
         float heading = 0;
         float cog = -1;
@@ -175,13 +178,24 @@ namespace MissionPlanner.Maps
 
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             g.RotateTransform(framerotation);
-            var fmtIcon = IsActive ? GlowIcon : Icon;
-            // The normal icon is 72 px while the active glow icon is 100 px.
-            // Centre each bitmap using its own dimensions instead of reusing the
-            // 100 px marker hit-box offset, otherwise inactive vehicles shift by
-            // 14 px toward the upper-left of their GPS coordinate.
-            g.DrawImage(fmtIcon, -fmtIcon.Width / 2, -fmtIcon.Height / 2,
-                fmtIcon.Width, fmtIcon.Height);
+            if (IsActive)
+            {
+                // Scale down the filled/glowing bitmap only. The normal-size
+                // aircraft is then drawn on top, while the separate 76 px active
+                // ring above remains unchanged.
+                g.DrawImage(GlowIcon, -ActiveBackdropSize / 2, -ActiveBackdropSize / 2,
+                    ActiveBackdropSize, ActiveBackdropSize);
+                g.DrawImage(Icon, -Icon.Width / 2, -Icon.Height / 2,
+                    Icon.Width, Icon.Height);
+            }
+            else
+            {
+                // The normal icon is 72 px while the marker hit-box is 100 px.
+                // Centre the bitmap using its own dimensions so the GPS position
+                // stays aligned with the visual centre.
+                g.DrawImage(Icon, -Icon.Width / 2, -Icon.Height / 2,
+                    Icon.Width, Icon.Height);
+            }
             g.RotateTransform(-framerotation);
 
             g.Transform = temp;

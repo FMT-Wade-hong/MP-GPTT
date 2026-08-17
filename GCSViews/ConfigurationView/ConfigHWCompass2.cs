@@ -3,6 +3,8 @@ using MissionPlanner.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -81,6 +83,155 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         public ConfigHWCompass2()
         {
             InitializeComponent();
+            ApplyFmtCompassLayout();
+        }
+
+        private bool UseTraditionalChinese => CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+        private void ApplyFmtCompassLayout()
+        {
+            SuspendLayout();
+            AutoScroll = true;
+            BackColor = Color.FromArgb(18, 28, 35);
+
+            var zh = UseTraditionalChinese;
+            label6.Text = zh ? "羅盤優先順序與校正" : "Compass priority and calibration";
+            label1.Text = zh
+                ? "依優先順序排列已偵測到的羅盤；第一列為最高優先。變更後請重新啟動飛控並重新校正。"
+                : "Order detected compasses by priority. The first row has the highest priority. Reboot and recalibrate after changes.";
+            label3.Text = zh ? "啟用要使用的羅盤：" : "Enable the compasses to use:";
+            label4.Text = zh ? "變更羅盤配置後必須重新校正。" : "Calibration is required after changing compass configuration.";
+            label5.Text = zh ? "變更優先順序後必須重新啟動飛控。" : "A reboot is required after changing priority.";
+            but_missing.Text = zh ? "移除遺失羅盤" : "Remove missing";
+            but_reboot.Text = zh ? "重新啟動飛控" : "Reboot autopilot";
+            but_largemagcal.Text = zh ? "大型載具羅盤校正" : "Large vehicle calibration";
+            mavlinkCheckBoxUseCompass1.Text = zh ? "使用羅盤 1" : "Use compass 1";
+            mavlinkCheckBoxUseCompass2.Text = zh ? "使用羅盤 2" : "Use compass 2";
+            mavlinkCheckBoxUseCompass3.Text = zh ? "使用羅盤 3" : "Use compass 3";
+            CHK_compass_learn.Text = zh ? "自動學習偏移量" : "Automatically learn offsets";
+
+            groupBoxonboardcalib.Text = zh ? "飛控內建羅盤校正" : "Onboard compass calibration";
+            BUT_OBmagcalstart.Text = zh ? "開始校正" : "Start";
+            BUT_OBmagcalaccept.Text = zh ? "接受結果" : "Accept";
+            BUT_OBmagcalcancel.Text = zh ? "取消" : "Cancel";
+            label7.Text = zh ? "羅盤 1" : "Compass 1";
+            label8.Text = zh ? "羅盤 2" : "Compass 2";
+            label9.Text = zh ? "羅盤 3" : "Compass 3";
+            label10.Text = zh ? "容許誤差" : "Fitness";
+            label2.Text = zh ? "校正失敗時可放寬容許誤差" : "Relax fitness if calibration fails";
+
+            Priority.HeaderText = zh ? "優先" : "Priority";
+            devIDDataGridViewTextBoxColumn.HeaderText = zh ? "裝置 ID" : "Device ID";
+            busTypeDataGridViewTextBoxColumn.HeaderText = zh ? "匯流排類型" : "Bus type";
+            busDataGridViewTextBoxColumn.HeaderText = zh ? "匯流排" : "Bus";
+            addressDataGridViewTextBoxColumn.HeaderText = zh ? "位址" : "Address";
+            devTypeDataGridViewTextBoxColumn.HeaderText = zh ? "感測器型號" : "Sensor type";
+            Missing.HeaderText = zh ? "遺失" : "Missing";
+            External.HeaderText = zh ? "外接" : "External";
+            Orientation.HeaderText = zh ? "安裝方向" : "Orientation";
+            Up.HeaderText = zh ? "上移" : "Up";
+            Down.HeaderText = zh ? "下移" : "Down";
+
+            var root = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                AutoSize = true,
+                ColumnCount = 1,
+                RowCount = 5,
+                BackColor = BackColor,
+                Padding = new Padding(12)
+            };
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 66F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 225F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 112F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 190F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 46F));
+
+            var header = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(27, 39, 47), Margin = new Padding(0, 0, 0, 8) };
+            var icon = new Panel { Location = new Point(12, 9), Size = new Size(42, 42), BackColor = Color.Transparent };
+            icon.Paint += (sender, args) =>
+            {
+                args.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var pen = new Pen(Color.FromArgb(45, 169, 220), 2F))
+                using (var brush = new SolidBrush(Color.FromArgb(45, 169, 220)))
+                {
+                    args.Graphics.DrawEllipse(pen, 4, 4, 33, 33);
+                    args.Graphics.DrawLine(pen, 20, 8, 20, 34);
+                    args.Graphics.DrawLine(pen, 8, 21, 33, 21);
+                    args.Graphics.FillPolygon(brush, new[] { new Point(20, 5), new Point(16, 18), new Point(24, 18) });
+                }
+            };
+            header.Controls.Add(icon);
+            label6.AutoSize = true;
+            label6.Location = new Point(66, 8);
+            label6.ForeColor = Color.White;
+            label6.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 12F, FontStyle.Bold);
+            label1.AutoSize = false;
+            label1.Location = new Point(67, 33);
+            label1.Size = new Size(Math.Max(520, ClientSize.Width - 110), 28);
+            label1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            label1.ForeColor = Color.Gainsboro;
+            header.Controls.Add(label6);
+            header.Controls.Add(label1);
+            root.Controls.Add(header, 0, 0);
+
+            myDataGridView1.Dock = DockStyle.Fill;
+            myDataGridView1.Margin = new Padding(0, 0, 0, 8);
+            myDataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            myDataGridView1.ColumnHeadersHeight = 30;
+            myDataGridView1.RowTemplate.Height = 28;
+            myDataGridView1.BackgroundColor = Color.FromArgb(22, 34, 42);
+            root.Controls.Add(myDataGridView1, 0, 1);
+
+            var options = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
+                WrapContents = true,
+                BackColor = Color.FromArgb(27, 39, 47),
+                Padding = new Padding(10),
+                Margin = new Padding(0, 0, 0, 8)
+            };
+            label3.AutoSize = true;
+            label3.Margin = new Padding(0, 7, 12, 0);
+            options.Controls.Add(label3);
+            foreach (var check in new Control[] { mavlinkCheckBoxUseCompass1, mavlinkCheckBoxUseCompass2, mavlinkCheckBoxUseCompass3, CHK_compass_learn })
+            {
+                check.AutoSize = true;
+                check.Margin = new Padding(4, 6, 14, 4);
+                options.Controls.Add(check);
+            }
+            foreach (var button in new Control[] { but_missing, but_reboot })
+            {
+                button.Size = new Size(130, 30);
+                button.Margin = new Padding(4);
+                options.Controls.Add(button);
+            }
+            label5.AutoSize = true;
+            label5.Margin = new Padding(8, 9, 8, 0);
+            options.Controls.Add(label5);
+            root.Controls.Add(options, 0, 2);
+
+            groupBoxonboardcalib.Dock = DockStyle.Fill;
+            groupBoxonboardcalib.Margin = new Padding(0, 0, 0, 8);
+            groupBoxonboardcalib.ForeColor = Color.White;
+            groupBoxonboardcalib.BackColor = Color.FromArgb(22, 34, 42);
+            lbl_obmagresult.Width = Math.Max(250, groupBoxonboardcalib.Width - lbl_obmagresult.Left - 20);
+            lbl_obmagresult.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            root.Controls.Add(groupBoxonboardcalib, 0, 3);
+
+            var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
+            label4.AutoSize = true;
+            label4.Margin = new Padding(0, 9, 12, 0);
+            but_largemagcal.Size = new Size(160, 30);
+            footer.Controls.Add(label4);
+            footer.Controls.Add(but_largemagcal);
+            root.Controls.Add(footer, 0, 4);
+
+            Controls.Clear();
+            Controls.Add(root);
+            ResumeLayout(true);
         }
 
         public void Activate()

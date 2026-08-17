@@ -99,7 +99,10 @@ namespace MissionPlanner.Plugin
                     if (assembly.FullName == args.Name)
                         return assembly;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    log.Debug("Assembly resolver could not load " + file, ex);
+                }
             }
 
             // check local directory
@@ -113,7 +116,10 @@ namespace MissionPlanner.Plugin
                     if (assembly.FullName == args.Name)
                         return assembly;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    log.Debug("Assembly resolver could not load " + file, ex);
+                }
             }
 
             log.Info("LoadFromSameFolder " + args.RequestingAssembly + "-> " + args.Name);
@@ -154,9 +160,9 @@ namespace MissionPlanner.Plugin
                 asm = Assembly.LoadFile(file);
                 log.Info("Plugin Load " + file);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // unable to load
+                log.Warn("Unable to load plugin assembly " + file, ex);
                 return;
             }
 

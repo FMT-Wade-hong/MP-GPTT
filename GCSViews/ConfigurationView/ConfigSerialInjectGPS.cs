@@ -161,7 +161,289 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             rtcm3.ObsMessage += Rtcm3_ObsMessage;
 
+            ApplyFmtRtkLocalizationAndLayout();
+
             MissionPlanner.Utilities.Tracking.AddPage(this.GetType().ToString(), this.Text);
+        }
+
+        private bool IsFmtChinese =>
+            CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+        private void ApplyFmtRtkLocalizationAndLayout()
+        {
+            AutoScroll = true;
+            Font = new Font("Microsoft JhengHei UI", 9.5F);
+            MinimumSize = new Size(900, 620);
+
+            if (IsFmtChinese)
+            {
+                chk_autoconfig.Text = "自動設定接收機";
+                chk_rtcmmsg.Text = "僅注入 RTCM 訊息";
+                chk_sendgga.Text = "傳送 NTRIP GGA（VRS／Smart）";
+                check_sendntripv1.Text = "使用 NTRIP v1.0 協定";
+                BUT_connect.Text = threadrun ? "停止" : "連線";
+                groupBox_autoconfig.Text = "接收機自動設定";
+                groupBox3.Text = "資料連線狀態";
+                groupBox2.Text = "RTCM 星系狀態";
+                label3.Text = "輸入資料率";
+                label4.Text = "輸出資料率";
+                label5.Text = "RTCM 基準站";
+                label6.Text = "已接收訊息";
+                label11.Text = "基準站";
+                label12.Text = "GPS";
+                label13.Text = "GLONASS";
+                label15.Text = "北斗";
+                label16.Text = "Galileo";
+                groupBox1.Text = "測量定位狀態";
+                label1.Text = "精度（公尺）";
+                label2.Text = "時間（秒）";
+                chk_m8p_130p.Text = "M8P 130+／F9P 韌體";
+                but_restartsvin.Text = "重新測量";
+                but_save_basepos.Text = "儲存目前位置";
+                chk_septentriofixedposition.Text = "使用固定位置";
+                label14.Text = "緯度（WGS84）";
+                label17.Text = "經度（WGS84）";
+                label18.Text = "高度（公尺）";
+                button_septentriosetposition.Text = "設定位置";
+                label19.Text = "RTCM 訊息量";
+                label20.Text = "RTCM 傳送間隔（秒）";
+                button_septentriortcminterval.Text = "套用間隔";
+                label21.Text = "使用的衛星星系";
+                label22.Text = "連線後，接收機會啟動測量定位以取得高精度基準站座標。\r\n" +
+                                   "當基準站座標不再變動時代表測量完成；實際時間取決於位置與衛星訊號。\r\n" +
+                                   "完成後即可開始傳送 RTK 差分資料。";
+                Lat.HeaderText = "緯度／ECEF X";
+                Long.HeaderText = "經度／ECEF Y";
+                Alt.HeaderText = "高度／ECEF Z";
+                BaseName1.HeaderText = "位置名稱";
+                Use.HeaderText = "使用";
+                Use.Text = "使用";
+                Delete.HeaderText = "刪除";
+                Delete.Text = "刪除";
+            }
+
+            ConfigureFmtRtkStatusGroups();
+            ConfigureFmtUbloxPanel();
+            ConfigureFmtSeptentrioPanel();
+
+            panel_um982.Padding = new Padding(14);
+            label22.Dock = DockStyle.Fill;
+            label22.AutoSize = false;
+
+            var title = new Label
+            {
+                AutoSize = true,
+                Text = IsFmtChinese ? "RTK 定位與差分資料設定" : "RTK Positioning and Correction Data",
+                Font = new Font(Font, FontStyle.Bold),
+                Margin = new Padding(0, 0, 0, 6)
+            };
+            var subtitle = new Label
+            {
+                AutoSize = true,
+                Text = IsFmtChinese
+                    ? "選擇 RTK 資料來源與接收機設定；連線後請確認資料率、基準站及 RTCM 狀態。"
+                    : "Select the RTK source and receiver configuration, then verify link and RTCM status.",
+                Margin = new Padding(0, 0, 0, 10)
+            };
+
+            var connectionBar = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                AutoScroll = true,
+                WrapContents = true,
+                Padding = new Padding(8),
+                Margin = new Padding(0, 0, 0, 8),
+                BackColor = Color.FromArgb(22, 43, 53)
+            };
+            AddFmtLabeledControl(connectionBar, IsFmtChinese ? "資料來源" : "Source", CMB_serialport, 155);
+            AddFmtLabeledControl(connectionBar, IsFmtChinese ? "傳輸速率" : "Baud", CMB_baudrate, 105);
+            BUT_connect.Size = new Size(105, 31);
+            BUT_connect.Margin = new Padding(8, 18, 8, 3);
+            connectionBar.Controls.Add(BUT_connect);
+            connectionBar.Controls.Add(chk_autoconfig);
+            AddFmtLabeledControl(connectionBar, IsFmtChinese ? "接收機類型" : "Receiver", comboBoxConfigType, 190);
+            connectionBar.Controls.Add(chk_rtcmmsg);
+            connectionBar.Controls.Add(chk_sendgga);
+            connectionBar.Controls.Add(check_sendntripv1);
+            foreach (Control check in new Control[] { chk_autoconfig, chk_rtcmmsg, chk_sendgga, check_sendntripv1 })
+            {
+                check.AutoSize = true;
+                check.Margin = new Padding(8, 23, 8, 3);
+            }
+
+            var statusArea = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 3,
+                RowCount = 1,
+                Margin = new Padding(0, 0, 0, 8)
+            };
+            statusArea.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
+            statusArea.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32F));
+            statusArea.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28F));
+            groupBox3.Dock = DockStyle.Fill;
+            groupBox2.Dock = DockStyle.Fill;
+            myGMAP1.Dock = DockStyle.Fill;
+            myGMAP1.MinimumSize = new Size(220, 110);
+            statusArea.Controls.Add(groupBox3, 0, 0);
+            statusArea.Controls.Add(groupBox2, 1, 0);
+            statusArea.Controls.Add(myGMAP1, 2, 0);
+
+            splitContainer1.Dock = DockStyle.Fill;
+            splitContainer1.Orientation = Orientation.Horizontal;
+            splitContainer1.Panel1MinSize = 210;
+            splitContainer1.Panel2MinSize = 140;
+            groupBox_autoconfig.Dock = DockStyle.Fill;
+            panel1.Dock = DockStyle.Fill;
+            panel1.AutoScroll = true;
+
+            var root = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(14),
+                ColumnCount = 1,
+                RowCount = 5
+            };
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 90F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 145F));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            Controls.Clear();
+            root.Controls.Add(title, 0, 0);
+            root.Controls.Add(subtitle, 0, 1);
+            root.Controls.Add(connectionBar, 0, 2);
+            root.Controls.Add(statusArea, 0, 3);
+            root.Controls.Add(splitContainer1, 0, 4);
+            Controls.Add(root);
+
+            groupBox_autoconfig.Visible = chk_autoconfig.Checked;
+            comboBoxConfigType.Visible = chk_autoconfig.Checked;
+            Resize += (sender, args) =>
+            {
+                if (!splitContainer1.Panel1Collapsed && splitContainer1.Height > 390)
+                    splitContainer1.SplitterDistance = Math.Min(250, splitContainer1.Height - 145);
+            };
+        }
+
+        private static void AddFmtLabeledControl(FlowLayoutPanel parent, string caption, Control input, int width)
+        {
+            var holder = new TableLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 1,
+                RowCount = 2,
+                Margin = new Padding(4, 0, 4, 0)
+            };
+            holder.Controls.Add(new Label { Text = caption, AutoSize = true, Margin = new Padding(0, 0, 0, 2) }, 0, 0);
+            input.Width = width;
+            input.Margin = Padding.Empty;
+            holder.Controls.Add(input, 0, 1);
+            parent.Controls.Add(holder);
+        }
+
+        private void ConfigureFmtRtkStatusGroups()
+        {
+            var link = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(8), ColumnCount = 4, RowCount = 2 };
+            link.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            link.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            link.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            link.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            link.Controls.Add(label3, 0, 0); link.Controls.Add(lbl_status1, 1, 0);
+            link.Controls.Add(label4, 2, 0); link.Controls.Add(lbl_status2, 3, 0);
+            link.Controls.Add(label5, 0, 1); link.Controls.Add(lbl_status3, 1, 1);
+            link.Controls.Add(label6, 2, 1); link.Controls.Add(labelmsgseen, 3, 1);
+            foreach (Control control in link.Controls) { control.AutoSize = true; control.Margin = new Padding(3, 5, 8, 3); }
+            groupBox3.Controls.Clear();
+            groupBox3.Controls.Add(link);
+
+            var rtcm = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, WrapContents = true, Padding = new Padding(7) };
+            AddFmtRtkState(rtcm, label11, labelbase);
+            AddFmtRtkState(rtcm, label12, labelgps);
+            AddFmtRtkState(rtcm, label13, labelglonass);
+            AddFmtRtkState(rtcm, label15, label14BDS);
+            AddFmtRtkState(rtcm, label16, labelGall);
+            groupBox2.Controls.Clear();
+            groupBox2.Controls.Add(rtcm);
+        }
+
+        private static void AddFmtRtkState(FlowLayoutPanel parent, Label name, Label state)
+        {
+            var holder = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Margin = new Padding(4) };
+            name.AutoSize = true;
+            state.Size = new Size(22, 22);
+            state.Margin = new Padding(0, 2, 0, 0);
+            holder.Controls.Add(name);
+            holder.Controls.Add(state);
+            parent.Controls.Add(holder);
+        }
+
+        private void ConfigureFmtUbloxPanel()
+        {
+            var options = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true, Padding = new Padding(6) };
+            foreach (var control in new Control[] { chk_m8p_130p, label1, txt_surveyinAcc, label2, txt_surveyinDur,
+                         but_restartsvin, but_save_basepos })
+            {
+                control.Margin = new Padding(5);
+                options.Controls.Add(control);
+            }
+            txt_surveyinAcc.Width = 70;
+            txt_surveyinDur.Width = 70;
+            but_restartsvin.Size = new Size(110, 30);
+            but_save_basepos.Size = new Size(145, 30);
+            dg_basepos.Dock = DockStyle.Fill;
+            dg_basepos.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            panel2.Controls.Clear();
+            panel2.Dock = DockStyle.Fill;
+            panel2.Controls.Add(dg_basepos);
+            panel2.Controls.Add(options);
+            options.BringToFront();
+
+            var survey = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(6) };
+            foreach (var control in new Control[] { lbl_svin, label7, label8, label9, label10 })
+            {
+                control.AutoSize = true;
+                control.MaximumSize = new Size(280, 0);
+                survey.Controls.Add(control);
+            }
+            groupBox1.Controls.Clear();
+            groupBox1.Controls.Add(survey);
+            groupBox1.Dock = DockStyle.Fill;
+
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 72F));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 28F));
+            layout.Controls.Add(panel2, 0, 0);
+            layout.Controls.Add(groupBox1, 1, 0);
+            panel_ubloxoptions.Controls.Clear();
+            panel_ubloxoptions.Controls.Add(layout);
+        }
+
+        private void ConfigureFmtSeptentrioPanel()
+        {
+            var layout = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, WrapContents = true, Padding = new Padding(8) };
+            foreach (var control in new Control[] { chk_septentriofixedposition, label14, input_septentriofixedatitude,
+                         label17, input_septentriofixedlongitude, label18, input_septentriofixedaltitude,
+                         button_septentriosetposition, label19, cmb_septentriortcmamount, label20,
+                         input_septentriortcminterval, button_septentriortcminterval, label21,
+                         chk_septentriogps, chk_septentrioglonass, chk_septentriobeidou, chk_septentriogalileo })
+            {
+                control.AutoSize = control is Label || control is CheckBox;
+                control.Margin = new Padding(6, 8, 6, 4);
+                layout.Controls.Add(control);
+            }
+            input_septentriofixedatitude.Width = 120;
+            input_septentriofixedlongitude.Width = 120;
+            input_septentriofixedaltitude.Width = 95;
+            cmb_septentriortcmamount.Width = 130;
+            input_septentriortcminterval.Width = 110;
+            button_septentriosetposition.Size = new Size(105, 30);
+            button_septentriortcminterval.Size = new Size(105, 30);
+            panel_septentrio.Controls.Clear();
+            panel_septentrio.Controls.Add(layout);
         }
 
         private void Rtcm3_ObsMessage(object sender, EventArgs e)
@@ -1284,6 +1566,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             Settings.Instance["SerialInjectGPS_autoconfig"] = chk_autoconfig.Checked.ToString();
 
             splitContainer1.Panel1Collapsed = !chk_autoconfig.Checked;
+            groupBox_autoconfig.Visible = chk_autoconfig.Checked;
             comboBoxConfigType.Visible = chk_autoconfig.Checked;
         }
 

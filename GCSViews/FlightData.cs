@@ -60,15 +60,21 @@ namespace MissionPlanner.GCSViews
         private readonly FmtFlightModeBar fmtFlightModeBar;
         private readonly FmtAutoMissionPanel fmtAutoMissionPanel;
         private readonly CheckBox chkFmtAirspace;
+        private readonly CheckBox chkFmt3DMap;
+        private OpenGLtest2 fmt3DMapControl;
+        private bool fmtChangingEmbeddedMapView;
         private DateTime fmtLastAirspaceRefresh = DateTime.MinValue;
         private bool fmtAirspaceRefreshRunning;
         private const double FmtAirspaceDisplayRadiusKm = 50.0;
         private Firmwares fmtModeFirmware = (Firmwares)(-1);
         private bool fmtModeIsQuadPlane;
+        private bool fmtModeIsHelicopter;
         private bool fmtModeListLoaded;
         private List<string> fmtSupportedModes = new List<string>();
 
         internal PointLatLng MouseDownStart;
+        private static readonly PointLatLng FmtDefaultMapPosition =
+            new PointLatLng(23.8456499, 120.9759521);
         internal Point MouseDownStartLocal;
 
         //The file path of the selected script
@@ -276,7 +282,23 @@ namespace MissionPlanner.GCSViews
                 UseVisualStyleBackColor = true
             };
             chkFmtAirspace.CheckedChanged += CHK_fmtAirspace_CheckedChanged;
+
+            chkFmt3DMap = new CheckBox
+            {
+                Name = "CHK_fmt3DMap",
+                AutoSize = true,
+                Text = "3D 地圖",
+                Checked = false,
+                Anchor = AnchorStyles.Left | AnchorStyles.Bottom,
+                UseVisualStyleBackColor = true
+            };
+            chkFmt3DMap.CheckedChanged += CHK_fmt3DMap_CheckedChanged;
             ConfigureFmtMapOptionsPanel();
+            splitContainer1.Resize += (sender, args) =>
+            {
+                if (!splitContainer1.Panel1Collapsed)
+                    SetFmtEmbeddedPanelHeight();
+            };
 
             fmtFlightModeBar = new FmtFlightModeBar();
             fmtFlightModeBar.ModeRequested += (sender, mode) => RequestFmtFlightMode(mode);
@@ -603,7 +625,14 @@ namespace MissionPlanner.GCSViews
             CustomWarning.defaultsrc = MainV2.comPort.MAV.cs;
             MissionPlanner.Controls.PreFlight.CheckListItem.defaultsrc = MainV2.comPort.MAV.cs;
 
-            if (Settings.Instance["maplast_lat"] != "")
+            if (MainV2.comPort.MAV.cs.Location == PointLatLngAlt.Zero)
+            {
+                // FMT operations default to central Taiwan until the connected vehicle
+                // publishes a valid GPS position. Do not reuse an unrelated stale map
+                // position as the automatic tracking target.
+                gMapControl1.Position = FmtDefaultMapPosition;
+            }
+            else if (Settings.Instance["maplast_lat"] != "")
             {
                 try
                 {
@@ -909,42 +938,55 @@ namespace MissionPlanner.GCSViews
 
         protected override void Dispose(bool disposing)
         {
+            threadrun = false;
+
+            if (disposing)
+            {
+                if (MainV2.comPort != null)
+                {
+                    MainV2.comPort.logreadmode = false;
+                    MainV2.comPort.ParamListChanged -= FlightData_ParentChanged;
+                }
+                POI.POIModified -= POI_POIModified;
+                NoFly.NoFly.NoFlyEvent -= NoFly_NoFlyEvent;
+                if (MainV2.cam != null)
+                    MainV2.cam.camimage -= cam_camimage;
+
+                try
+                {
+                    if (hud1 != null && MainH != null)
+                        Settings.Instance["FlightSplitter"] = MainH.SplitterDistance.ToString();
+                }
+                catch (Exception ex)
+                {
+                    log.Debug("Unable to save Flight Data splitter position during disposal", ex);
+                }
+
+                if (prop != null)
+                    prop.Stop();
+                if (polygons != null)
+                    polygons.Dispose();
+                if (routes != null)
+                    routes.Dispose();
+                if (route != null)
+                    route.Dispose();
+                if (marker != null)
+                    marker.Dispose();
+                if (aviwriter != null)
+                    aviwriter.Dispose();
+                if (components != null)
+                    components.Dispose();
+            }
+
             base.Dispose(disposing);
-
-            MainV2.comPort.logreadmode = false;
-            try
-            {
-                if (hud1 != null)
-                    Settings.Instance["FlightSplitter"] = MainH.SplitterDistance.ToString();
-            }
-            catch
-            {
-            }
-
-            if (polygons != null)
-                polygons.Dispose();
-            if (routes != null)
-                routes.Dispose();
-            if (route != null)
-                route.Dispose();
-            if (marker != null)
-                marker.Dispose();
-            if (aviwriter != null)
-                aviwriter.Dispose();
-
-            if (prop != null)
-                prop.Stop();
-
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
         }
 
         protected override void OnInvalidated(InvalidateEventArgs e)
         {
             base.OnInvalidated(e);
-            updateBindingSourceWork();
+            // The main Flight Data loop owns the 10 Hz binding cadence. Calling the
+            // complete binding pass from a paint invalidation bypassed that throttle
+            // and could create paint -> bind -> invalidate feedback loops.
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -1185,6 +1227,116 @@ namespace MissionPlanner.GCSViews
         internal void ExecuteFmtArmDisarm()
         {
             BUT_ARM_Click(BUT_ARM, EventArgs.Empty);
+        }
+
+        internal void ExecuteFmtPreflightCheck()
+        {
+            var connected = MainV2.comPort?.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
+            if (!connected)
+            {
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "請先連線飛控，才能辨識飛行器構型並執行飛行前檢查。"
+                        : "Connect to the flight controller before running the preflight checklist.",
+                    IsFmtTraditionalChineseUi ? "飛行前檢查" : "Preflight Check",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var firmware = MainV2.comPort.MAV.cs.firmware;
+            var isQuadPlane = firmware == Firmwares.ArduPlane &&
+                              MainV2.comPort.MAV.param.ContainsKey("Q_ENABLE") &&
+                              MainV2.comPort.MAV.param["Q_ENABLE"].Value != 0;
+            var isHelicopter = IsFmtHelicopter(firmware);
+            var vehicleName = isQuadPlane
+                ? "QuadPlane / VTOL"
+                : firmware == Firmwares.ArduPlane || firmware == Firmwares.Ateryx
+                    ? "固定翼"
+                    : isHelicopter
+                        ? "直升機"
+                        : firmware == Firmwares.ArduCopter2
+                        ? "多旋翼"
+                        : "其他構型";
+
+            var commonItems = new[]
+            {
+                "任務、返航點與限禁航區已確認",
+                "GPS 定位、衛星數與 HDOP 符合任務需求",
+                "電池電壓、容量及遙測鏈路正常",
+                "螺旋槳、機體與酬載固定完成",
+                "現場人員已退至安全區域"
+            };
+            var vehicleItems = isQuadPlane
+                ? new[] { "固定翼與垂直起降控制面／馬達方向均已確認", "VTOL 轉換高度、空速與模式設定已確認" }
+                : firmware == Firmwares.ArduPlane || firmware == Firmwares.Ateryx
+                    ? new[] { "副翼、升降舵、方向舵與油門方向已確認", "空速計、QNH 與起降方向已確認" }
+                    : isHelicopter
+                        ? new[] { "主旋翼、尾旋翼／反扭力系統與伺服方向已確認", "旋翼轉速、油門鎖定與失控保護設定已確認" }
+                        : firmware == Firmwares.ArduCopter2
+                        ? new[] { "各馬達編號、旋向與槳葉方向已確認", "羅盤、水平與震動狀態已確認" }
+                        : new[] { "飛控構型、致動器方向與安全設定已確認" };
+
+            using (var form = new Form())
+            using (var root = new TableLayoutPanel())
+            using (var checklist = new CheckedListBox())
+            using (var skip = new CheckBox())
+            using (var close = new Button())
+            {
+                form.Text = "FMT 飛行前檢查";
+                form.StartPosition = FormStartPosition.CenterParent;
+                form.MinimizeBox = false;
+                form.MaximizeBox = false;
+                form.ShowIcon = false;
+                form.ClientSize = new Size(600, 500);
+                form.MinimumSize = new Size(560, 430);
+                form.Font = new Font("Microsoft JhengHei UI", 10F);
+
+                root.Dock = DockStyle.Fill;
+                root.Padding = new Padding(18);
+                root.ColumnCount = 1;
+                root.RowCount = 5;
+                root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+                root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+                var title = new System.Windows.Forms.Label
+                {
+                    AutoSize = true,
+                    Font = new Font(form.Font, FontStyle.Bold),
+                    Text = "偵測構型：" + vehicleName,
+                    Margin = new Padding(0, 0, 0, 8)
+                };
+                var note = new System.Windows.Forms.Label
+                {
+                    AutoSize = true,
+                    Text = "逐項勾選完成確認。此介面目前僅供操作提醒，不會影響解鎖。",
+                    Margin = new Padding(0, 0, 0, 12)
+                };
+                checklist.Dock = DockStyle.Fill;
+                checklist.CheckOnClick = true;
+                checklist.IntegralHeight = false;
+                checklist.Items.AddRange(commonItems.Concat(vehicleItems).Cast<object>().ToArray());
+                skip.AutoSize = true;
+                skip.Text = "測試性質跳過（暫時不影響解鎖）";
+                skip.Margin = new Padding(0, 12, 0, 12);
+                skip.CheckedChanged += (sender, args) => checklist.Enabled = !skip.Checked;
+                close.Text = "完成／關閉";
+                close.AutoSize = false;
+                close.Size = new Size(130, 38);
+                close.Anchor = AnchorStyles.Right;
+                close.DialogResult = DialogResult.OK;
+
+                root.Controls.Add(title, 0, 0);
+                root.Controls.Add(note, 0, 1);
+                root.Controls.Add(checklist, 0, 2);
+                root.Controls.Add(skip, 0, 3);
+                root.Controls.Add(close, 0, 4);
+                form.Controls.Add(root);
+                form.AcceptButton = close;
+                Utilities.ThemeManager.ApplyThemeTo(form);
+                form.ShowDialog(this);
+            }
         }
 
         internal void ExecuteFmtAirspeedZero()
@@ -1961,11 +2113,14 @@ namespace MissionPlanner.GCSViews
             var isQuadPlane = firmware == Firmwares.ArduPlane &&
                               MainV2.comPort.MAV.param.ContainsKey("Q_ENABLE") &&
                               MainV2.comPort.MAV.param["Q_ENABLE"].Value != 0;
+            var isHelicopter = IsFmtHelicopter(firmware);
 
-            if (!fmtModeListLoaded || fmtModeFirmware != firmware || fmtModeIsQuadPlane != isQuadPlane)
+            if (!fmtModeListLoaded || fmtModeFirmware != firmware || fmtModeIsQuadPlane != isQuadPlane ||
+                fmtModeIsHelicopter != isHelicopter)
             {
                 fmtModeFirmware = firmware;
                 fmtModeIsQuadPlane = isQuadPlane;
+                fmtModeIsHelicopter = isHelicopter;
                 fmtModeListLoaded = true;
                 var modes = ArduPilot.Common.getModesList(firmware);
                 fmtSupportedModes = modes == null
@@ -1974,8 +2129,32 @@ namespace MissionPlanner.GCSViews
             }
 
             var connected = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
-            fmtFlightModeBar.UpdateVehicle(firmware, isQuadPlane, connected,
+            fmtFlightModeBar.UpdateVehicle(firmware, isQuadPlane, isHelicopter, connected,
                 MainV2.comPort.MAV.cs.mode, fmtSupportedModes);
+        }
+
+        private static bool IsFmtHelicopter(Firmwares firmware)
+        {
+            if (firmware != Firmwares.ArduCopter2)
+                return false;
+
+            var mav = MainV2.comPort.MAV;
+            if (mav.aptype == MAVLink.MAV_TYPE.HELICOPTER)
+                return true;
+
+            var parameters = mav.param;
+            if (parameters == null)
+                return false;
+
+            if (parameters.ContainsKey("H_RSC_MODE") || parameters.ContainsKey("H_SW_TYPE") ||
+                parameters.ContainsKey("H_SWASH_TYPE") || parameters.ContainsKey("H_COL_MIN"))
+                return true;
+
+            if (!parameters.ContainsKey("FRAME_CLASS"))
+                return false;
+
+            var frameClass = (int)Math.Round(parameters["FRAME_CLASS"].Value);
+            return frameClass == 6 || frameClass == 11 || frameClass == 13;
         }
 
         private void LayoutFmtFlightModeArea()
@@ -2008,7 +2187,8 @@ namespace MissionPlanner.GCSViews
             {
                 tableMap.RowCount = 3;
                 tableMap.RowStyles.Clear();
-                tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, 56F));
+                // Compact FMT mission strip: a fixed caption and one execution value line.
+                tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
                 tableMap.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
                 tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
                 tableMap.SetRow(splitContainer1, 1);
@@ -2038,7 +2218,7 @@ namespace MissionPlanner.GCSViews
                 Height = panel1.Height
             };
 
-            var controls = new[] { CB_tuning, CHK_autopan, chkFmtAirspace };
+            var controls = new[] { CB_tuning, CHK_autopan, chkFmtAirspace, chkFmt3DMap };
             foreach (var checkBox in controls)
             {
                 checkBox.Anchor = AnchorStyles.None;
@@ -2302,24 +2482,20 @@ namespace MissionPlanner.GCSViews
 
         private void CB_tuning_CheckedChanged(object sender, EventArgs e)
         {
-            if (CB_tuning.Checked)
+            if (!fmtChangingEmbeddedMapView && CB_tuning.Checked && chkFmt3DMap.Checked)
             {
-                splitContainer1.Panel1Collapsed = false;
-                ZedGraphTimer.Enabled = true;
-                ZedGraphTimer.Start();
-                zg1.Visible = true;
-                zg1.Refresh();
-            }
-            else
-            {
-                splitContainer1.Panel1Collapsed = true;
-                ZedGraphTimer.Enabled = false;
-                ZedGraphTimer.Stop();
-                zg1.Visible = false;
+                fmtChangingEmbeddedMapView = true;
+                try
+                {
+                    chkFmt3DMap.Checked = false;
+                }
+                finally
+                {
+                    fmtChangingEmbeddedMapView = false;
+                }
             }
 
-            // Fire the splitContainer1_Panel2_Resize event
-            splitContainer1_Panel2_Resize(null, null);
+            UpdateFmtEmbeddedMapView();
         }
 
         private void CheckAndBindPreFlightData()
@@ -3161,7 +3337,7 @@ namespace MissionPlanner.GCSViews
 
             prop = new Propagation(gMapControl1);
 
-            splitContainer1.Panel1Collapsed = true;
+            UpdateFmtEmbeddedMapView();
 
             try
             {
@@ -3532,6 +3708,130 @@ namespace MissionPlanner.GCSViews
             }
 
             RefreshFmtAirspaceForAircraft(true);
+        }
+
+        private void CHK_fmt3DMap_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!fmtChangingEmbeddedMapView && chkFmt3DMap.Checked && CB_tuning.Checked)
+            {
+                fmtChangingEmbeddedMapView = true;
+                try
+                {
+                    CB_tuning.Checked = false;
+                }
+                finally
+                {
+                    fmtChangingEmbeddedMapView = false;
+                }
+            }
+
+            UpdateFmtEmbeddedMapView();
+        }
+
+        private void UpdateFmtEmbeddedMapView()
+        {
+            if (splitContainer1 == null || splitContainer1.IsDisposed)
+                return;
+
+            var show3D = chkFmt3DMap != null && chkFmt3DMap.Checked;
+            var showTuning = !show3D && CB_tuning != null && CB_tuning.Checked;
+
+            ZedGraphTimer.Enabled = showTuning;
+            if (showTuning)
+                ZedGraphTimer.Start();
+            else
+                ZedGraphTimer.Stop();
+
+            zg1.Visible = showTuning;
+            if (fmt3DMapControl != null && !fmt3DMapControl.IsDisposed)
+                fmt3DMapControl.Visible = show3D;
+
+            if (!show3D && !showTuning)
+            {
+                splitContainer1.Panel1Collapsed = true;
+                splitContainer1_Panel2_Resize(null, null);
+                return;
+            }
+
+            if (show3D)
+            {
+                try
+                {
+                    EnsureFmt3DMapControl();
+                    fmt3DMapControl.Visible = true;
+                    fmt3DMapControl.BringToFront();
+                }
+                catch (Exception ex)
+                {
+                    log.Error("Unable to open embedded FMT 3D map", ex);
+                    fmtChangingEmbeddedMapView = true;
+                    try
+                    {
+                        chkFmt3DMap.Checked = false;
+                    }
+                    finally
+                    {
+                        fmtChangingEmbeddedMapView = false;
+                    }
+                    splitContainer1.Panel1Collapsed = true;
+                    CustomMessageBox.Show(
+                        "無法開啟 3D 地圖。請確認顯示卡驅動程式與 OpenGL 支援狀態。\r\n\r\n" + ex.Message,
+                        "FMT 3D 地圖");
+                    return;
+                }
+            }
+
+            splitContainer1.Panel1Collapsed = false;
+            SetFmtEmbeddedPanelHeight();
+
+            if (showTuning)
+            {
+                zg1.BringToFront();
+                zg1.Refresh();
+            }
+
+            splitContainer1_Panel2_Resize(null, null);
+        }
+
+        private void EnsureFmt3DMapControl()
+        {
+            if (fmt3DMapControl != null && !fmt3DMapControl.IsDisposed)
+                return;
+
+            fmt3DMapControl = new OpenGLtest2
+            {
+                Name = "fmtEmbedded3DMap",
+                Text = "FMT 3D 地圖",
+                Dock = DockStyle.Fill,
+                Margin = Padding.Empty,
+                BackColor = Color.FromArgb(13, 29, 37)
+            };
+            splitContainer1.Panel1.Controls.Add(fmt3DMapControl);
+        }
+
+        private void SetFmtEmbeddedPanelHeight()
+        {
+            if (splitContainer1.Panel1Collapsed || splitContainer1.ClientSize.Height <= 0)
+                return;
+
+            var available = Math.Max(0, splitContainer1.ClientSize.Height - splitContainer1.SplitterWidth);
+            if (available <= 0)
+                return;
+
+            const int minimumMapHeight = 220;
+            var maximumEmbeddedHeight = Math.Max(60, available - minimumMapHeight);
+            var desiredEmbeddedHeight = Math.Max(160, (int)Math.Round(available * 0.42));
+            desiredEmbeddedHeight = Math.Min(desiredEmbeddedHeight, maximumEmbeddedHeight);
+            desiredEmbeddedHeight = Math.Max(25, Math.Min(desiredEmbeddedHeight, available - 25));
+
+            try
+            {
+                splitContainer1.SplitterDistance = desiredEmbeddedHeight;
+            }
+            catch (InvalidOperationException)
+            {
+                // The split container may still be completing its first layout pass.
+            }
         }
 
         private void RefreshFmtAirspaceForAircraft(bool force)
@@ -4293,7 +4593,10 @@ namespace MissionPlanner.GCSViews
                             routes.Routes.Add(route);
                         }
 
-                        PointLatLng currentloc = new PointLatLng(MainV2.comPort.MAV.cs.lat, MainV2.comPort.MAV.cs.lng);
+                        PointLatLng currentloc = new PointLatLng(MainV2.comPort.MAV.cs.lat,
+                            MainV2.comPort.MAV.cs.lng);
+                        if (!IsFmtValidLocation(currentloc))
+                            currentloc = FmtDefaultMapPosition;
 
                         gMapControl1.HoldInvalidation = true;
 
@@ -5960,18 +6263,42 @@ namespace MissionPlanner.GCSViews
                     updateBindingSourceThreadName = Thread.CurrentThread.Name;
                 }
 
-                if(Disposing)
-                    return;
-
-                this.BeginInvokeIfRequired(delegate
+                if (Disposing || IsDisposed)
                 {
-                    updateBindingSourceWork();
+                    ReleaseBindingSourceUpdateSlot();
+                    return;
+                }
 
-                    lock (updateBindingSourcelock)
+                try
+                {
+                    this.BeginInvokeIfRequired(delegate
                     {
-                        updateBindingSourcecount--;
-                    }
-                });
+                        try
+                        {
+                            updateBindingSourceWork();
+                        }
+                        finally
+                        {
+                            // Never leave the coalescing gate locked when a control is
+                            // disposed or an individual binding update fails.
+                            ReleaseBindingSourceUpdateSlot();
+                        }
+                    });
+                }
+                catch (InvalidOperationException)
+                {
+                    // The window can close between the disposal check and BeginInvoke.
+                    ReleaseBindingSourceUpdateSlot();
+                }
+            }
+        }
+
+        private void ReleaseBindingSourceUpdateSlot()
+        {
+            lock (updateBindingSourcelock)
+            {
+                if (updateBindingSourcecount > 0)
+                    updateBindingSourcecount--;
             }
         }
 

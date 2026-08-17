@@ -71,6 +71,17 @@ namespace MissionPlanner.FMT
             }
         }
 
+        private sealed class DoubleBufferedFlowLayoutPanel : FlowLayoutPanel
+        {
+            internal DoubleBufferedFlowLayoutPanel()
+            {
+                DoubleBuffered = true;
+                SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
+                         ControlStyles.ResizeRedraw | ControlStyles.UserPaint, true);
+                UpdateStyles();
+            }
+        }
+
         private static readonly Color Background = Color.FromArgb(12, 27, 36);
         private static readonly Color PanelBackground = Color.FromArgb(20, 37, 47);
         private static readonly Color SkyBlue = Color.FromArgb(45, 169, 220);
@@ -88,6 +99,9 @@ namespace MissionPlanner.FMT
 
         internal FmtFlightModeBar()
         {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
+                     ControlStyles.ResizeRedraw | ControlStyles.UserPaint, true);
+            UpdateStyles();
             Name = "fmtFlightModeBar";
             BackColor = Background;
             Padding = new Padding(5, 4, 5, 4);
@@ -106,7 +120,7 @@ namespace MissionPlanner.FMT
                 Padding = new Padding(4, 0, 0, 0)
             };
 
-            modesPanel = new FlowLayoutPanel
+            modesPanel = new DoubleBufferedFlowLayoutPanel
             {
                 Name = "fmtFlightModeGroups",
                 Dock = DockStyle.Fill,
@@ -125,15 +139,15 @@ namespace MissionPlanner.FMT
 
         internal event EventHandler<string> ModeRequested;
 
-        internal void UpdateVehicle(Firmwares firmware, bool isQuadPlane, bool isConnected,
+        internal void UpdateVehicle(Firmwares firmware, bool isQuadPlane, bool isHelicopter, bool isConnected,
             string activeMode, IEnumerable<string> supportedModes)
         {
             var supported = (supportedModes ?? Enumerable.Empty<string>())
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .GroupBy(NormalizeModeName)
                 .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-            var groups = GetModeGroups(firmware, isQuadPlane);
-            var signature = firmware + "|" + isQuadPlane + "|" +
+            var groups = GetModeGroups(firmware, isQuadPlane, isHelicopter);
+            var signature = firmware + "|" + isQuadPlane + "|" + isHelicopter + "|" +
                             string.Join(",", supported.Values.OrderBy(value => value, StringComparer.OrdinalIgnoreCase));
             var normalizedActiveMode = NormalizeModeName(activeMode);
             var nextVehicleStateSignature = signature + "|" + isConnected + "|" + normalizedActiveMode;
@@ -152,7 +166,7 @@ namespace MissionPlanner.FMT
                 RebuildButtons(supported);
             }
 
-            var vehicleName = GetVehicleName(firmware, isQuadPlane);
+            var vehicleName = GetVehicleName(firmware, isQuadPlane, isHelicopter);
             statusLabel.Text = (connected ? "● 已連線" : "● 未連線") + "  |  " + vehicleName +
                                "  |  目前模式：" + (string.IsNullOrWhiteSpace(currentMode) ? "--" : currentMode);
             statusLabel.ForeColor = connected ? Color.LimeGreen : Disconnected;
@@ -161,10 +175,17 @@ namespace MissionPlanner.FMT
             {
                 var isActive = string.Equals(NormalizeModeName(pair.Key), NormalizeModeName(currentMode),
                     StringComparison.OrdinalIgnoreCase);
-                pair.Value.DisplayBackColor = isActive ? ActiveGreen : Color.FromArgb(39, 54, 64);
-                pair.Value.DisplayBorderColor = isActive ? Color.LimeGreen : SkyBlue;
-                pair.Value.Enabled = connected && pair.Value.Tag != null;
-                pair.Value.Invalidate();
+                var backColor = isActive ? ActiveGreen : Color.FromArgb(39, 54, 64);
+                var borderColor = isActive ? Color.LimeGreen : SkyBlue;
+                var enabled = connected && pair.Value.Tag != null;
+                if (pair.Value.DisplayBackColor != backColor ||
+                    pair.Value.DisplayBorderColor != borderColor || pair.Value.Enabled != enabled)
+                {
+                    pair.Value.DisplayBackColor = backColor;
+                    pair.Value.DisplayBorderColor = borderColor;
+                    pair.Value.Enabled = enabled;
+                    pair.Value.Invalidate();
+                }
             }
 
             foreach (var groupLabel in modesPanel.Controls.OfType<Label>())
@@ -173,8 +194,12 @@ namespace MissionPlanner.FMT
                 var groupActive = connected && group != null && group.Modes.Any(definition =>
                     string.Equals(NormalizeModeName(definition.Mode), NormalizeModeName(currentMode),
                         StringComparison.OrdinalIgnoreCase));
-                groupLabel.Text = (groupActive ? "● " : "○ ") + (group == null ? string.Empty : group.Title);
-                groupLabel.ForeColor = groupActive ? Color.LimeGreen : Color.Gainsboro;
+                var text = (groupActive ? "● " : "○ ") + (group == null ? string.Empty : group.Title);
+                var color = groupActive ? Color.LimeGreen : Color.Gainsboro;
+                if (!string.Equals(groupLabel.Text, text, StringComparison.Ordinal))
+                    groupLabel.Text = text;
+                if (groupLabel.ForeColor != color)
+                    groupLabel.ForeColor = color;
             }
         }
 
@@ -261,7 +286,9 @@ namespace MissionPlanner.FMT
             foreach (var group in visibleGroups)
                 contentHeight += 22 + (int)Math.Ceiling(group.Modes.Length / (double)buttonsPerRow) * 54;
 
-            Height = Math.Max(92, Math.Min(286, statusLabel.Height + Padding.Vertical + contentHeight));
+            var nextHeight = Math.Max(92, Math.Min(286, statusLabel.Height + Padding.Vertical + contentHeight));
+            if (Height != nextHeight)
+                Height = nextHeight;
             foreach (Control control in modesPanel.Controls)
             {
                 var label = control as Label;
@@ -270,7 +297,7 @@ namespace MissionPlanner.FMT
             }
         }
 
-        private static List<ModeGroup> GetModeGroups(Firmwares firmware, bool isQuadPlane)
+        private static List<ModeGroup> GetModeGroups(Firmwares firmware, bool isQuadPlane, bool isHelicopter)
         {
             if (isQuadPlane)
             {
@@ -283,6 +310,14 @@ namespace MissionPlanner.FMT
                         Mode("MANUAL", "手動"), Mode("FBWA", "FBWA"), Mode("FBWB", "FBWB"),
                         Mode("LOITER", "盤旋"), Mode("AUTO", "任務"), Mode("RTL", "返航"))
                 };
+            }
+
+            if (isHelicopter)
+            {
+                return OneGroup("直升機常用模式",
+                    Mode("STABILIZE", "自穩"), Mode("ACRO", "特技"), Mode("ALT_HOLD", "定高"),
+                    Mode("LOITER", "定點"), Mode("BRAKE", "煞車"), Mode("AUTO", "任務"),
+                    Mode("RTL", "返航"), Mode("LAND", "降落"));
             }
 
             switch (firmware)
@@ -306,7 +341,7 @@ namespace MissionPlanner.FMT
                 default:
                     return OneGroup("多旋翼常用模式",
                         Mode("STABILIZE", "自穩"), Mode("ALT_HOLD", "定高"), Mode("LOITER", "定點"),
-                        Mode("POSHOLD", "位置保持"), Mode("AUTO", "任務"), Mode("RTL", "返航"),
+                        Mode("BRAKE", "煞車"), Mode("AUTO", "任務"), Mode("RTL", "返航"),
                         Mode("LAND", "降落"));
             }
         }
@@ -329,10 +364,13 @@ namespace MissionPlanner.FMT
                 .ToArray());
         }
 
-        private static string GetVehicleName(Firmwares firmware, bool isQuadPlane)
+        private static string GetVehicleName(Firmwares firmware, bool isQuadPlane, bool isHelicopter)
         {
             if (isQuadPlane)
                 return "QuadPlane／VTOL";
+
+            if (isHelicopter)
+                return "直升機";
 
             switch (firmware)
             {

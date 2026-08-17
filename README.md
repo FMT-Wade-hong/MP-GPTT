@@ -1,7 +1,7 @@
-# FeiMaoTecPlanner V1.1.1
+# FeiMaoTecPlanner V1.1.2
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.1/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
+  <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.2/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
 </p>
 
 <p align="center">
@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.1/FMTPlanner-V1.1.1.zip"><strong>下載 FMTPlanner V1.1.1</strong></a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.2/FMTPlanner-V1.1.2.zip"><strong>下載 FMTPlanner V1.1.2</strong></a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.1.1/README-FMT.md">繁體中文圖文操作手冊</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.1.2/README-FMT.md">繁體中文圖文操作手冊</a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.1">版本發布頁</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.2">版本發布頁</a>
 </p>
 
-![Version](https://img.shields.io/badge/version-V1.1.1-22a9dc)
+![Version](https://img.shields.io/badge/version-V1.1.2-22a9dc)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
 ![Package](https://img.shields.io/badge/package-portable%20ZIP-35a853)
 ![Language](https://img.shields.io/badge/UI-English%20%7C%20繁體中文-f0ad00)
@@ -26,7 +26,7 @@
 
 | 項目 | 內容 |
 |---|---|
-| 軟體名稱 | **FeiMaoTecPlanner V1.1.1** |
+| 軟體名稱 | **FeiMaoTecPlanner V1.1.2** |
 | 執行檔 | **FMTPlanner.exe** |
 | 公司／品牌 | **FMT 飛貓科技** |
 | 基礎專案 | ArduPilot Mission Planner |
@@ -35,15 +35,15 @@
 | 支援構型 | 多旋翼、定翼機、VTOL／QuadPlane |
 | 介面語言 | 預設英文，可使用繁體中文 |
 
-## V1.1.1 穩定版主要更新
+## V1.1.2 穩定版主要更新
 
-- 採用全新的 FMT 航圖風格啟動畫面與登入畫面，加入帳號記憶、密碼顯示切換及 V1.1.1 品牌資訊。
-- 高度與地形剖面新增逐點撞地、低於 30 公尺淨空與安全狀態判定，使用紅、黃、綠高對比提示。
-- 限禁航區檢查改為可捲動的逐筆清單：禁航區紅底白字、限航區黃底深色字，並涵蓋起飛、任務及返航路徑。
-- 修正任務規劃地圖點擊無法建立經緯度，以及電子圍籬命令繁體中文化後的選單例外。
-- 完成飛行資料與任務規劃右鍵選單、進階工具、感測器狀態及多機編隊介面的繁體中文化與版面整理。
-- 修正語言切換、遺失資源、未連線讀取參數逾時等錯誤路徑，保留本機去識別化 GitHub 錯誤回報。
-- QNH 改以 hPa（百帕）直接輸入；空速計歸零與 QNH 按鈕採一致圓角尺寸，與紅色解鎖按鈕清楚區分。
+- 重製 AUTO 任務狀態列為固定高度、固定欄寬的雙層資訊版面；航點切換與 ETA 更新不再推移欄位，並移除會造成版面壅塞的藍色進度條。
+- 目前執行狀態只在 AUTO／RTL 模式啟用，並穩定顯示 Mission Item、下一任務、航段距離、離家距離與 ETA。
+- 新增飛行前檢查、主旋翼 RPM1 整數轉速與上下限提示；整理頂端飛行時間及衛星資訊並移除 ArduPilot 圖標，避免遙測資料被遮蔽。
+- 整合 3D 地圖與舵機調整面板，兩者只能擇一展開；修正地圖預設位置、自動平移、飛行器圖標中心及多旋翼圖標底色。
+- 強化直升機、定翼機、多旋翼及 VTOL 構型辨識與常用設定；直升機新增導航、半徑、航向與主旋翼轉速警告設定。
+- 完成 RTK、加速度計、羅盤、遙控器、舵機、馬達及電子圍籬頁面的繁體中文化與 DPI／捲動版面整理。
+- 改善外掛載入、畫面更新、未連線參數讀取與空值處理；完整方案以 Visual Studio MSBuild 建置成功，並完成可攜式封裝驗證。
 
 ## 主要功能
 
@@ -63,23 +63,23 @@
 
 ### 飛行資料與 AUTO 任務控制
 
-![FeiMaoTecPlanner V1.1.1 飛行資料畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.1/FMT/ManualImages/v110-flight-data.png)
+![FeiMaoTecPlanner V1.1.2 飛行資料畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.2/FMT/ManualImages/v110-flight-data.png)
 
 ### 任務規劃
 
-![任務規劃畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.1/FMT/ManualImages/v110-mission-planning.png)
+![任務規劃畫面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.2/FMT/ManualImages/v110-mission-planning.png)
 
 ### 限禁航區檢查
 
-![限禁航區檢查](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.1/FMT/ManualImages/v110-airspace-check.png)
+![限禁航區檢查](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.2/FMT/ManualImages/v110-airspace-check.png)
 
 ### 飛行高度與地形剖面
 
-![飛行高度與地形剖面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.1/FMT/ManualImages/v110-height-profile.png)
+![飛行高度與地形剖面](https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.2/FMT/ManualImages/v110-height-profile.png)
 
 ## 快速開始
 
-1. 下載 [FMTPlanner-V1.1.1.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.1/FMTPlanner-V1.1.1.zip)。
+1. 下載 [FMTPlanner-V1.1.2.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.2/FMTPlanner-V1.1.2.zip)。
 2. 將 ZIP **完整解壓縮**到可寫入的資料夾。
 3. 執行 **FMTPlanner.exe**，不要直接在壓縮檔內啟動。
 4. 登入後選擇正確 COM 埠與傳輸速率，再按 **CONNECT／連線**。
@@ -97,10 +97,10 @@
 
 ## 文件與下載
 
-- [V1.1.1 穩定版發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.1)
-- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.1/FMTPlanner-V1.1.1.zip)
-- [完整繁體中文圖文操作手冊](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.1.1/README-FMT.md)
-- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.1.1/CHANGELOG-FMT.md)
+- [V1.1.2 穩定版發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.2)
+- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.2/FMTPlanner-V1.1.2.zip)
+- [完整繁體中文圖文操作手冊](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.1.2/README-FMT.md)
+- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.1.2/CHANGELOG-FMT.md)
 - [FMT 飛貓科技官網](https://www.feimaotec.com)
 
 ## 安全提醒

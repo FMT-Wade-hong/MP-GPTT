@@ -18,11 +18,13 @@ Add-Type -AssemblyName UIAutomationTypes
 
 $resolvedExecutable = (Resolve-Path -LiteralPath $ExecutablePath).Path
 $process = $null
+$launchedProcess = $null
 $gcCounters = @()
 
 try {
     $clock = [Diagnostics.Stopwatch]::StartNew()
-    $process = Start-Process -FilePath $resolvedExecutable -WorkingDirectory (Split-Path $resolvedExecutable) -PassThru
+    $launchedProcess = Start-Process -FilePath $resolvedExecutable -WorkingDirectory (Split-Path $resolvedExecutable) -PassThru
+    $process = $launchedProcess
     $processCondition = New-Object Windows.Automation.PropertyCondition(
         [Windows.Automation.AutomationElement]::ProcessIdProperty,
         $process.Id)
@@ -71,6 +73,10 @@ try {
                 if ($descendantCount -gt 20) {
                     $mainWindowReadyMs = $clock.ElapsedMilliseconds
                     $mainWindowTitle = $windowName
+                    $mainWindowProcessId = $window.Current.ProcessId
+                    if ($mainWindowProcessId -ne $process.Id) {
+                        $process = Get-Process -Id $mainWindowProcessId -ErrorAction Stop
+                    }
                     break
                 }
             }
@@ -187,6 +193,13 @@ finally {
         $process.CloseMainWindow() | Out-Null
         if (-not $process.WaitForExit(8000)) {
             Stop-Process -Id $process.Id
+        }
+    }
+
+    if ($null -ne $launchedProcess -and $launchedProcess.Id -ne $process.Id -and -not $launchedProcess.HasExited) {
+        $launchedProcess.CloseMainWindow() | Out-Null
+        if (-not $launchedProcess.WaitForExit(3000)) {
+            Stop-Process -Id $launchedProcess.Id
         }
     }
 }

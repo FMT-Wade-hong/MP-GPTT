@@ -1,5 +1,35 @@
 # FMTPlanner release history
 
+## FMTPlanner v1.1.2 — 2026-08-17
+
+### AUTO mission panel and flight display
+
+- Rebuilt the AUTO mission panel with fixed-height, fixed-width two-line fields so Mission updates, waypoint jumps and ETA refreshes no longer shift or truncate the layout.
+- Kept the current-execution status active only in AUTO and RTL modes, and stabilized Mission Item, next-task, leg-distance, home-distance and ETA presentation.
+- Removed the blue progress bar while retaining the Mission Item count and percentage as stable text values.
+- Added a mutually exclusive embedded 3D-map/tuning panel so expanding either tool cannot overlap or push the primary map out of view.
+
+### Vehicle controls and configuration
+
+- Added the green preflight-check action, red arm/disarm action and matching rounded dark-blue airspeed-zero and QNH actions.
+- Added integer RPM1 main-rotor telemetry and configurable helicopter RPM warning limits; compacted the flight-time and satellite telemetry blocks and removed the ArduPilot toolbar logo.
+- Corrected helicopter, multirotor, fixed-wing and VTOL identification, replaced Position Hold with Brake for helicopter/multirotor quick modes, and expanded per-frame common navigation settings.
+- Added the RTK setup entry under mandatory hardware and localized/reflowed accelerometer, compass, radio, servo-output, motor-test, fence and traditional-helicopter pages.
+
+### Map, parameters and localization
+
+- Set the disconnected/default map anchor to `23.8456499, 120.9759521`, corrected aircraft marker anchoring and reduced the multirotor icon's cyan fill.
+- Fixed the electronic-fence restriction choices, widened its dropdown, and ensured parameter bitmask controls are visible on first display.
+- Kept ArduPilot parameter keys in English while providing Traditional Chinese field tooltips and descriptions.
+- Improved Traditional Chinese labels and DPI-aware layout in advanced tools, waypoint control and calibration pages.
+
+### Stability and validation
+
+- Cached plugin assembly discovery and reduced redundant Flight Data, mission-panel and theme refresh work to avoid UI stalls and white flashes.
+- Added disconnected, timeout, missing-resource and null-control guards for configuration and advanced-tool paths.
+- Built the complete Release solution with Visual Studio 2022 MSBuild with zero compiler errors, then validated the versioned portable package, required files and exclusion policy.
+- The repository test project currently exposes no discoverable automated test cases; physical motor/servo output, GPS/RTK, pitot/QNH and real-controller behavior remain hardware validation items.
+
 ## FMTPlanner v1.1.1 — 2026-08-16
 
 ### FMT startup and login experience

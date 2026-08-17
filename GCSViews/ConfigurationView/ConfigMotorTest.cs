@@ -8,6 +8,7 @@ using System.Reflection;
 using Newtonsoft.Json;
 using System.IO;
 using System.Drawing.Drawing2D;
+using System.Threading.Tasks;
 
 namespace MissionPlanner.GCSViews.ConfigurationView
 {
@@ -633,59 +634,92 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private async void but_mot_spin_arm_Click(object sender, EventArgs e)
         {
-            this.Enabled = false;
-
-            if (!MainV2.comPort.MAV.param.ContainsKey("MOT_SPIN_ARM"))
+            Enabled = false;
+            try
             {
-                CustomMessageBox.Show("param MOT_SPIN_ARM missing", Strings.ERROR);
-                return;
-            }
-
-            if (NUM_thr_percent.Value < 20)
-            {
-                var value = (int)NUM_thr_percent.Value + 2;
-                if (InputBox.Show(Strings.ChangeThrottle, "Enter arm throttle % (deadzone + 2%)", ref value) == DialogResult.OK)
+                if (!MainV2.comPort.MAV.param.ContainsKey("MOT_SPIN_ARM"))
                 {
-                    await MainV2.comPort.setParamAsync((byte)MainV2.comPort.sysidcurrent,
-                        (byte)MainV2.comPort.compidcurrent, "MOT_SPIN_ARM",
-                        (float)value / 100.0f).ConfigureAwait(true);
+                    CustomMessageBox.Show("飛控未提供 MOT_SPIN_ARM 參數。", "無法設定");
+                    return;
                 }
-            }
-            else
-            {
-                CustomMessageBox.Show("Throttle percent above 20, too high", Strings.ERROR);
-            }
 
-            this.Enabled = true;
+                if (NUM_thr_percent.Value >= 20)
+                {
+                    CustomMessageBox.Show("解鎖旋轉油門不可高於 20%。", "數值過高");
+                    return;
+                }
+
+                var value = (int)Math.Round(MainV2.comPort.MAV.param["MOT_SPIN_ARM"].Value * 100.0) + 2;
+                if (InputBox.Show("解鎖旋轉油門", "請輸入解鎖後的旋轉油門百分比（建議高於死區 2%）。", ref value) != DialogResult.OK)
+                    return;
+
+                if (value < 0 || value >= 20)
+                {
+                    CustomMessageBox.Show("請輸入 0～19 的百分比。", "數值錯誤");
+                    return;
+                }
+
+                await SetMotorParameterWithTimeoutAsync("MOT_SPIN_ARM", (float)value / 100.0f);
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("設定解鎖旋轉值失敗：\r\n" + ex.Message, "通訊錯誤");
+            }
+            finally
+            {
+                Enabled = true;
+            }
         }
 
         private async void but_mot_spin_min_Click(object sender, EventArgs e)
         {
-            this.Enabled = false;
-
-            if (!MainV2.comPort.MAV.param.ContainsKey("MOT_SPIN_MIN"))
+            Enabled = false;
+            try
             {
-                CustomMessageBox.Show("param MOT_SPIN_MIN missing", Strings.ERROR);
-                return;
-            }
-
-            if (NUM_thr_percent.Value < 20)
-            {
-                var value = (int)MainV2.comPort.MAV.param["MOT_SPIN_MIN"].Value + 3;
-                if (InputBox.Show(Strings.ChangeThrottle, "Enter min spin throttle % (arm min + 3%)", ref value) ==
-                    DialogResult.OK)
+                if (!MainV2.comPort.MAV.param.ContainsKey("MOT_SPIN_MIN"))
                 {
-                    await MainV2.comPort.setParamAsync((byte)MainV2.comPort.sysidcurrent,
-                        (byte)MainV2.comPort.compidcurrent, "MOT_SPIN_MIN",
-                        (float)value/100.0f).ConfigureAwait(true);
+                    CustomMessageBox.Show("飛控未提供 MOT_SPIN_MIN 參數。", "無法設定");
+                    return;
                 }
-            }
-            else
-            {
-                CustomMessageBox.Show("Throttle percent above 20, too high", Strings.ERROR);
-            }
 
-            this.Enabled = true;
+                if (NUM_thr_percent.Value >= 20)
+                {
+                    CustomMessageBox.Show("最低旋轉油門不可高於 20%。", "數值過高");
+                    return;
+                }
+
+                var value = (int)Math.Round(MainV2.comPort.MAV.param["MOT_SPIN_MIN"].Value * 100.0) + 3;
+                if (InputBox.Show("最低旋轉油門", "請輸入最低穩定旋轉油門百分比（建議高於解鎖旋轉值 3%）。", ref value) != DialogResult.OK)
+                    return;
+
+                if (value < 0 || value >= 20)
+                {
+                    CustomMessageBox.Show("請輸入 0～19 的百分比。", "數值錯誤");
+                    return;
+                }
+
+                await SetMotorParameterWithTimeoutAsync("MOT_SPIN_MIN", (float)value / 100.0f);
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("設定最低旋轉值失敗：\r\n" + ex.Message, "通訊錯誤");
+            }
+            finally
+            {
+                Enabled = true;
+            }
+        }
+
+        private static async Task SetMotorParameterWithTimeoutAsync(string parameterName, float value)
+        {
+            var writeTask = MainV2.comPort.setParamAsync((byte)MainV2.comPort.sysidcurrent,
+                (byte)MainV2.comPort.compidcurrent, parameterName, value);
+            var completed = await Task.WhenAny(writeTask, Task.Delay(TimeSpan.FromSeconds(8))).ConfigureAwait(true);
+            if (completed != writeTask)
+                throw new TimeoutException("飛控在 8 秒內未回覆，請檢查連線後重試。");
+
+            if (!await writeTask.ConfigureAwait(true))
+                throw new InvalidOperationException("飛控拒絕寫入參數 " + parameterName + "。");
         }
     }
 }

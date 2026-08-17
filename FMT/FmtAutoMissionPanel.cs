@@ -3,9 +3,11 @@ using MissionPlanner.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MissionPlanner.FMT
@@ -14,25 +16,35 @@ namespace MissionPlanner.FMT
     {
         private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static readonly Color Background = Color.FromArgb(12, 27, 36);
+        private static readonly Color CardBackground = Color.FromArgb(7, 22, 32);
         private static readonly Color FieldBackground = Color.FromArgb(29, 48, 59);
         private static readonly Color SkyBlue = Color.FromArgb(45, 169, 220);
+        private static readonly Color CardBorder = Color.FromArgb(27, 77, 101);
+        private static readonly Color Separator = Color.FromArgb(38, 67, 82);
+        private static readonly Color CaptionText = Color.FromArgb(181, 197, 207);
         private static readonly Color InactiveText = Color.FromArgb(175, 187, 194);
         private static readonly Color ActiveGreen = Color.FromArgb(46, 190, 92);
         private static readonly Color Warning = Color.FromArgb(242, 156, 45);
+        private const float MissionValueFontSize = 9.5F;
 
-        private readonly TableLayoutPanel layout;
+        private readonly Panel layout;
+        private readonly Control[] missionRowControls;
+        private readonly int[] missionColumnWidths = new int[9];
         private readonly Label currentActionLabel;
+        private readonly Panel missionComboHost;
+        private readonly Label missionComboCaption;
         private readonly ComboBox missionCombo;
         private readonly Button executeButton;
         private readonly Label progressTextLabel;
-        private readonly MissionProgressBar progressBar;
         private readonly Label progressPercentLabel;
         private readonly Label nextActionLabel;
         private readonly Label distanceLabel;
+        private readonly Label homeDistanceLabel;
         private readonly Label etaLabel;
         private readonly ToolTip toolTip;
         private readonly List<FmtMissionItem> missionItems = new List<FmtMissionItem>();
         private readonly List<int> missionPacketSubscriptions = new List<int>();
+        private MAVLinkInterface missionSubscriptionPort;
 
         private int currentMissionSequence = -1;
         private int lastObservedMissionCount = -1;
@@ -40,28 +52,45 @@ namespace MissionPlanner.FMT
         private int missionRefreshQueued;
         private int reportedMissionItemCount = -1;
         private bool busy;
+        private int responsiveLayoutMode = -1;
+        private int lastComboHighlightSequence = int.MinValue;
+        private bool missionSelectionActive;
+        private bool pendingVehicleRefresh;
+        private bool rebuildingMissionCombo;
+        private int operatorSelectedMissionSequence = -1;
+        private int renderedMissionSequence = int.MinValue;
+        private int renderedMissionTotal = -1;
+        private int renderedMissionProgress = -1;
+        private int missionVisualRefreshQueued;
+        private int vehicleUpdateInvokeQueued;
+        private int lastNormalVehicleUpdateTick = unchecked(Environment.TickCount - 500);
         private string displaySignature = string.Empty;
         private string executeStateSignature = string.Empty;
 
         internal FmtAutoMissionPanel()
         {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
+                     ControlStyles.ResizeRedraw, true);
             Name = "fmtAutoMissionPanel";
             Dock = DockStyle.Fill;
             BackColor = Background;
             ForeColor = Color.White;
             Margin = Padding.Empty;
-            Padding = new Padding(7, 6, 7, 6);
-            MinimumSize = new Size(0, 54);
+            Padding = new Padding(5, 3, 5, 3);
+            MinimumSize = new Size(0, 53);
 
             toolTip = new ToolTip();
 
-            currentActionLabel = CreateLabel("fmtMissionCurrent", "● 目前執行：任務狀態未知", FontStyle.Bold);
+            currentActionLabel = CreateLabel("fmtMissionCurrent", "目前執行\r\n○ 未啟用", FontStyle.Bold);
             currentActionLabel.ForeColor = InactiveText;
+            currentActionLabel.Font = new Font(SystemFonts.MessageBoxFont.FontFamily,
+                MissionValueFontSize, FontStyle.Bold);
+            ((MissionFieldLabel) currentActionLabel).ShowTargetIcon = true;
 
             missionCombo = new ComboBox
             {
                 Name = "fmtMissionContents",
-                Dock = DockStyle.Fill,
+                Dock = DockStyle.None,
                 DropDownStyle = ComboBoxStyle.DropDownList,
                 DrawMode = DrawMode.OwnerDrawFixed,
                 ItemHeight = 22,
@@ -70,23 +99,52 @@ namespace MissionPlanner.FMT
                 BackColor = FieldBackground,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 9F),
-                Margin = new Padding(4, 4, 6, 4)
+                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, MissionValueFontSize),
+                Margin = Padding.Empty
             };
             missionCombo.DrawItem += MissionComboDrawItem;
             missionCombo.DropDown += MissionComboDropDown;
-            missionCombo.SelectedIndexChanged += (sender, args) => UpdateExecuteState();
+            missionCombo.DropDownClosed += MissionComboDropDownClosed;
+            missionCombo.Enter += MissionComboEnter;
+            missionCombo.Leave += MissionComboLeave;
+            missionCombo.SelectionChangeCommitted += MissionComboSelectionChangeCommitted;
+            missionCombo.SelectedIndexChanged += (sender, args) =>
+            {
+                if (!rebuildingMissionCombo)
+                    UpdateExecuteState();
+            };
 
-            executeButton = new Button
+            missionComboCaption = new Label
+            {
+                Name = "fmtMissionContentsCaption",
+                Text = "任務航點",
+                AutoSize = false,
+                ForeColor = CaptionText,
+                BackColor = CardBackground,
+                TextAlign = ContentAlignment.TopLeft,
+                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 7.5F, FontStyle.Bold),
+                Margin = Padding.Empty
+            };
+            missionComboHost = new MissionStripPanel
+            {
+                Name = "fmtMissionContentsHost",
+                BackColor = CardBackground,
+                Margin = new Padding(4, 1, 6, 1)
+            };
+            missionComboHost.Controls.Add(missionComboCaption);
+            missionComboHost.Controls.Add(missionCombo);
+            missionComboHost.SizeChanged += (sender, args) => LayoutMissionComboHost();
+
+            executeButton = new RoundedActionButton
             {
                 Name = "fmtMissionExecute",
                 Text = "跳轉航點",
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0, 3, 7, 3),
+                Dock = DockStyle.None,
+                Margin = new Padding(0, 2, 7, 2),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = FieldBackground,
+                BackColor = Color.FromArgb(10, 39, 52),
                 ForeColor = Color.White,
-                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.5F, FontStyle.Bold),
+                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, MissionValueFontSize, FontStyle.Bold),
                 Image = CreateJumpWaypointIcon(),
                 ImageAlign = ContentAlignment.MiddleLeft,
                 TextAlign = ContentAlignment.MiddleCenter,
@@ -98,56 +156,68 @@ namespace MissionPlanner.FMT
             executeButton.FlatAppearance.BorderColor = Color.FromArgb(95, 205, 240);
             executeButton.Click += ExecuteButtonClick;
 
-            progressTextLabel = CreateLabel("fmtMissionProgressText", "Mission Item -- / --", FontStyle.Bold);
+            progressTextLabel = CreateLabel("fmtMissionProgressText", "Mission Item\r\n-- / --", FontStyle.Bold);
             progressTextLabel.TextAlign = ContentAlignment.MiddleCenter;
+            progressTextLabel.Font = new Font(SystemFonts.MessageBoxFont.FontFamily,
+                MissionValueFontSize, FontStyle.Bold);
 
-            progressBar = new MissionProgressBar
-            {
-                Name = "fmtMissionProgress",
-                Dock = DockStyle.Fill,
-                Margin = new Padding(4, 12, 4, 12)
-            };
-
-            progressPercentLabel = CreateLabel("fmtMissionProgressPercent", "--%", FontStyle.Bold);
+            progressPercentLabel = CreateLabel("fmtMissionProgressPercent", "進度\r\n--%", FontStyle.Bold);
             progressPercentLabel.TextAlign = ContentAlignment.MiddleCenter;
             progressPercentLabel.ForeColor = SkyBlue;
+            progressPercentLabel.Font = new Font(SystemFonts.MessageBoxFont.FontFamily,
+                MissionValueFontSize, FontStyle.Bold);
 
-            nextActionLabel = CreateLabel("fmtMissionNext", "下一任務：--", FontStyle.Regular);
+            nextActionLabel = CreateLabel("fmtMissionNext", "下一任務\r\n--", FontStyle.Regular);
             nextActionLabel.ForeColor = Color.Gainsboro;
+            nextActionLabel.Font = new Font(SystemFonts.MessageBoxFont.FontFamily,
+                MissionValueFontSize, FontStyle.Bold);
 
-            distanceLabel = CreateLabel("fmtMissionDistance", string.Empty, FontStyle.Regular);
+            distanceLabel = CreateLabel("fmtMissionDistance", "距離\r\n--", FontStyle.Regular);
             distanceLabel.TextAlign = ContentAlignment.MiddleCenter;
             distanceLabel.ForeColor = Color.Gainsboro;
+            distanceLabel.Font = new Font(SystemFonts.MessageBoxFont.FontFamily,
+                MissionValueFontSize, FontStyle.Bold);
             distanceLabel.Visible = false;
 
-            etaLabel = CreateLabel("fmtMissionEta", "ETA --", FontStyle.Regular);
-            etaLabel.TextAlign = ContentAlignment.MiddleCenter;
-            etaLabel.ForeColor = Color.Gainsboro;
+            homeDistanceLabel = CreateLabel("fmtMissionHomeDistance", "離家距離\r\n--", FontStyle.Regular);
+            homeDistanceLabel.TextAlign = ContentAlignment.MiddleCenter;
+            homeDistanceLabel.ForeColor = Color.Gainsboro;
+            homeDistanceLabel.Font = new Font(SystemFonts.MessageBoxFont.FontFamily,
+                MissionValueFontSize, FontStyle.Bold);
 
-            layout = new TableLayoutPanel
+            etaLabel = CreateLabel("fmtMissionEta", "ETA\r\n--:--:--", FontStyle.Regular);
+            etaLabel.TextAlign = ContentAlignment.MiddleLeft;
+            etaLabel.ForeColor = Color.Gainsboro;
+            etaLabel.Font = new Font(SystemFonts.MessageBoxFont.FontFamily,
+                MissionValueFontSize, FontStyle.Bold);
+
+            layout = new MissionStripPanel
             {
                 Name = "fmtMissionLayout",
                 Dock = DockStyle.Fill,
-                BackColor = Background,
+                BackColor = CardBackground,
                 Margin = Padding.Empty,
-                Padding = Padding.Empty,
-                RowCount = 1,
-                ColumnCount = 9
+                Padding = new Padding(10, 2, 10, 2),
+                DrawCardFrame = true
             };
-            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            ConfigureColumns(220, 230, 112, 100, 35F, 58, 65F, 90, 82);
-            layout.Controls.Add(currentActionLabel, 0, 0);
-            layout.Controls.Add(missionCombo, 1, 0);
-            layout.Controls.Add(executeButton, 2, 0);
-            layout.Controls.Add(progressTextLabel, 3, 0);
-            layout.Controls.Add(progressBar, 4, 0);
-            layout.Controls.Add(progressPercentLabel, 5, 0);
-            layout.Controls.Add(nextActionLabel, 6, 0);
-            layout.Controls.Add(distanceLabel, 7, 0);
-            layout.Controls.Add(etaLabel, 8, 0);
+            missionRowControls = new Control[]
+            {
+                currentActionLabel,
+                missionComboHost,
+                executeButton,
+                progressTextLabel,
+                progressPercentLabel,
+                nextActionLabel,
+                distanceLabel,
+                homeDistanceLabel,
+                etaLabel
+            };
+            layout.Controls.AddRange(missionRowControls);
+            layout.SizeChanged += (sender, args) => LayoutMissionControls();
 
             Controls.Add(layout);
             SizeChanged += (sender, args) => ApplyResponsiveLayout();
+            ApplyResponsiveLayout(true);
             RebuildMissionCombo(-1);
             SubscribeMissionPackets();
         }
@@ -158,7 +228,56 @@ namespace MissionPlanner.FMT
                 return;
             if (InvokeRequired)
             {
-                BeginInvoke((Action) (() => UpdateFromVehicle(forceMissionRefresh)));
+                if (forceMissionRefresh)
+                {
+                    try
+                    {
+                        BeginInvoke((Action) (() => UpdateFromVehicle(true)));
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // A packet can arrive while the parent Flight Data page is
+                        // closing. The next activation will rebuild the snapshot.
+                    }
+                }
+                else if (Interlocked.Exchange(ref vehicleUpdateInvokeQueued, 1) == 0)
+                {
+                    try
+                    {
+                        BeginInvoke((Action) (() =>
+                        {
+                            Interlocked.Exchange(ref vehicleUpdateInvokeQueued, 0);
+                            UpdateFromVehicle();
+                        }));
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        Interlocked.Exchange(ref vehicleUpdateInvokeQueued, 0);
+                    }
+                }
+                return;
+            }
+
+            // Flight Data runs its fast telemetry pass at 10 Hz. Mission progress,
+            // distance and ETA are normal-cadence values; repainting them faster than
+            // 2 Hz only adds layout/paint pressure and makes the native ComboBox less
+            // stable while a mission is changing. Packet-driven refreshes bypass this.
+            if (!forceMissionRefresh)
+            {
+                var now = Environment.TickCount;
+                if (unchecked(now - lastNormalVehicleUpdateTick) < 500)
+                    return;
+                lastNormalVehicleUpdateTick = now;
+            }
+
+            // Keep an operator's open Mission Item list completely stable. Telemetry
+            // (especially ETA and distance) is refreshed several times per second; a
+            // TableLayoutPanel pass while the native ComboBox drop-down is open can
+            // move/close the list or lose its highlighted selection. Defer that visual
+            // refresh until the operator has finished selecting an item.
+            if (missionSelectionActive || missionCombo.DroppedDown || missionCombo.Focused)
+            {
+                pendingVehicleRefresh = true;
                 return;
             }
 
@@ -184,21 +303,49 @@ namespace MissionPlanner.FMT
             var progress = currentItem != null && total > 0
                 ? Math.Max(0, Math.Min(100, (int) Math.Round(currentListPosition * 100.0 / total)))
                 : 0;
+            var missionVisualChanged = currentMissionSequence != renderedMissionSequence ||
+                                       total != renderedMissionTotal ||
+                                       progress != renderedMissionProgress;
 
             var currentDescription = currentItem == null
                 ? "任務狀態未知"
                 : FmtMissionCommandFormatter.Describe(currentItem);
             var inAuto = string.Equals(mode, "AUTO", StringComparison.OrdinalIgnoreCase);
-            var currentText = inAuto
-                ? "● 目前執行：" + currentDescription
-                : "○ 目前模式：" + (string.IsNullOrWhiteSpace(mode) ? "--" : mode) +
-                  "｜AUTO 任務暫停於 " + currentDescription;
+            var inRtl = string.Equals(mode, "RTL", StringComparison.OrdinalIgnoreCase);
+            var executionActive = connected && (inAuto || inRtl);
+            string currentValue;
+            string currentToolTip;
+            if (!connected)
+            {
+                currentValue = "○ 尚未連線";
+                currentToolTip = "尚未連線飛控。";
+            }
+            else if (inAuto)
+            {
+                currentValue = "● " + currentDescription;
+                currentToolTip = "目前執行：" + currentDescription;
+            }
+            else if (inRtl)
+            {
+                currentValue = "● 返航 RTL";
+                currentToolTip = "目前執行：返航 RTL";
+            }
+            else
+            {
+                currentValue = "○ 未啟用";
+                currentToolTip = "目前執行僅在 AUTO 或 RTL 模式啟用。";
+            }
+            var currentText = "目前執行\r\n" + currentValue;
             var nextText = nextItem == null
+                ? "下一任務\r\n--"
+                : "下一任務\r\n" + FmtMissionCommandFormatter.Describe(nextItem);
+            var nextToolTip = nextItem == null
                 ? "下一任務：--"
                 : "下一任務：" + FmtMissionCommandFormatter.Describe(nextItem);
 
-            var distanceText = string.Empty;
-            var etaText = "ETA --";
+            var distanceText = "距離\r\n--";
+            var homeDistanceText = "離家距離\r\n--";
+            var etaText = "ETA\r\n--:--:--";
             if (nextItem != null)
             {
                 PointLatLngAlt nextLocation;
@@ -208,33 +355,64 @@ namespace MissionPlanner.FMT
                     var distanceMeters = vehicleLocation.GetDistance(nextLocation);
                     if (!double.IsNaN(distanceMeters) && !double.IsInfinity(distanceMeters) && distanceMeters >= 0)
                     {
-                        distanceText = "距離 " + FormatDistance(distanceMeters);
+                        distanceText = "距離\r\n" + FormatDistance(distanceMeters);
                         var speed = GetGroundSpeedMetersPerSecond();
                         if (speed >= 0.5)
-                            etaText = FormatEta(distanceMeters / speed);
+                            etaText = "ETA\r\n" + FormatEtaValue(distanceMeters / speed);
                     }
                 }
             }
 
+            var vehicleState = mav == null ? null : mav.cs;
+            if (connected && vehicleState != null && vehicleState.TrackerLocation != PointLatLngAlt.Zero &&
+                CurrentState.multiplierdist > 0)
+            {
+                var homeDistanceMeters = vehicleState.DistToHome / CurrentState.multiplierdist;
+                if (!double.IsNaN(homeDistanceMeters) && !double.IsInfinity(homeDistanceMeters) &&
+                    homeDistanceMeters >= 0)
+                    homeDistanceText = "離家距離\r\n" + FormatDistance(homeDistanceMeters);
+            }
+
             var signature = connected + "|" + mode + "|" + currentMissionSequence + "|" + total + "|" +
-                            progress + "|" + currentText + "|" + nextText + "|" + distanceText + "|" + etaText;
+                            progress + "|" + currentText + "|" + nextText + "|" + distanceText + "|" +
+                            homeDistanceText + "|" + etaText;
             if (!string.Equals(signature, displaySignature, StringComparison.Ordinal))
             {
                 displaySignature = signature;
-                currentActionLabel.Text = currentText;
-                currentActionLabel.ForeColor = connected && inAuto ? ActiveGreen : InactiveText;
-                progressTextLabel.Text = total == 0
-                    ? "Mission Item -- / --"
+                // This strip uses fixed child bounds rather than a TableLayoutPanel.
+                // Telemetry may change text and colour only; it cannot trigger a new
+                // column measurement or move any neighbouring field.
+                layout.SuspendLayout();
+                SetLabelText(currentActionLabel, currentText);
+                currentActionLabel.ForeColor = executionActive ? ActiveGreen : InactiveText;
+                toolTip.SetToolTip(currentActionLabel, currentToolTip);
+                SetLabelText(progressTextLabel, total == 0
+                    ? "Mission Item\r\n-- / --"
                     : currentItem == null
-                        ? "Mission Item -- / " + total
-                    : "Mission Item " + currentListPosition + " / " + total;
-                progressBar.Value = progress;
-                progressPercentLabel.Text = total == 0 || currentItem == null ? "--%" : progress + "%";
-                nextActionLabel.Text = nextText;
-                distanceLabel.Text = distanceText;
-                distanceLabel.Visible = !string.IsNullOrEmpty(distanceText) && ClientSize.Width >= 980;
-                etaLabel.Text = etaText;
-                missionCombo.Invalidate();
+                        ? "Mission Item\r\n-- / " + total
+                        : "Mission Item\r\n" + currentListPosition + " / " + total);
+                SetLabelText(progressPercentLabel,
+                    "進度\r\n" + (total == 0 || currentItem == null ? "--%" : progress + "%"));
+                SetLabelText(nextActionLabel, nextText);
+                toolTip.SetToolTip(nextActionLabel, nextToolTip);
+                SetLabelText(distanceLabel, distanceText);
+                SetLabelText(homeDistanceLabel, homeDistanceText);
+                SetLabelText(etaLabel, etaText);
+                layout.ResumeLayout(false);
+                InvalidateMissionRow(false);
+                if (lastComboHighlightSequence != currentMissionSequence)
+                {
+                    lastComboHighlightSequence = currentMissionSequence;
+                    missionCombo.Invalidate();
+                }
+
+                if (missionVisualChanged)
+                {
+                    renderedMissionSequence = currentMissionSequence;
+                    renderedMissionTotal = total;
+                    renderedMissionProgress = progress;
+                    QueueMissionVisualRefresh();
+                }
             }
 
             UpdateExecuteState();
@@ -245,6 +423,8 @@ namespace MissionPlanner.FMT
             var port = MainV2.comPort;
             if (port == null)
                 return;
+
+            missionSubscriptionPort = port;
 
             missionPacketSubscriptions.Add(port.SubscribeToPacketType(
                 MAVLink.MAVLINK_MSG_ID.MISSION_COUNT, MissionPacketReceived, 0, 0));
@@ -344,6 +524,7 @@ namespace MissionPlanner.FMT
 
         private void RebuildMissionCombo(int preferredSequence)
         {
+            rebuildingMissionCombo = true;
             missionCombo.BeginUpdate();
             try
             {
@@ -358,7 +539,9 @@ namespace MissionPlanner.FMT
                 }
                 else
                 {
-                    var preferred = missionItems.FirstOrDefault(item => item.Sequence == preferredSequence) ??
+                    var preferred = missionItems.FirstOrDefault(
+                                        item => item.Sequence == operatorSelectedMissionSequence) ??
+                                    missionItems.FirstOrDefault(item => item.Sequence == preferredSequence) ??
                                     missionItems.FirstOrDefault(item => item.Sequence == GetCurrentSequence()) ??
                                     missionItems[0];
                     missionCombo.SelectedItem = preferred;
@@ -367,6 +550,8 @@ namespace MissionPlanner.FMT
             finally
             {
                 missionCombo.EndUpdate();
+                rebuildingMissionCombo = false;
+                UpdateExecuteState();
             }
         }
 
@@ -400,12 +585,10 @@ namespace MissionPlanner.FMT
             SetBusy(true);
             try
             {
-                var changed = await MainV2.comPort.setWPCurrentAsync(
-                    MainV2.comPort.MAV.sysid,
-                    MainV2.comPort.MAV.compid,
-                    (ushort) target.Sequence);
+                var changed = await SetCurrentMissionItemSafelyAsync(target.Sequence);
                 if (!changed)
-                    ShowFailure("飛控未確認任務切換，原任務保持不變。");
+                    ShowFailure("飛控未在時限內確認航點跳轉，原任務保持不變。\r\n" +
+                                "請確認飛控已載入任務且 MAVLink 連線正常後再試一次。");
             }
             catch (Exception ex)
             {
@@ -415,8 +598,59 @@ namespace MissionPlanner.FMT
             finally
             {
                 SetBusy(false);
-                UpdateFromVehicle(true);
+                try
+                {
+                    UpdateFromVehicle(true);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn("FMT AUTO mission panel refresh failed after Mission Item change", ex);
+                }
             }
+        }
+
+        private static async Task<bool> SetCurrentMissionItemSafelyAsync(int sequence)
+        {
+            if (sequence <= 0 || sequence > ushort.MaxValue)
+                return false;
+
+            var port = MainV2.comPort;
+            var mav = port == null ? null : port.MAV;
+            if (port == null || port.BaseStream == null || !port.BaseStream.IsOpen || mav == null ||
+                mav.sysid == 0)
+                return false;
+
+            var request = new MAVLink.mavlink_mission_set_current_t
+            {
+                target_system = mav.sysid,
+                target_component = mav.compid,
+                seq = (ushort) sequence
+            };
+
+            // Do not call setWPCurrentAsync here. That legacy method temporarily takes
+            // ownership of the shared serial receive loop and can time out or leave the
+            // port locked when Flight Data is already consuming packets. Send the
+            // standard request through the normal writer and let the existing telemetry
+            // reader publish MISSION_CURRENT into CurrentState.wpno.
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                if (port.BaseStream == null || !port.BaseStream.IsOpen)
+                    return false;
+
+                port.generatePacket(MAVLink.MAVLINK_MSG_ID.MISSION_SET_CURRENT, request,
+                    mav.sysid, mav.compid);
+
+                for (var sample = 0; sample < 15; sample++)
+                {
+                    await Task.Delay(100);
+                    if (GetCurrentSequence() == sequence)
+                        return true;
+                    if (port.BaseStream == null || !port.BaseStream.IsOpen)
+                        return false;
+                }
+            }
+
+            return GetCurrentSequence() == sequence;
         }
 
         private bool ValidateTarget(FmtMissionItem target, out string error)
@@ -478,7 +712,9 @@ namespace MissionPlanner.FMT
 
             executeStateSignature = signature;
             executeButton.Enabled = enabled;
-            executeButton.BackColor = enabled ? FieldBackground : Color.FromArgb(58, 70, 77);
+            executeButton.BackColor = enabled
+                ? Color.FromArgb(10, 39, 52)
+                : Color.FromArgb(42, 55, 62);
             toolTip.SetToolTip(executeButton, reason);
         }
 
@@ -508,11 +744,83 @@ namespace MissionPlanner.FMT
 
         private void MissionComboDropDown(object sender, EventArgs e)
         {
+            missionSelectionActive = true;
             RefreshMissionSnapshot();
             currentMissionSequence = GetCurrentSequence();
             missionCombo.DropDownWidth = Math.Max(missionCombo.Width, 420);
             missionCombo.Invalidate();
             UpdateExecuteState();
+        }
+
+        private void MissionComboDropDownClosed(object sender, EventArgs e)
+        {
+            UpdateExecuteState();
+
+            // A WinForms ComboBox remains focused after its native list closes. Keep
+            // telemetry frozen so the operator's committed choice cannot be disturbed.
+            missionSelectionActive = missionCombo.Focused;
+            if (!missionSelectionActive)
+                FlushDeferredVehicleRefresh();
+        }
+
+        private void MissionComboEnter(object sender, EventArgs e)
+        {
+            missionSelectionActive = true;
+        }
+
+        private void MissionComboLeave(object sender, EventArgs e)
+        {
+            missionSelectionActive = false;
+            FlushDeferredVehicleRefresh();
+        }
+
+        private void MissionComboSelectionChangeCommitted(object sender, EventArgs e)
+        {
+            var selected = missionCombo.SelectedItem as FmtMissionItem;
+            operatorSelectedMissionSequence = selected == null ? -1 : selected.Sequence;
+            UpdateExecuteState();
+        }
+
+        private void FlushDeferredVehicleRefresh()
+        {
+            if (!pendingVehicleRefresh || IsDisposed || Disposing)
+                return;
+
+            pendingVehicleRefresh = false;
+            BeginInvoke((Action) (() => UpdateFromVehicle()));
+        }
+
+        private void QueueMissionVisualRefresh()
+        {
+            if (!IsHandleCreated || IsDisposed || Disposing)
+                return;
+            if (Interlocked.Exchange(ref missionVisualRefreshQueued, 1) != 0)
+                return;
+
+            try
+            {
+                BeginInvoke((Action) (() =>
+                {
+                    Interlocked.Exchange(ref missionVisualRefreshQueued, 0);
+                    if (IsDisposed || Disposing)
+                        return;
+                    if (missionSelectionActive || missionCombo.DroppedDown || missionCombo.Focused)
+                    {
+                        renderedMissionSequence = int.MinValue;
+                        pendingVehicleRefresh = true;
+                        return;
+                    }
+
+                    // Run after the current telemetry/binding pass. Mission updates must
+                    // repaint values only: recalculating bounds here made the complete row
+                    // jump after MISSION_CURRENT changed.
+                    InvalidateMissionRow(true);
+                }));
+            }
+            catch (InvalidOperationException)
+            {
+                Interlocked.Exchange(ref missionVisualRefreshQueued, 0);
+            }
         }
 
         private void MissionComboDrawItem(object sender, DrawItemEventArgs e)
@@ -539,62 +847,145 @@ namespace MissionPlanner.FMT
             e.DrawFocusRectangle();
         }
 
-        private void ApplyResponsiveLayout()
+        private void ApplyResponsiveLayout(bool force = false)
         {
             if (layout == null)
                 return;
 
-            if (ClientSize.Width >= 1200)
+            var mode = ClientSize.Width >= 1500 ? 2 : ClientSize.Width >= 1050 ? 1 : 0;
+            if (!force && responsiveLayoutMode == mode)
+                return;
+
+            responsiveLayoutMode = mode;
+            if (ClientSize.Width >= 1500)
             {
-                ConfigureColumns(220, 230, 112, 100, 35F, 58, 65F, 90, 82);
+                ConfigureColumns(205, 220, 108, 105, 72, 185, 95, 110, 110);
                 etaLabel.Visible = true;
-                distanceLabel.Visible = !string.IsNullOrEmpty(distanceLabel.Text);
+                distanceLabel.Visible = true;
+                homeDistanceLabel.Visible = true;
             }
-            else if (ClientSize.Width >= 930)
+            else if (ClientSize.Width >= 1050)
             {
-                ConfigureColumns(185, 195, 106, 90, 35F, 52, 65F, 78, 70);
+                ConfigureColumns(160, 175, 96, 92, 62, 150, 90, 95, 100);
                 etaLabel.Visible = true;
-                distanceLabel.Visible = !string.IsNullOrEmpty(distanceLabel.Text);
+                distanceLabel.Visible = true;
+                homeDistanceLabel.Visible = true;
             }
             else
             {
-                ConfigureColumns(165, 170, 100, 88, 42F, 50, 58F, 0, 0);
+                ConfigureColumns(135, 155, 88, 82, 54, 130, 0, 0, 90);
                 distanceLabel.Visible = false;
-                etaLabel.Visible = false;
+                homeDistanceLabel.Visible = false;
+                etaLabel.Visible = true;
+            }
+            LayoutMissionControls();
+            InvalidateMissionRow(false);
+        }
+
+        private void ConfigureColumns(int current, int combo, int execute, int progressText,
+            int percent, int nextWidth, int distance,
+            int homeDistance, int eta)
+        {
+            var widths = new[]
+            {
+                current, combo, execute, progressText, percent,
+                nextWidth, distance, homeDistance, eta
+            };
+            Array.Copy(widths, missionColumnWidths, missionColumnWidths.Length);
+        }
+
+        private void LayoutMissionControls()
+        {
+            if (layout == null || missionRowControls == null)
+                return;
+
+            layout.SuspendLayout();
+            try
+            {
+                var widths = (int[]) missionColumnWidths.Clone();
+                // Keep every field at a fixed pixel position. Spare horizontal room stays
+                // at the right edge instead of being redistributed across the mission row;
+                // therefore MISSION_CURRENT, progress, distance and ETA updates cannot
+                // move any neighbouring control.
+
+                var x = layout.Padding.Left;
+                var rowTop = layout.Padding.Top;
+                var rowHeight = Math.Max(0, layout.ClientSize.Height - layout.Padding.Vertical);
+                var separators = new List<int>();
+                for (var index = 0; index < missionRowControls.Length; index++)
+                {
+                    var control = missionRowControls[index];
+                    var cellWidth = Math.Max(0, widths[index]);
+                    var margin = control.Margin;
+                    var bounds = new Rectangle(
+                        x + margin.Left,
+                        rowTop + margin.Top,
+                        Math.Max(0, cellWidth - margin.Horizontal),
+                        Math.Max(0, rowHeight - margin.Vertical));
+                    if (control.Bounds != bounds)
+                        control.Bounds = bounds;
+                    x += cellWidth;
+
+                    if (cellWidth > 0 && control.Visible &&
+                        (index == 0 || index == 2 || index == 3 || index == 4 ||
+                         index == 5 || index == 6 || index == 7))
+                        separators.Add(x);
+                }
+                ((MissionStripPanel) layout).SetSeparators(separators);
+            }
+            finally
+            {
+                layout.ResumeLayout(false);
             }
         }
 
-        private void ConfigureColumns(float current, float combo, float execute, float progressText,
-            float progressPercentWidth, float percent, float nextPercentWidth, float distance, float eta)
+        private void LayoutMissionComboHost()
         {
-            if (layout == null)
+            if (missionComboHost == null || missionComboCaption == null || missionCombo == null)
                 return;
-            layout.ColumnStyles.Clear();
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, current));
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, combo));
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, execute));
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, progressText));
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, progressPercentWidth));
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, percent));
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, nextPercentWidth));
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, distance));
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, eta));
+
+            var width = missionComboHost.ClientSize.Width;
+            var height = missionComboHost.ClientSize.Height;
+            missionComboCaption.SetBounds(0, 0, Math.Max(0, width), 14);
+            missionCombo.SetBounds(0, 16, Math.Max(0, width), Math.Max(23, height - 16));
+        }
+
+        private void InvalidateMissionRow(bool paintImmediately)
+        {
+            if (layout == null || layout.IsDisposed)
+                return;
+
+            // Changed labels invalidate themselves. Repaint only
+            // the card/separator surface here; invalidating and synchronously updating
+            // every child produced avoidable CPU spikes and visible white flashes.
+            layout.Invalidate();
         }
 
         private static Label CreateLabel(string name, string text, FontStyle style)
         {
-            return new Label
+            return new MissionFieldLabel
             {
                 Name = name,
                 Text = text,
-                Dock = DockStyle.Fill,
-                AutoEllipsis = true,
+                Dock = DockStyle.None,
+                // Captions and values are painted independently. Long mission descriptions
+                // wrap below their caption instead of being replaced by an ellipsis.
+                AutoEllipsis = false,
                 ForeColor = Color.White,
-                BackColor = Background,
+                BackColor = CardBackground,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 9F, style),
+                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, MissionValueFontSize, style),
                 Margin = new Padding(4, 0, 4, 0)
             };
+        }
+
+        private static void SetLabelText(Label label, string text)
+        {
+            if (!string.Equals(label.Text, text, StringComparison.Ordinal))
+            {
+                label.Text = text;
+                label.Invalidate();
+            }
         }
 
         private static Image CreateJumpWaypointIcon()
@@ -658,14 +1049,12 @@ namespace MissionPlanner.FMT
                 : Math.Round(meters).ToString("0") + " m";
         }
 
-        private static string FormatEta(double seconds)
+        private static string FormatEtaValue(double seconds)
         {
             if (double.IsNaN(seconds) || double.IsInfinity(seconds) || seconds < 0 || seconds > 359999)
-                return "ETA --";
+                return "--:--:--";
             var eta = TimeSpan.FromSeconds(seconds);
-            return eta.TotalHours >= 1
-                ? "ETA " + ((int) eta.TotalHours) + eta.ToString(@"\:mm\:ss")
-                : "ETA " + eta.ToString(@"mm\:ss");
+            return ((int) eta.TotalHours).ToString("00") + eta.ToString(@"\:mm\:ss");
         }
 
         private static int ComputeMissionSignature(IEnumerable<FmtMissionItem> items)
@@ -698,13 +1087,13 @@ namespace MissionPlanner.FMT
             {
                 if (left[index].Sequence != right[index].Sequence ||
                     left[index].CommandId != right[index].CommandId ||
-                    left[index].Param1 != right[index].Param1 ||
-                    left[index].Param2 != right[index].Param2 ||
-                    left[index].Param3 != right[index].Param3 ||
-                    left[index].Param4 != right[index].Param4 ||
-                    left[index].Latitude != right[index].Latitude ||
-                    left[index].Longitude != right[index].Longitude ||
-                    left[index].Altitude != right[index].Altitude ||
+                    !left[index].Param1.Equals(right[index].Param1) ||
+                    !left[index].Param2.Equals(right[index].Param2) ||
+                    !left[index].Param3.Equals(right[index].Param3) ||
+                    !left[index].Param4.Equals(right[index].Param4) ||
+                    !left[index].Latitude.Equals(right[index].Latitude) ||
+                    !left[index].Longitude.Equals(right[index].Longitude) ||
+                    !left[index].Altitude.Equals(right[index].Altitude) ||
                     left[index].Frame != right[index].Frame)
                     return false;
             }
@@ -721,57 +1110,244 @@ namespace MissionPlanner.FMT
         {
             if (disposing)
             {
-                var port = MainV2.comPort;
+                var port = missionSubscriptionPort;
                 if (port != null)
                 {
                     foreach (var subscription in missionPacketSubscriptions)
                         port.UnSubscribeToPacketType(subscription);
                 }
                 missionPacketSubscriptions.Clear();
+                missionSubscriptionPort = null;
+                if (executeButton != null && executeButton.Image != null)
+                {
+                    var image = executeButton.Image;
+                    executeButton.Image = null;
+                    image.Dispose();
+                }
                 toolTip.Dispose();
             }
             base.Dispose(disposing);
         }
 
-        private sealed class MissionProgressBar : Control
+        private sealed class MissionStripPanel : Panel
         {
-            private int value;
+            private int[] separators = new int[0];
 
-            internal int Value
-            {
-                get { return value; }
-                set
-                {
-                    var next = Math.Max(0, Math.Min(100, value));
-                    if (this.value == next)
-                        return;
-                    this.value = next;
-                    Invalidate();
-                }
-            }
+            internal bool DrawCardFrame { get; set; }
 
-            internal MissionProgressBar()
+            internal MissionStripPanel()
             {
                 SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
                          ControlStyles.ResizeRedraw | ControlStyles.UserPaint, true);
-                BackColor = Color.FromArgb(47, 62, 70);
-                Height = 14;
+            }
+
+            protected override void OnPaintBackground(PaintEventArgs e)
+            {
+                if (!DrawCardFrame)
+                {
+                    e.Graphics.Clear(BackColor);
+                    return;
+                }
+
+                e.Graphics.Clear(Background);
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                var bounds = new Rectangle(1, 1, Math.Max(0, ClientSize.Width - 3),
+                    Math.Max(0, ClientSize.Height - 3));
+                if (bounds.Width <= 0 || bounds.Height <= 0)
+                    return;
+
+                using (var path = CreateRoundedPath(bounds, 10))
+                using (var brush = new SolidBrush(BackColor))
+                using (var pen = new Pen(CardBorder, 1.2F))
+                {
+                    e.Graphics.FillPath(brush, path);
+                    e.Graphics.DrawPath(pen, path);
+                }
+            }
+
+            internal void SetSeparators(IEnumerable<int> positions)
+            {
+                var next = positions == null ? new int[0] : positions.Distinct().ToArray();
+                if (separators.SequenceEqual(next))
+                    return;
+                separators = next;
+                Invalidate();
             }
 
             protected override void OnPaint(PaintEventArgs e)
             {
                 base.OnPaint(e);
-                e.Graphics.Clear(BackColor);
-                var fillWidth = (int) Math.Round(ClientSize.Width * value / 100.0);
-                if (fillWidth > 0)
+                if (!DrawCardFrame || separators.Length == 0)
+                    return;
+
+                using (var pen = new Pen(Separator, 1F))
                 {
-                    using (var brush = new SolidBrush(SkyBlue))
-                        e.Graphics.FillRectangle(brush, 0, 0, fillWidth, ClientSize.Height);
+                    foreach (var x in separators)
+                    {
+                        if (x <= Padding.Left || x >= ClientSize.Width - Padding.Right)
+                            continue;
+                        e.Graphics.DrawLine(pen, x, 13, x, Math.Max(13, ClientSize.Height - 13));
+                    }
                 }
-                using (var border = new Pen(Color.FromArgb(86, 108, 119)))
-                    e.Graphics.DrawRectangle(border, 0, 0, Math.Max(0, ClientSize.Width - 1),
-                        Math.Max(0, ClientSize.Height - 1));
             }
+        }
+
+        private sealed class MissionFieldLabel : Label
+        {
+            private Font captionFont;
+
+            internal bool ShowTargetIcon { get; set; }
+
+            internal MissionFieldLabel()
+            {
+                SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer |
+                         ControlStyles.ResizeRedraw | ControlStyles.UserPaint, true);
+            }
+
+            protected override void OnFontChanged(EventArgs e)
+            {
+                base.OnFontChanged(e);
+                if (captionFont != null)
+                    captionFont.Dispose();
+                captionFont = new Font(Font.FontFamily, Math.Max(7.5F, Font.Size - 2F),
+                    FontStyle.Regular);
+            }
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                using (var background = new SolidBrush(BackColor))
+                    e.Graphics.FillRectangle(background, ClientRectangle);
+
+                var bounds = new Rectangle(
+                    Padding.Left,
+                    Padding.Top,
+                    Math.Max(0, ClientSize.Width - Padding.Horizontal),
+                    Math.Max(0, ClientSize.Height - Padding.Vertical));
+                if (bounds.Width <= 0 || bounds.Height <= 0)
+                    return;
+
+                var rawText = Text ?? string.Empty;
+                var separator = rawText.IndexOf('\n');
+                var caption = separator < 0
+                    ? string.Empty
+                    : rawText.Substring(0, separator).TrimEnd('\r');
+                var value = separator < 0
+                    ? rawText
+                    : rawText.Substring(separator + 1).TrimStart('\r', '\n');
+
+                var iconInset = ShowTargetIcon ? 34 : 0;
+                if (ShowTargetIcon)
+                    DrawTargetIcon(e.Graphics, new Point(bounds.Left + 14,
+                        bounds.Top + bounds.Height / 2));
+
+                var captionHeight = string.IsNullOrEmpty(caption) ? 0 : 15;
+                if (captionHeight > 0)
+                {
+                    var captionBounds = new Rectangle(bounds.Left + iconInset, bounds.Top,
+                        Math.Max(0, bounds.Width - iconInset),
+                        Math.Min(captionHeight, bounds.Height));
+                    TextRenderer.DrawText(e.Graphics, caption, captionFont ?? Font, captionBounds,
+                        CaptionText, BackColor,
+                        TextFormatFlags.SingleLine | TextFormatFlags.Top |
+                        TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding |
+                        TextFormatFlags.PreserveGraphicsClipping);
+                }
+
+                var valueBounds = new Rectangle(bounds.Left + iconInset,
+                    bounds.Top + captionHeight, Math.Max(0, bounds.Width - iconInset),
+                    Math.Max(0, bounds.Height - captionHeight));
+                if (valueBounds.Width <= 0 || valueBounds.Height <= 0)
+                    return;
+
+                var flags = TextFormatFlags.WordBreak | TextFormatFlags.Top |
+                            TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding |
+                            TextFormatFlags.PreserveGraphicsClipping;
+                switch (TextAlign)
+                {
+                    case ContentAlignment.TopCenter:
+                    case ContentAlignment.MiddleCenter:
+                    case ContentAlignment.BottomCenter:
+                        flags |= TextFormatFlags.HorizontalCenter;
+                        break;
+                    case ContentAlignment.TopRight:
+                    case ContentAlignment.MiddleRight:
+                    case ContentAlignment.BottomRight:
+                        flags |= TextFormatFlags.Right;
+                        break;
+                    default:
+                        flags |= TextFormatFlags.Left;
+                        break;
+                }
+
+                TextRenderer.DrawText(e.Graphics, value, Font, valueBounds,
+                    ForeColor, BackColor, flags);
+            }
+
+            private static void DrawTargetIcon(Graphics graphics, Point center)
+            {
+                graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var pen = new Pen(SkyBlue, 1.8F))
+                {
+                    graphics.DrawEllipse(pen, center.X - 10, center.Y - 10, 20, 20);
+                    graphics.DrawEllipse(pen, center.X - 4, center.Y - 4, 8, 8);
+                    graphics.DrawLine(pen, center.X, center.Y - 14, center.X, center.Y - 7);
+                    graphics.DrawLine(pen, center.X, center.Y + 7, center.X, center.Y + 14);
+                    graphics.DrawLine(pen, center.X - 14, center.Y, center.X - 7, center.Y);
+                    graphics.DrawLine(pen, center.X + 7, center.Y, center.X + 14, center.Y);
+                }
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing && captionFont != null)
+                {
+                    captionFont.Dispose();
+                    captionFont = null;
+                }
+                base.Dispose(disposing);
+            }
+        }
+
+        private sealed class RoundedActionButton : Button
+        {
+            internal RoundedActionButton()
+            {
+                SetStyle(ControlStyles.ResizeRedraw, true);
+            }
+
+            protected override void OnResize(EventArgs e)
+            {
+                base.OnResize(e);
+                if (ClientSize.Width <= 0 || ClientSize.Height <= 0)
+                    return;
+
+                var oldRegion = Region;
+                using (var path = CreateRoundedPath(new Rectangle(0, 0, ClientSize.Width,
+                           ClientSize.Height), 6))
+                    Region = new Region(path);
+                if (oldRegion != null)
+                    oldRegion.Dispose();
+            }
+        }
+
+        private static GraphicsPath CreateRoundedPath(Rectangle bounds, int radius)
+        {
+            var path = new GraphicsPath();
+            if (bounds.Width <= 0 || bounds.Height <= 0)
+                return path;
+
+            var diameter = Math.Max(1, Math.Min(radius * 2,
+                Math.Min(bounds.Width, bounds.Height)));
+            var arc = new Rectangle(bounds.Left, bounds.Top, diameter, diameter);
+            path.AddArc(arc, 180, 90);
+            arc.X = bounds.Right - diameter;
+            path.AddArc(arc, 270, 90);
+            arc.Y = bounds.Bottom - diameter;
+            path.AddArc(arc, 0, 90);
+            arc.X = bounds.Left;
+            path.AddArc(arc, 90, 90);
+            path.CloseFigure();
+            return path;
         }
 
         private sealed class MissionConfirmationForm : Form

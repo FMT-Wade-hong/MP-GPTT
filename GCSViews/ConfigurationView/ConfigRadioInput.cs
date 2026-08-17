@@ -194,10 +194,38 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                 BackColor = Color.FromArgb(27, 39, 47)
             };
+            var radioIcon = new Panel
+            {
+                Location = new Point(12, 4),
+                Size = new Size(42, 42),
+                BackColor = Color.Transparent
+            };
+            radioIcon.Paint += (sender, args) =>
+            {
+                args.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var pen = new Pen(Color.FromArgb(46, 174, 220), 2.2F))
+                using (var brush = new SolidBrush(Color.FromArgb(46, 174, 220)))
+                using (var body = new System.Drawing.Drawing2D.GraphicsPath())
+                {
+                    body.AddArc(5, 14, 10, 10, 180, 90);
+                    body.AddArc(27, 14, 10, 10, 270, 90);
+                    body.AddArc(27, 26, 10, 10, 0, 90);
+                    body.AddArc(5, 26, 10, 10, 90, 90);
+                    body.CloseFigure();
+                    args.Graphics.DrawPath(pen, body);
+                    args.Graphics.DrawLine(pen, 14, 14, 9, 5);
+                    args.Graphics.DrawLine(pen, 28, 14, 33, 5);
+                    args.Graphics.FillEllipse(brush, 12, 21, 5, 5);
+                    args.Graphics.FillEllipse(brush, 25, 21, 5, 5);
+                    args.Graphics.DrawLine(pen, 14, 23, 14, 17);
+                    args.Graphics.DrawLine(pen, 27, 23, 30, 19);
+                }
+            };
+            header.Controls.Add(radioIcon);
             header.Controls.Add(new Label
             {
                 AutoSize = true,
-                Location = new Point(14, 8),
+                Location = new Point(62, 7),
                 Text = "遙控器輸入校正  Radio Calibration",
                 ForeColor = Color.White,
                 Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 12F, FontStyle.Bold)
@@ -205,7 +233,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             header.Controls.Add(new Label
             {
                 AutoSize = true,
-                Location = new Point(15, 30),
+                Location = new Point(63, 29),
                 Text = "即時確認搖桿、開關與通道方向；校正前請先移除槳葉。",
                 ForeColor = Color.FromArgb(255, 174, 72)
             });

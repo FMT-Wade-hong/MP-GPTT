@@ -109,7 +109,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             var header = new Panel
             {
                 Name = "fmtServoHeader",
-                Width = Math.Max(840, flowLayoutPanel1.ClientSize.Width - 28),
+                Width = Math.Min(1280, Math.Max(840, flowLayoutPanel1.ClientSize.Width - 28)),
                 Height = 55,
                 BackColor = Color.FromArgb(27, 39, 47),
                 Margin = new Padding(0, 0, 0, 8)
@@ -133,7 +133,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             flowLayoutPanel1.Controls.SetChildIndex(header, 0);
 
             tableLayoutPanel1.AutoSize = false;
-            tableLayoutPanel1.Width = Math.Max(840, flowLayoutPanel1.ClientSize.Width - 28);
+            tableLayoutPanel1.Width = Math.Min(1280, Math.Max(840, flowLayoutPanel1.ClientSize.Width - 28));
             tableLayoutPanel1.Height = Math.Max(60, tableLayoutPanel1.RowCount * 34);
             tableLayoutPanel1.GrowStyle = TableLayoutPanelGrowStyle.AddRows;
             tableLayoutPanel1.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
@@ -167,7 +167,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             flowLayoutPanel1.SizeChanged += (sender, args) =>
             {
-                var width = Math.Max(840, flowLayoutPanel1.ClientSize.Width - 28);
+                var width = Math.Min(1280, Math.Max(840, flowLayoutPanel1.ClientSize.Width - 28));
                 header.Width = width;
                 tableLayoutPanel1.Width = width;
             };

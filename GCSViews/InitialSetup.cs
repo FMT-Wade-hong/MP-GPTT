@@ -7,6 +7,7 @@ using MissionPlanner.Radio;
 using MissionPlanner.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Resources;
 using System.Windows.Forms;
@@ -231,6 +232,11 @@ namespace MissionPlanner.GCSViews
             if (MainV2.DisplayConfiguration.displayFlightModes)
             {
                 AddBackstageViewPage(typeof(ConfigFlightModes), rm.GetString("backstageViewPageflmode.Text"), isConnected && gotAllParams, mand);
+                AddBackstageViewPage(typeof(ConfigFmtCommonSettings),
+                    CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
+                        ? "常用設定"
+                        : "Common Settings",
+                    isConnected && gotAllParams, mand);
             }
             if (MainV2.DisplayConfiguration.displayFailSafe)
             {
@@ -245,21 +251,20 @@ namespace MissionPlanner.GCSViews
             if (MainV2.DisplayConfiguration.displayHWIDs)
                 AddBackstageViewPage(typeof(ConfigHWIDs), "HW ID", isConnected && gotAllParams, mand);
 
+            if (MainV2.DisplayConfiguration.displayRTKInject)
+            {
+                AddBackstageViewPage(typeof(ConfigSerialInjectGPS),
+                    CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
+                        ? "RTK 定位設定"
+                        : "RTK Positioning",
+                    true, mand);
+            }
+
             // FMTPlanner intentionally hides the Optional Hardware container and every page below it.
             // The underlying drivers remain compiled because other flight functions still depend on them.
             if (ShowFmtOptionalHardware)
             {
             var opt = AddBackstageViewPage(typeof(ConfigOptional), rm.GetString("backstageViewPageopt.Text"));
-            if (MainV2.DisplayConfiguration.displayRTKInject)
-            {
-                var rtcmStr = rm.GetString("backstageViewPageSerialInjectGPS.Text");
-                if(rtcmStr == null)
-                    {
-                    rtcmStr = "RTK/GPS Inject";
-                }
-                AddBackstageViewPage(typeof(ConfigSerialInjectGPS), rtcmStr, true, opt);
-            }
-
             AddBackstageViewPage(typeof(ConfigCubeID), "CubeID Update",
     isConnected, opt);
 

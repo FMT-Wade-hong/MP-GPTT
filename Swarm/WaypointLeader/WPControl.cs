@@ -17,6 +17,7 @@ namespace MissionPlanner.Swarm.WaypointLeader
         {
             InitializeComponent();
             ApplyFmtTraditionalChinese();
+            ApplyFmtResponsiveLayout();
 
             zedGraphControl1.GraphPane.AddCurve(useTraditionalChinese ? "航徑" : "Path",
                 DG.path_to_fly, Color.Red, SymbolType.None);
@@ -25,6 +26,186 @@ namespace MissionPlanner.Swarm.WaypointLeader
             zedGraphControl1.GraphPane.YAxis.Title.Text = useTraditionalChinese ? "高度（公尺）" : "Altitude";
 
             DG.Drones.Clear();
+        }
+
+        private void ApplyFmtResponsiveLayout()
+        {
+            SuspendLayout();
+
+            AutoScaleMode = AutoScaleMode.Dpi;
+            Font = new Font("Microsoft JhengHei UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            MinimumSize = new Size(1000, 700);
+            ClientSize = new Size(Math.Max(ClientSize.Width, 1120), Math.Max(ClientSize.Height, 720));
+            StartPosition = FormStartPosition.CenterParent;
+
+            var root = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 3,
+                Padding = new Padding(10),
+                Margin = Padding.Empty
+            };
+            root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 245F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 150F));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            var top = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 3,
+                RowCount = 1,
+                Margin = new Padding(0, 0, 0, 8)
+            };
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 29F));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 36F));
+            top.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            var settingsGroup = new GroupBox
+            {
+                Text = useTraditionalChinese ? "編隊參數" : "Formation settings",
+                Dock = DockStyle.Fill,
+                Padding = new Padding(10),
+                Margin = new Padding(0, 0, 8, 0)
+            };
+            var settings = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 5,
+                Margin = Padding.Empty,
+                Padding = new Padding(2)
+            };
+            settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 62F));
+            settings.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38F));
+            for (var row = 0; row < 5; row++)
+                settings.RowStyles.Add(new RowStyle(SizeType.Percent, 20F));
+            AddSettingRow(settings, 0, label1, numericUpDown1);
+            AddSettingRow(settings, 1, label2, numericUpDown2);
+            AddSettingRow(settings, 2, label3, num_useroffline);
+            AddSettingRow(settings, 3, label4, num_rtl_alt);
+            AddSettingRow(settings, 4, label5, num_wpnav_accel);
+            settingsGroup.Controls.Add(settings);
+
+            var actionsGroup = new GroupBox
+            {
+                Text = useTraditionalChinese ? "編隊操作" : "Formation actions",
+                Dock = DockStyle.Fill,
+                Padding = new Padding(10),
+                Margin = new Padding(0, 0, 8, 0)
+            };
+            var actions = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 2,
+                RowCount = 5,
+                Margin = Padding.Empty,
+                Padding = new Padding(2)
+            };
+            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            actions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            actions.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
+            actions.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33F));
+            actions.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33F));
+            actions.RowStyles.Add(new RowStyle(SizeType.Percent, 33.34F));
+            actions.RowStyles.Add(new RowStyle(SizeType.Absolute, 34F));
+
+            txt_mode.AutoSize = false;
+            txt_mode.Dock = DockStyle.Fill;
+            txt_mode.TextAlign = ContentAlignment.MiddleCenter;
+            txt_mode.Font = new Font(Font, FontStyle.Bold);
+            txt_mode.Margin = new Padding(4, 0, 4, 3);
+            actions.Controls.Add(txt_mode, 0, 0);
+            actions.SetColumnSpan(txt_mode, 2);
+
+            ConfigureActionButton(but_master);
+            ConfigureActionButton(but_airmaster);
+            ConfigureActionButton(but_start);
+            ConfigureActionButton(but_resetmode);
+            ConfigureActionButton(but_rth);
+            ConfigureActionButton(but_setmoderltland);
+            actions.Controls.Add(but_master, 0, 1);
+            actions.Controls.Add(but_airmaster, 1, 1);
+            actions.Controls.Add(but_start, 0, 2);
+            actions.Controls.Add(but_resetmode, 1, 2);
+            actions.Controls.Add(but_rth, 0, 3);
+            actions.Controls.Add(but_setmoderltland, 1, 3);
+
+            chk_V.AutoSize = false;
+            chk_V.Dock = DockStyle.Fill;
+            chk_V.Margin = new Padding(6, 4, 4, 2);
+            chk_alt_interleave.AutoSize = false;
+            chk_alt_interleave.Dock = DockStyle.Fill;
+            chk_alt_interleave.Margin = new Padding(6, 4, 4, 2);
+            actions.Controls.Add(chk_V, 0, 4);
+            actions.Controls.Add(chk_alt_interleave, 1, 4);
+            actionsGroup.Controls.Add(actions);
+
+            var instructionsGroup = new GroupBox
+            {
+                Text = useTraditionalChinese ? "操作說明" : "Instructions",
+                Dock = DockStyle.Fill,
+                Padding = new Padding(10),
+                Margin = Padding.Empty
+            };
+            textBox1.Dock = DockStyle.Fill;
+            textBox1.Margin = Padding.Empty;
+            textBox1.Multiline = true;
+            textBox1.WordWrap = true;
+            textBox1.ScrollBars = ScrollBars.Vertical;
+            textBox1.Font = new Font("Microsoft JhengHei UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            instructionsGroup.Controls.Add(textBox1);
+
+            top.Controls.Add(settingsGroup, 0, 0);
+            top.Controls.Add(actionsGroup, 1, 0);
+            top.Controls.Add(instructionsGroup, 2, 0);
+
+            var statusGroup = new GroupBox
+            {
+                Text = useTraditionalChinese ? "飛行器狀態" : "Vehicle status",
+                Dock = DockStyle.Fill,
+                Padding = new Padding(8),
+                Margin = new Padding(0, 0, 0, 8)
+            };
+            PNL_status.Dock = DockStyle.Fill;
+            PNL_status.Margin = Padding.Empty;
+            PNL_status.AutoScroll = true;
+            PNL_status.WrapContents = true;
+            statusGroup.Controls.Add(PNL_status);
+
+            zedGraphControl1.Dock = DockStyle.Fill;
+            zedGraphControl1.Margin = Padding.Empty;
+
+            root.Controls.Add(top, 0, 0);
+            root.Controls.Add(statusGroup, 0, 1);
+            root.Controls.Add(zedGraphControl1, 0, 2);
+
+            Controls.Clear();
+            Controls.Add(root);
+            ResumeLayout(true);
+        }
+
+        private static void AddSettingRow(TableLayoutPanel layout, int row, System.Windows.Forms.Label label,
+            NumericUpDown value)
+        {
+            label.AutoSize = false;
+            label.Dock = DockStyle.Fill;
+            label.TextAlign = ContentAlignment.MiddleLeft;
+            label.Margin = new Padding(4, 3, 8, 3);
+            value.Dock = DockStyle.Fill;
+            value.Margin = new Padding(4, 7, 4, 7);
+            value.MinimumSize = new Size(90, 0);
+            layout.Controls.Add(label, 0, row);
+            layout.Controls.Add(value, 1, row);
+        }
+
+        private static void ConfigureActionButton(Control button)
+        {
+            button.Dock = DockStyle.Fill;
+            button.Margin = new Padding(4);
+            button.MinimumSize = new Size(0, 34);
         }
 
         private void ApplyFmtTraditionalChinese()

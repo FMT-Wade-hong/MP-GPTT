@@ -591,6 +591,7 @@ namespace MissionPlanner
         GCSViews.SITL Simulation;
         private ToolStripButton MenuFeiMao;
         private ToolStripButton MenuFmtParameterSettings;
+        private ToolStripButton MenuFmtPreflightCheck;
         private ToolStripButton MenuFmtArmDisarm;
         private ToolStripButton MenuFmtAirspeedZero;
         private ToolStripButton MenuFmtQnh;
@@ -600,8 +601,35 @@ namespace MissionPlanner
         private ToolStripControlHost MenuFmtFlightTime;
         private Label FmtFlightTimeLabel;
         private Label FmtTotalFlightTimeLabel;
+        private ToolStripControlHost MenuFmtRotorRpm;
+        private Label FmtRotorRpmLabel;
         private readonly Dictionary<string, Image> FmtQuickActionBackgrounds =
             new Dictionary<string, Image>(StringComparer.Ordinal);
+
+        private sealed class FmtQuickActionToolStripButton : ToolStripButton
+        {
+            internal Color FillColor { get; set; } = Color.FromArgb(18, 50, 65);
+            internal Color BorderColor { get; set; } = Color.FromArgb(65, 194, 235);
+
+            protected override void OnPaint(PaintEventArgs e)
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                e.Graphics.Clear(Color.FromArgb(24, 24, 24));
+                var bounds = new RectangleF(1.5F, 2.5F, Math.Max(1, Width - 4F), Math.Max(1, Height - 6F));
+                using (var path = CreateFmtRoundedRectanglePath(bounds, 7F))
+                using (var fill = new SolidBrush(FillColor))
+                using (var border = new Pen(BorderColor, 1.4F))
+                {
+                    e.Graphics.FillPath(fill, path);
+                    e.Graphics.DrawPath(border, path);
+                }
+
+                var textColor = Enabled ? Color.White : Color.FromArgb(205, 212, 216);
+                TextRenderer.DrawText(e.Graphics, Text, Font, Rectangle.Round(bounds), textColor,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine);
+            }
+        }
 
         private Form connectionStatsForm;
         private ConnectionStats _connectionStats;
@@ -1099,13 +1127,6 @@ namespace MissionPlanner
 #endif
 
             FMT.FmtBranding.ApplyApplicationIcon(this);
-
-            MenuArduPilot.Image = new Bitmap(Properties.Resources._0d92fed790a3a70170e61a86db103f399a595c70,
-                (int) (200), 31);
-            MenuArduPilot.Width = MenuArduPilot.Image.Width;
-
-            if (Program.Logo2 != null)
-                MenuArduPilot.Image = Program.Logo2;
 
             Application.DoEvents();
 
@@ -4666,13 +4687,14 @@ namespace MissionPlanner
         {
             foreach (ToolStripItem item in MainMenu.Items)
             {
-                if (item == MenuFmtArmDisarm || item == MenuFmtAirspeedZero || item == MenuFmtQnh)
+                if (item == MenuFmtPreflightCheck || item == MenuFmtArmDisarm ||
+                    item == MenuFmtAirspeedZero || item == MenuFmtQnh)
                 {
                     ApplyFmtQuickActionButtonStyle(item);
                     continue;
                 }
 
-                if (item == MenuFmtGpsStatus || item == MenuFmtFlightTime)
+                if (item == MenuFmtGpsStatus || item == MenuFmtFlightTime || item == MenuFmtRotorRpm)
                 {
                     item.BackgroundImage = null;
                     item.BackColor = Color.FromArgb(24, 24, 24);
@@ -4771,6 +4793,9 @@ namespace MissionPlanner
         {
             MainMenu.Items.Remove(MenuSimulation);
             MainMenu.Items.Remove(MenuHelp);
+            // FMT owns the product header. Removing the legacy ArduPilot logo also releases
+            // the right-side width needed by rotor RPM, flight-time and satellite status.
+            MainMenu.Items.Remove(MenuArduPilot);
             MenuFlightPlanner.Text = "任務規劃";
 
             MenuFmtParameterSettings = new ToolStripButton
@@ -4794,15 +4819,31 @@ namespace MissionPlanner
             var parameterSettingsIndex = MainMenu.Items.IndexOf(MenuConfigTune) + 1;
             MainMenu.Items.Insert(parameterSettingsIndex, MenuFmtParameterSettings);
 
-            MenuFmtArmDisarm = new ToolStripButton
+            MenuFmtPreflightCheck = new FmtQuickActionToolStripButton
+            {
+                Name = "MenuFmtPreflightCheck",
+                Text = IsFmtTraditionalChineseUi ? "飛行前檢查" : "PREFLIGHT",
+                Alignment = ToolStripItemAlignment.Left,
+                DisplayStyle = ToolStripItemDisplayStyle.Text,
+                AutoSize = false,
+                Size = new Size(116, 35),
+                Margin = new Padding(8, 0, 4, 0),
+                Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
+                ToolTipText = IsFmtTraditionalChineseUi
+                    ? "依目前飛行器構型顯示飛行前確認清單（目前不影響解鎖）"
+                    : "Show the vehicle-specific preflight checklist (advisory only)"
+            };
+            MenuFmtPreflightCheck.Click += MenuFmtPreflightCheck_Click;
+
+            MenuFmtArmDisarm = new FmtQuickActionToolStripButton
             {
                 Name = "MenuFmtArmDisarm",
                 Text = IsFmtTraditionalChineseUi ? "解鎖" : "ARM",
                 Alignment = ToolStripItemAlignment.Left,
                 DisplayStyle = ToolStripItemDisplayStyle.Text,
                 AutoSize = false,
-                Size = new Size(92, 35),
-                Margin = new Padding(8, 0, 4, 0),
+                Size = new Size(116, 35),
+                Margin = new Padding(0, 0, 4, 0),
                 Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
                 ToolTipText = IsFmtTraditionalChineseUi
                     ? "連動飛行資料動作頁的解鎖／上鎖功能"
@@ -4810,7 +4851,7 @@ namespace MissionPlanner
             };
             MenuFmtArmDisarm.Click += MenuFmtArmDisarm_Click;
 
-            MenuFmtAirspeedZero = new ToolStripButton
+            MenuFmtAirspeedZero = new FmtQuickActionToolStripButton
             {
                 Name = "MenuFmtAirspeedZero",
                 Text = IsFmtTraditionalChineseUi ? "空速計歸零" : "ZERO AIRSPEED",
@@ -4826,7 +4867,7 @@ namespace MissionPlanner
             };
             MenuFmtAirspeedZero.Click += MenuFmtAirspeedZero_Click;
 
-            MenuFmtQnh = new ToolStripButton
+            MenuFmtQnh = new FmtQuickActionToolStripButton
             {
                 Name = "MenuFmtQnh",
                 Text = IsFmtTraditionalChineseUi ? "QNH校正" : "QNH",
@@ -4843,9 +4884,11 @@ namespace MissionPlanner
             MenuFmtQnh.Click += MenuFmtQnh_Click;
 
             var quickActionIndex = MainMenu.Items.IndexOf(MenuFmtParameterSettings) + 1;
-            MainMenu.Items.Insert(quickActionIndex, MenuFmtArmDisarm);
-            MainMenu.Items.Insert(quickActionIndex + 1, MenuFmtAirspeedZero);
-            MainMenu.Items.Insert(quickActionIndex + 2, MenuFmtQnh);
+            MainMenu.Items.Insert(quickActionIndex, MenuFmtPreflightCheck);
+            MainMenu.Items.Insert(quickActionIndex + 1, MenuFmtArmDisarm);
+            MainMenu.Items.Insert(quickActionIndex + 2, MenuFmtAirspeedZero);
+            MainMenu.Items.Insert(quickActionIndex + 3, MenuFmtQnh);
+            ApplyFmtQuickActionButtonStyle(MenuFmtPreflightCheck);
             ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
             ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
             ApplyFmtQuickActionButtonStyle(MenuFmtQnh);
@@ -4906,14 +4949,14 @@ namespace MissionPlanner
             {
                 Name = "FmtGpsStatusPanel",
                 BackColor = Color.FromArgb(24, 24, 24),
-                Size = new Size(190, 35),
+                Size = new Size(150, 35),
                 Margin = Padding.Empty
             };
             var gpsIconBox = new PictureBox
             {
                 Name = "FmtGpsIcon",
-                Location = new Point(3, 3),
-                Size = new Size(29, 29),
+                Location = new Point(2, 5),
+                Size = new Size(25, 25),
                 BackColor = Color.Transparent,
                 Image = gpsIcon,
                 SizeMode = PictureBoxSizeMode.Zoom,
@@ -4923,8 +4966,8 @@ namespace MissionPlanner
             {
                 Name = "FmtGpsPrimaryLabel",
                 AutoSize = false,
-                Location = new Point(35, 1),
-                Size = new Size(154, 17),
+                Location = new Point(29, 1),
+                Size = new Size(119, 17),
                 BackColor = Color.Transparent,
                 ForeColor = Color.Gray,
                 Font = new Font(SystemFonts.MenuFont.FontFamily, 8.25f, FontStyle.Bold),
@@ -4935,8 +4978,8 @@ namespace MissionPlanner
             {
                 Name = "FmtGpsDopLabel",
                 AutoSize = false,
-                Location = new Point(35, 17),
-                Size = new Size(154, 16),
+                Location = new Point(29, 17),
+                Size = new Size(119, 16),
                 BackColor = Color.Transparent,
                 ForeColor = Color.Gray,
                 Font = new Font(SystemFonts.MenuFont.FontFamily, 8.0f, FontStyle.Regular),
@@ -4952,8 +4995,8 @@ namespace MissionPlanner
                 Name = "MenuFmtGpsStatus",
                 Alignment = ToolStripItemAlignment.Right,
                 AutoSize = false,
-                Size = new Size(190, 35),
-                Margin = new Padding(2, 0, 2, 0),
+                Size = new Size(150, 35),
+                Margin = Padding.Empty,
                 Padding = Padding.Empty,
                 BackColor = Color.FromArgb(24, 24, 24),
                 ToolTipText = "GPS satellites, fix status, HDOP and VDOP"
@@ -4964,14 +5007,14 @@ namespace MissionPlanner
             {
                 Name = "FmtFlightTimePanel",
                 BackColor = Color.FromArgb(24, 24, 24),
-                Size = new Size(205, 35),
+                Size = new Size(164, 35),
                 Margin = Padding.Empty
             };
             var flightTimeIconBox = new PictureBox
             {
                 Name = "FmtFlightTimeIcon",
-                Location = new Point(3, 3),
-                Size = new Size(29, 29),
+                Location = new Point(2, 5),
+                Size = new Size(25, 25),
                 BackColor = Color.Transparent,
                 Image = CreateFmtFlightTimeIcon(),
                 SizeMode = PictureBoxSizeMode.CenterImage,
@@ -4980,8 +5023,8 @@ namespace MissionPlanner
             FmtFlightTimeLabel = new Label
             {
                 Name = "FmtFlightTimeLabel",
-                Location = new Point(35, 1),
-                Size = new Size(167, 17),
+                Location = new Point(29, 1),
+                Size = new Size(133, 17),
                 ForeColor = Color.LightSkyBlue,
                 BackColor = Color.Transparent,
                 Font = new Font(SystemFonts.MenuFont.FontFamily, 8.25f, FontStyle.Bold),
@@ -4991,8 +5034,8 @@ namespace MissionPlanner
             FmtTotalFlightTimeLabel = new Label
             {
                 Name = "FmtTotalFlightTimeLabel",
-                Location = new Point(35, 17),
-                Size = new Size(167, 16),
+                Location = new Point(29, 17),
+                Size = new Size(133, 16),
                 ForeColor = Color.Gainsboro,
                 BackColor = Color.Transparent,
                 Font = new Font(SystemFonts.MenuFont.FontFamily, 8.0f, FontStyle.Regular),
@@ -5007,8 +5050,8 @@ namespace MissionPlanner
                 Name = "MenuFmtFlightTime",
                 Alignment = ToolStripItemAlignment.Right,
                 AutoSize = false,
-                Size = new Size(205, 35),
-                Margin = new Padding(2, 0, 2, 0),
+                Size = new Size(164, 35),
+                Margin = Padding.Empty,
                 Padding = Padding.Empty,
                 BackColor = Color.FromArgb(24, 24, 24),
                 ToolTipText = "飛行時間與飛控累計總飛行時間"
@@ -5016,7 +5059,68 @@ namespace MissionPlanner
             // Right-aligned ToolStrip items are laid out in reverse insertion order.
             // Adding this after GPS places the flight-time panel immediately to its left.
             MainMenu.Items.Add(MenuFmtFlightTime);
+
+            var rotorRpmPanel = new Panel
+            {
+                Name = "FmtRotorRpmPanel",
+                BackColor = Color.FromArgb(24, 24, 24),
+                Size = new Size(112, 35),
+                Margin = Padding.Empty
+            };
+            var rotorRpmIconBox = new PictureBox
+            {
+                Name = "FmtRotorRpmIcon",
+                Location = new Point(2, 5),
+                Size = new Size(25, 25),
+                BackColor = Color.Transparent,
+                Image = CreateFmtRotorRpmIcon(),
+                SizeMode = PictureBoxSizeMode.CenterImage,
+                TabStop = false
+            };
+            FmtRotorRpmLabel = new Label
+            {
+                Name = "FmtRotorRpmLabel",
+                Location = new Point(29, 1),
+                Size = new Size(81, 32),
+                ForeColor = Color.Gray,
+                BackColor = Color.Transparent,
+                Font = new Font(SystemFonts.MenuFont.FontFamily, 8.25f, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Text = "主旋翼\r\nRPM1：--"
+            };
+            rotorRpmPanel.Controls.Add(rotorRpmIconBox);
+            rotorRpmPanel.Controls.Add(FmtRotorRpmLabel);
+            MenuFmtRotorRpm = new ToolStripControlHost(rotorRpmPanel)
+            {
+                Name = "MenuFmtRotorRpm",
+                Alignment = ToolStripItemAlignment.Right,
+                AutoSize = false,
+                Size = new Size(112, 35),
+                Margin = Padding.Empty,
+                Padding = Padding.Empty,
+                BackColor = Color.FromArgb(24, 24, 24),
+                ToolTipText = "RPM1 主旋翼轉速與上下限警告"
+            };
+            // Right aligned items are reversed: this appears immediately left of flight time.
+            MainMenu.Items.Add(MenuFmtRotorRpm);
             UpdateFmtQuickActionButtons();
+        }
+
+        private static Image CreateFmtRotorRpmIcon()
+        {
+            var image = new Bitmap(29, 29);
+            using (var graphics = Graphics.FromImage(image))
+            using (var line = new Pen(Color.WhiteSmoke, 2.0F))
+            using (var accent = new Pen(Color.FromArgb(65, 194, 235), 2.0F))
+            {
+                graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                graphics.Clear(Color.Transparent);
+                graphics.DrawEllipse(accent, 3, 3, 23, 23);
+                graphics.DrawLine(line, 14.5F, 7F, 14.5F, 22F);
+                graphics.DrawLine(line, 7F, 14.5F, 22F, 14.5F);
+                graphics.DrawEllipse(accent, 11.5F, 11.5F, 6F, 6F);
+            }
+            return image;
         }
 
         private static Image CreateFmtFlightTimeIcon()
@@ -5093,10 +5197,10 @@ namespace MissionPlanner
 
             Color fill;
             Color border;
-            if (!item.Enabled)
+            if (item == MenuFmtPreflightCheck)
             {
-                fill = Color.FromArgb(54, 64, 70);
-                border = Color.FromArgb(105, 117, 124);
+                fill = Color.FromArgb(18, 122, 72);
+                border = Color.FromArgb(89, 224, 145);
             }
             else if (item == MenuFmtArmDisarm)
             {
@@ -5115,8 +5219,14 @@ namespace MissionPlanner
             // rounded silhouette remains clean on every ToolStrip renderer.
             item.BackColor = Color.FromArgb(24, 24, 24);
             item.ForeColor = Color.White;
-            item.BackgroundImageLayout = ImageLayout.Stretch;
-            item.BackgroundImage = GetFmtRoundedButtonBackground(item.Size, fill, border);
+            item.BackgroundImage = null;
+            var fmtButton = item as FmtQuickActionToolStripButton;
+            if (fmtButton != null)
+            {
+                fmtButton.FillColor = fill;
+                fmtButton.BorderColor = border;
+                fmtButton.Invalidate();
+            }
         }
 
         private Image GetFmtRoundedButtonBackground(Size size, Color fill, Color border)
@@ -5163,7 +5273,8 @@ namespace MissionPlanner
 
         private void UpdateFmtQuickActionButtons()
         {
-            if (MenuFmtArmDisarm == null || MenuFmtAirspeedZero == null || MenuFmtQnh == null)
+            if (MenuFmtPreflightCheck == null || MenuFmtArmDisarm == null ||
+                MenuFmtAirspeedZero == null || MenuFmtQnh == null)
                 return;
 
             var connected = comPort?.BaseStream != null && comPort.BaseStream.IsOpen;
@@ -5172,24 +5283,50 @@ namespace MissionPlanner
             var satCount = connected ? comPort.MAV.cs.satcount : 0;
             var hdop = connected ? comPort.MAV.cs.gpshdop : 0;
             var vdop = connected ? comPort.MAV.cs.gpsvdop : 0;
+            var rotorRpm = connected ? comPort.MAV.cs.rpm1 : 0;
             var flightSeconds = connected ? Math.Max(0, comPort.MAV.cs.timeInAir) : 0;
             double totalFlightSeconds = 0;
             var hasTotalFlightTime = connected && TryGetFmtTotalFlightSeconds(out totalFlightSeconds);
             this.BeginInvokeIfRequired((Action)(() =>
             {
+                MenuFmtPreflightCheck.Text = IsFmtTraditionalChineseUi ? "飛行前檢查" : "PREFLIGHT";
+                MenuFmtPreflightCheck.Enabled = connected;
                 MenuFmtArmDisarm.Text = IsFmtTraditionalChineseUi
                     ? (armed ? "上鎖" : "解鎖")
                     : (armed ? "DISARM" : "ARM");
                 MenuFmtArmDisarm.Enabled = connected && !comPort.ReadOnly;
                 MenuFmtAirspeedZero.Enabled = connected && !armed && !comPort.ReadOnly;
                 MenuFmtQnh.Enabled = connected && !armed && !comPort.ReadOnly;
+                ApplyFmtQuickActionButtonStyle(MenuFmtPreflightCheck);
                 ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
                 ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
                 ApplyFmtQuickActionButtonStyle(MenuFmtQnh);
                 UpdateFmtGpsStatus(connected, gpsStatus, satCount, hdop, vdop);
+                UpdateFmtRotorRpm(connected, rotorRpm);
                 UpdateFmtFlightTime(connected, flightSeconds,
                     hasTotalFlightTime ? (double?)totalFlightSeconds : null);
             }));
+        }
+
+        private void UpdateFmtRotorRpm(bool connected, float rpmValue)
+        {
+            if (FmtRotorRpmLabel == null)
+                return;
+
+            if (!connected || float.IsNaN(rpmValue) || float.IsInfinity(rpmValue))
+            {
+                FmtRotorRpmLabel.Text = "主旋翼\r\nRPM1：--";
+                FmtRotorRpmLabel.ForeColor = Color.Gray;
+                return;
+            }
+
+            var rpm = Math.Max(0, Math.Min(9999, (int)Math.Round(rpmValue)));
+            var lower = Settings.Instance.GetInt32("FMT_HeliRpmLower", 1000);
+            var upper = Settings.Instance.GetInt32("FMT_HeliRpmUpper", 2500);
+            FmtRotorRpmLabel.Text = "主旋翼\r\nRPM1：" + rpm.ToString(CultureInfo.InvariantCulture);
+            FmtRotorRpmLabel.ForeColor = rpm > 0 && (rpm < lower || rpm > upper)
+                ? Color.OrangeRed
+                : rpm > 0 ? Color.LimeGreen : Color.Gold;
         }
 
         private bool TryGetFmtTotalFlightSeconds(out double seconds)
@@ -5309,6 +5446,11 @@ namespace MissionPlanner
         {
             FlightData?.ExecuteFmtArmDisarm();
             UpdateFmtQuickActionButtons();
+        }
+
+        private void MenuFmtPreflightCheck_Click(object sender, EventArgs e)
+        {
+            FlightData?.ExecuteFmtPreflightCheck();
         }
 
         private void MenuFmtAirspeedZero_Click(object sender, EventArgs e)

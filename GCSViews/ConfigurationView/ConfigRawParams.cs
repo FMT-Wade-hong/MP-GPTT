@@ -33,6 +33,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         // Changes made to the params between writing to the copter
         private readonly Hashtable _changes = new Hashtable();
         private static List<GitHubContent.FileInfo> paramfiles;
+        private const string BitmaskButtonText = "設定位元遮罩";
         // ?
         internal static bool startup = true;
         internal static List<DataGridViewRow> rowlist = new List<DataGridViewRow>();
@@ -690,8 +691,15 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                             ParameterMetaDataConstants.Description, MainV2.comPort.MAV.cs.firmware.ToString());
                         if (!string.IsNullOrEmpty(metaDataDescription))
                         {
-                            row.Cells[Command.Index].ToolTipText = AddNewLinesForTooltip(metaDataDescription);
-                            row.Cells[Value.Index].ToolTipText = AddNewLinesForTooltip(metaDataDescription);
+                            var tooltipDescription = AddNewLinesForTooltip(
+                                GetFmtTooltipDescription(value, metaDataDescription));
+
+                            // Keep the parameter table and metadata in their original English form,
+                            // but show the same Traditional Chinese explanation from every cell in
+                            // the row. This prevents the tooltip content from changing according to
+                            // which column happens to be under the pointer.
+                            foreach (DataGridViewCell cell in row.Cells)
+                                cell.ToolTipText = tooltipDescription;
 
                             var range = ParameterMetaDataRepository.GetParameterMetaData(value,
                                 ParameterMetaDataConstants.Range, MainV2.comPort.MAV.cs.firmware.ToString());
@@ -702,7 +710,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
                             row.Cells[Units.Index].Value = units;
                             row.Cells[Options.Index].Value = (range + "\n" + options.Replace(",", "\n")).Trim();
-                            if (options.Length > 0) row.Cells[Options.Index].ToolTipText = options.Replace(',', '\n');
+                            if (options.Length > 0)
+                                row.Cells[Options.Index].ToolTipText = tooltipDescription;
                             int N = options.Count(c => c.Equals(','));
                             if (N > 50)
                             {
@@ -721,10 +730,30 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                                     if (i >= N) break;
                                     ans.Append("\n");
                                 }
-                                row.Cells[Options.Index].ToolTipText = ans.ToInvariantString();
+                                row.Cells[Options.Index].ToolTipText = tooltipDescription;
                             }
                             row.Cells[Desc.Index].Value = metaDataDescription;
-                            row.Cells[Desc.Index].ToolTipText = AddNewLinesForTooltip(metaDataDescription);
+                            row.Cells[Desc.Index].ToolTipText = tooltipDescription;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Error(ex);
+                    }
+
+                    try
+                    {
+                        var bitmask = ParameterMetaDataRepository.GetParameterBitMaskInt(value,
+                            MainV2.comPort.MAV.cs.firmware.ToString());
+                        if (bitmask.Count > 0)
+                        {
+                            var tooltip = row.Cells[Options.Index].ToolTipText;
+                            row.Cells[Options.Index] = new DataGridViewButtonCell
+                            {
+                                Value = BitmaskButtonText,
+                                FlatStyle = FlatStyle.Flat,
+                                ToolTipText = tooltip
+                            };
                         }
                     }
                     catch (Exception ex)
@@ -839,6 +868,78 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             // Expanding is cosmetic, so defer safely instead of crashing the page.
             treeView1.TopNode?.Expand();
         }
+
+        private static string GetFmtTooltipDescription(string parameterName, string englishDescription)
+        {
+            if (!CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
+                return englishDescription;
+
+            string exact;
+            if (FmtTraditionalChineseParameterDescriptions.TryGetValue(parameterName, out exact))
+                return exact;
+
+            var parts = (parameterName ?? string.Empty).Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
+            var translated = new List<string>();
+            foreach (var part in parts)
+            {
+                string text;
+                translated.Add(FmtParameterTerms.TryGetValue(part, out text) ? text : part);
+            }
+
+            var topic = translated.Count == 0 ? "飛控" : string.Join("／", translated);
+            return "用途：設定「" + topic + "」相關功能。\r\n" +
+                   "參數名稱：" + parameterName + "（名稱保留英文以對應飛控）。\r\n" +
+                   "提醒：修改前請確認數值範圍、單位及目前飛行器構型；不確定時請保留預設值。";
+        }
+
+        private static readonly Dictionary<string, string> FmtTraditionalChineseParameterDescriptions =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "ACRO_LOCKING", "放開搖桿時啟用姿態鎖定。設為 2 時使用以四元數為基礎的姿態鎖定；啟用偏航速率控制或四元數鎖定時，可保持任意姿態。" },
+                { "ACRO_BAL_PITCH", "設定特技與運動模式中，俯仰角回正至水平的速度。數值越大，飛行器回正越快；直升機使用此值設定俯仰軸虛擬平衡桿的衰減速率，數值越大，期望姿態與實際姿態間的差異衰減越快。" },
+                { "ACRO_BAL_ROLL", "設定特技與運動模式中，橫滾角回正至水平的速度。數值越大，飛行器回正越快；直升機使用此值設定橫滾軸虛擬平衡桿的衰減速率，數值越大，期望姿態與實際姿態間的差異衰減越快。" },
+                { "ACRO_OPTIONS", "設定特技模式的附加行為。Air-mode 會持續套用 ATC_THR_MIX_MAN（直升機不受影響）；僅速率迴路會停用角度穩定，只使用角速度穩定控制。" },
+                { "ACRO_PITCH_RATE", "設定特技模式下俯仰軸的最大旋轉速率。數值越大，滿舵時的俯仰反應越快。" },
+                { "ACRO_ROLL_RATE", "設定特技模式下橫滾軸的最大旋轉速率。數值越大，滿舵時的橫滾反應越快。" },
+                { "ACRO_RP_EXPO", "設定特技模式橫滾與俯仰的指數曲線，使搖桿接近行程邊緣時可獲得更快的旋轉反應。" },
+                { "ACRO_RP_RATE", "設定特技模式的最大橫滾與俯仰角速度。數值越大，旋轉反應越快。" },
+                { "ACRO_RP_RATE_TC", "設定特技模式橫滾與俯仰角速度控制輸入的時間常數。數值較小時反應較直接銳利；數值較大時反應較柔和。" },
+                { "ACRO_THR_MID", "設定特技模式的油門中點，用於調整搖桿中位所對應的油門輸出。" },
+                { "ACRO_TRAINER", "選擇特技模式使用的輔助訓練功能，包括停用、自動回正，以及自動回正並限制傾角。" },
+                { "ACRO_Y_EXPO", "設定特技模式偏航的指數曲線，使搖桿接近行程邊緣時可獲得更快的旋轉反應。" },
+                { "ACRO_YAW_RATE", "設定特技模式下偏航軸的最大旋轉速率。數值越大，滿舵時的偏航反應越快。" },
+                { "ACRO_Y_RATE", "設定特技模式的最大偏航角速度。數值越大，偏航旋轉反應越快。" },
+                { "ACRO_Y_RATE_TC", "設定特技模式偏航角速度控制輸入的時間常數。數值較小時反應較直接銳利；數值較大時反應較柔和。" },
+                { "ADSB_TYPE", "選擇 ADS-B 硬體或通訊類型；未安裝 ADS-B 裝置時應維持停用。" },
+                { "AFS_ENABLE", "啟用進階失效保護系統。啟用前必須完成相關失效保護參數設定與實際測試。" },
+                { "AHRS_COMP_BETA", "設定 AHRS 使用空速與 GPS 地速交叉修正時的時間常數；數值越大，越偏重 GPS 資料。" },
+                { "AHRS_EKF_TYPE", "選擇飛控用於姿態與位置估算的 EKF 類型。一般情況請使用韌體建議值。" },
+                { "AHRS_GPS_GAIN", "設定 GPS 對 AHRS 姿態修正的影響程度。固定翼通常保留預設值。" },
+                { "AHRS_GPS_MINSATS", "設定允許 GPS 參與速度與姿態修正所需的最低衛星數量。" },
+                { "AHRS_GPS_USE", "設定 AHRS 是否使用 GPS 進行導航與位置修正。正常飛行不建議任意停用。" },
+                { "AHRS_ORIENTATION", "設定飛控安裝方向。若飛控不是箭頭朝前且水平安裝，必須選擇正確旋轉方向。" },
+                { "AIRSPEED_CRUISE", "設定自動油門模式下的目標巡航空速，單位依欄位顯示。" },
+                { "AIRSPEED_MIN", "設定自動飛行允許的最低空速；通常應高於失速速度並保留安全裕度。" },
+                { "AIRSPEED_MAX", "設定自動飛行允許的最高目標空速，不可超過機體與動力系統的安全限制。" }
+            };
+
+        private static readonly Dictionary<string, string> FmtParameterTerms =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "ACRO", "特技模式" }, { "AHRS", "姿態航向參考系統" }, { "ADSB", "ADS-B 航空監視" },
+                { "AFS", "進階失效保護" }, { "AIRSPEED", "空速" }, { "ALT", "高度" }, { "ARSPD", "空速計" },
+                { "ARMING", "解鎖" }, { "ATT", "姿態" }, { "AUTO", "自動模式" }, { "AVOID", "避障" },
+                { "BARO", "氣壓計" }, { "BATT", "電池" }, { "BAT", "電池" }, { "BRD", "飛控板" },
+                { "CAN", "CAN 匯流排" }, { "COMPASS", "羅盤" }, { "EKF", "擴展卡爾曼濾波" },
+                { "FENCE", "地理圍籬" }, { "FLTMODE", "飛行模式" }, { "FRAME", "機架構型" },
+                { "GPS", "衛星定位" }, { "INS", "慣性導航" }, { "LAND", "降落" }, { "LOIT", "盤旋" },
+                { "MOT", "馬達" }, { "NAV", "導航" }, { "PILOT", "手動操控" }, { "Q", "垂直起降" },
+                { "RC", "遙控器" }, { "RTL", "返航" }, { "SERIAL", "序列埠" }, { "SERVO", "伺服輸出" },
+                { "TECS", "總能量控制" }, { "THR", "油門" }, { "WP", "航點" }, { "WPNAV", "航點導航" },
+                { "ENABLE", "啟用" }, { "TYPE", "類型" }, { "RATE", "速率" }, { "MAX", "最大值" },
+                { "MIN", "最小值" }, { "GAIN", "增益" }, { "USE", "使用" }, { "OPTIONS", "選項" },
+                { "LOCKING", "姿態鎖定" }, { "PITCH", "俯仰" }, { "ROLL", "橫滾" }, { "YAW", "偏航" }
+            };
 
 
         // Based on https://gist.github.com/Nazardo/e42de483a03ec2e1ef9348e23bec4f95
@@ -1131,6 +1232,13 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             if (e.RowIndex == -1 || startup)
                 return;
 
+            if (e.ColumnIndex == Options.Index &&
+                Params[e.ColumnIndex, e.RowIndex] is DataGridViewButtonCell)
+            {
+                ShowBitmaskEditor(e.RowIndex);
+                return;
+            }
+
             if (e.ColumnIndex == Desc.Index)
             {
                 try
@@ -1250,6 +1358,42 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         }
 
         Control optionsControl;
+
+        private void ShowBitmaskEditor(int rowIndex)
+        {
+            if (rowIndex < 0 || rowIndex >= Params.Rows.Count)
+                return;
+
+            var row = Params.Rows[rowIndex];
+            var paramName = Convert.ToString(row.Cells[Command.Index].Value);
+            if (string.IsNullOrWhiteSpace(paramName))
+                return;
+
+            var mcb = new MavlinkCheckBoxBitMask();
+            var list = new MAVLink.MAVLinkParamList();
+            var type = MAVLink.MAV_PARAM_TYPE.INT32;
+            if (MainV2.comPort.MAV.param.ContainsKey(paramName))
+                type = MainV2.comPort.MAV.param[paramName].TypeAP;
+
+            double value;
+            if (!double.TryParse(Convert.ToString(row.Cells[Value.Index].Value),
+                    NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+                return;
+
+            list.Add(new MAVLink.MAVLinkParam(paramName, value, type));
+            mcb.setup(paramName, list);
+            mcb.ValueChanged += (o, x, newValue) =>
+            {
+                if (rowIndex < Params.Rows.Count)
+                    Params.Rows[rowIndex].Cells[Value.Index].Value = newValue;
+                Params.InvalidateRow(rowIndex);
+                mcb.Focus();
+            };
+
+            var frm = mcb.ShowUserControl();
+            frm.TopMost = true;
+        }
+
         // Create and place the relevant control in the options column when a row is entered
         private void Params_RowEnter(object sender, DataGridViewCellEventArgs e)
         {
@@ -1274,35 +1418,15 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             // (this is better than trying to cram the bitmask checkboxes into the small cell)
             if (bitmask.Count > 0)
             {
-                optionsControl = new MyButton() { Text = "Set Bitmask" };
-                optionsControl.Click += (s, a) =>
+                if (!(Params[Options.Index, e.RowIndex] is DataGridViewButtonCell))
                 {
-                    var mcb = new MavlinkCheckBoxBitMask();
-                    var list = new MAVLink.MAVLinkParamList();
-
-                    // Try and get type so the correct bitmask to value convertion is done
-                    var type = MAVLink.MAV_PARAM_TYPE.INT32;
-                    if (MainV2.comPort.MAV.param.ContainsKey(param_name))
+                    Params[Options.Index, e.RowIndex] = new DataGridViewButtonCell
                     {
-                        type = MainV2.comPort.MAV.param[param_name].TypeAP;
-                    }
-
-                    list.Add(new MAVLink.MAVLinkParam(param_name, double.Parse(Params[Value.Index, e.RowIndex].Value.ToString(), CultureInfo.InvariantCulture),
-                        type));
-                    mcb.setup(param_name, list);
-                    mcb.ValueChanged += (o, x, value) =>
-                    {
-                        Params.CurrentRow.Cells[Value.Index].Value = value;
-                        Params.Invalidate();
-                        mcb.Focus();
+                        Value = BitmaskButtonText,
+                        FlatStyle = FlatStyle.Flat,
+                        ToolTipText = Params[Options.Index, e.RowIndex].ToolTipText
                     };
-                    var frm = mcb.ShowUserControl();
-                    frm.TopMost = true;
-                };
-
-                ThemeManager.ApplyThemeTo(optionsControl);
-                optionsControl.Bounds = Params.GetCellDisplayRectangle(Options.Index, e.RowIndex, false);
-                Params.Controls.Add(optionsControl);
+                }
             }
             // If there are options, create a combo box and populate it with the options
             else if (options.Count > 0)
