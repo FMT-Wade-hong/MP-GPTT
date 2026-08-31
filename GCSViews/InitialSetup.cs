@@ -260,7 +260,9 @@ namespace MissionPlanner.GCSViews
                     true, mand);
             }
 
-            // FMTPlanner intentionally hides the Optional Hardware container and every page below it.
+            AddBackstageViewPage(typeof(ConfigSiKRadio), "數傳設定", true, mand);
+
+            // FMTPlanner intentionally hides the remaining Optional Hardware pages.
             // The underlying drivers remain compiled because other flight functions still depend on them.
             if (ShowFmtOptionalHardware)
             {

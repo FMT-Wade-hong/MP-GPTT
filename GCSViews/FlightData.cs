@@ -61,7 +61,11 @@ namespace MissionPlanner.GCSViews
         private readonly FmtAutoMissionPanel fmtAutoMissionPanel;
         private readonly CheckBox chkFmtAirspace;
         private readonly CheckBox chkFmt3DMap;
+        private readonly CheckBox chkFmtMqtt;
         private OpenGLtest2 fmt3DMapControl;
+        private FmtMqttPanel fmtMqttPanel;
+        internal bool HasRunningMqttBridge => fmtMqttPanel?.IsBridgeRunning == true;
+        internal FmtMqttTrafficSnapshot MqttTrafficSnapshot => fmtMqttPanel?.TrafficSnapshot ?? default(FmtMqttTrafficSnapshot);
         private bool fmtChangingEmbeddedMapView;
         private DateTime fmtLastAirspaceRefresh = DateTime.MinValue;
         private bool fmtAirspaceRefreshRunning;
@@ -293,7 +297,16 @@ namespace MissionPlanner.GCSViews
                 UseVisualStyleBackColor = true
             };
             chkFmt3DMap.CheckedChanged += CHK_fmt3DMap_CheckedChanged;
-            ConfigureFmtMapOptionsPanel();
+            chkFmtMqtt = new CheckBox
+            {
+                Name = "CHK_fmtMqtt",
+                AutoSize = true,
+                Text = "MQTT 連線",
+                Checked = false,
+                Anchor = AnchorStyles.Left | AnchorStyles.Bottom,
+                UseVisualStyleBackColor = true
+            };
+            chkFmtMqtt.CheckedChanged += (sender, args) => SelectFmtEmbeddedMapView(chkFmtMqtt);
             splitContainer1.Resize += (sender, args) =>
             {
                 if (!splitContainer1.Panel1Collapsed)
@@ -309,6 +322,7 @@ namespace MissionPlanner.GCSViews
 
             fmtAutoMissionPanel = new FmtAutoMissionPanel();
             ConfigureFmtAutoMissionPanel();
+            ConfigureFmtMapOptionsPanel();
 
             // GPS satellite count and HDOP are shown in the FMT top toolbar.
             // Hide the duplicate map-overlay values to keep the lower legend clear.
@@ -456,6 +470,8 @@ namespace MissionPlanner.GCSViews
             CMB_modes.Text = "Auto";
 
             CMB_setwp.SelectedIndex = 0;
+
+            FmtFlightActionsLayout.Configure(tabActions, tableLayoutPanel1, IsFmtTraditionalChineseUi);
 
             log.Info("Graph Setup");
             CreateChart(zg1);
@@ -2190,7 +2206,7 @@ namespace MissionPlanner.GCSViews
                 // Compact FMT mission strip: a fixed caption and one execution value line.
                 tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, 55F));
                 tableMap.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-                tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
+                tableMap.RowStyles.Add(new RowStyle(SizeType.Absolute, FmtMapOptionsLayout.RowHeight));
                 tableMap.SetRow(splitContainer1, 1);
                 tableMap.SetRow(panel1, 2);
                 tableMap.Controls.Add(fmtAutoMissionPanel, 0, 0);
@@ -2203,35 +2219,8 @@ namespace MissionPlanner.GCSViews
 
         private FlowLayoutPanel ConfigureFmtMapOptionsPanel()
         {
-            var options = new FlowLayoutPanel
-            {
-                Name = "fmtMapOptionsPanel",
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                WrapContents = false,
-                FlowDirection = FlowDirection.LeftToRight,
-                Location = new Point(CB_tuning.Left, 0),
-                Anchor = AnchorStyles.Left | AnchorStyles.Top,
-                BackColor = Color.Transparent,
-                Padding = new Padding(0, 2, 0, 0),
-                Margin = Padding.Empty,
-                Height = panel1.Height
-            };
-
-            var controls = new[] { CB_tuning, CHK_autopan, chkFmtAirspace, chkFmt3DMap };
-            foreach (var checkBox in controls)
-            {
-                checkBox.Anchor = AnchorStyles.None;
-                checkBox.AutoSize = true;
-                checkBox.Margin = new Padding(0, 2, 18, 0);
-                checkBox.Padding = Padding.Empty;
-                checkBox.TextAlign = ContentAlignment.MiddleLeft;
-                options.Controls.Add(checkBox);
-            }
-
-            panel1.Controls.Add(options);
-            options.BringToFront();
-            return options;
+            return FmtMapOptionsLayout.Configure(panel1, coords1,
+                CB_tuning, CHK_autopan, chkFmtAirspace, chkFmt3DMap, chkFmtMqtt);
         }
 
         private void BUT_setwp_Click(object sender, EventArgs e)
@@ -2482,20 +2471,7 @@ namespace MissionPlanner.GCSViews
 
         private void CB_tuning_CheckedChanged(object sender, EventArgs e)
         {
-            if (!fmtChangingEmbeddedMapView && CB_tuning.Checked && chkFmt3DMap.Checked)
-            {
-                fmtChangingEmbeddedMapView = true;
-                try
-                {
-                    chkFmt3DMap.Checked = false;
-                }
-                finally
-                {
-                    fmtChangingEmbeddedMapView = false;
-                }
-            }
-
-            UpdateFmtEmbeddedMapView();
+            SelectFmtEmbeddedMapView(CB_tuning);
         }
 
         private void CheckAndBindPreFlightData()
@@ -3712,12 +3688,19 @@ namespace MissionPlanner.GCSViews
 
         private void CHK_fmt3DMap_CheckedChanged(object sender, EventArgs e)
         {
-            if (!fmtChangingEmbeddedMapView && chkFmt3DMap.Checked && CB_tuning.Checked)
+            SelectFmtEmbeddedMapView(chkFmt3DMap);
+        }
+
+        private void SelectFmtEmbeddedMapView(CheckBox selected)
+        {
+            if (fmtChangingEmbeddedMapView) return;
+            if (selected.Checked)
             {
                 fmtChangingEmbeddedMapView = true;
                 try
                 {
-                    CB_tuning.Checked = false;
+                    foreach (var option in new[] { CB_tuning, chkFmt3DMap, chkFmtMqtt })
+                        if (option != null && option != selected) option.Checked = false;
                 }
                 finally
                 {
@@ -3734,7 +3717,8 @@ namespace MissionPlanner.GCSViews
                 return;
 
             var show3D = chkFmt3DMap != null && chkFmt3DMap.Checked;
-            var showTuning = !show3D && CB_tuning != null && CB_tuning.Checked;
+            var showMqtt = !show3D && chkFmtMqtt != null && chkFmtMqtt.Checked;
+            var showTuning = !show3D && !showMqtt && CB_tuning != null && CB_tuning.Checked;
 
             ZedGraphTimer.Enabled = showTuning;
             if (showTuning)
@@ -3745,8 +3729,12 @@ namespace MissionPlanner.GCSViews
             zg1.Visible = showTuning;
             if (fmt3DMapControl != null && !fmt3DMapControl.IsDisposed)
                 fmt3DMapControl.Visible = show3D;
+            // Visibility is independent of the bridge lifetime: switching to the
+            // map/tuning/3D view must not disconnect a live aircraft link.
+            if (fmtMqttPanel != null && !fmtMqttPanel.IsDisposed)
+                fmtMqttPanel.Visible = showMqtt;
 
-            if (!show3D && !showTuning)
+            if (!show3D && !showTuning && !showMqtt)
             {
                 splitContainer1.Panel1Collapsed = true;
                 splitContainer1_Panel2_Resize(null, null);
@@ -3777,6 +3765,29 @@ namespace MissionPlanner.GCSViews
                     CustomMessageBox.Show(
                         "無法開啟 3D 地圖。請確認顯示卡驅動程式與 OpenGL 支援狀態。\r\n\r\n" + ex.Message,
                         "FMT 3D 地圖");
+                    return;
+                }
+            }
+
+            if (showMqtt)
+            {
+                try
+                {
+                    if (fmtMqttPanel == null || fmtMqttPanel.IsDisposed)
+                    {
+                        fmtMqttPanel = new FmtMqttPanel();
+                        splitContainer1.Panel1.Controls.Add(fmtMqttPanel);
+                        ThemeManager.ApplyThemeTo(fmtMqttPanel);
+                    }
+                    fmtMqttPanel.Visible = true;
+                    fmtMqttPanel.BringToFront();
+                }
+                catch (Exception ex)
+                {
+                    log.Error("Unable to open embedded MQTT panel", ex);
+                    if (fmtMqttPanel != null) { fmtMqttPanel.Dispose(); fmtMqttPanel = null; }
+                    chkFmtMqtt.Checked = false;
+                    CustomMessageBox.Show("無法開啟 MQTT 連線面板。", "MQTT 連線");
                     return;
                 }
             }

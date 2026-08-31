@@ -49,3 +49,16 @@ obj3/
 
 /.claude/settings.local.json
 /CLAUDE.md
+
+# Local companion projects, signing material and test/build scratch space.
+/private-signing/
+/tmp/
+/.dotnet-home/
+/analysis_extracted/
+/FMT-MQTT-Admin/
+/FMT-MQTT-UAS-Android/
+/FMT-MQTT-UAS-iOS/
+/FMT-MQTT-UAS-publish/
+/FeimaoMqttBridge/
+/MQTT-GUI-publish/
+/*.apk

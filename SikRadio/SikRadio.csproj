@@ -81,6 +81,7 @@
       <Link>Linked\Models.cs</Link>
     </Compile>
     <Compile Include="..\Radio\Sikradio.cs" Link="Linked\Sikradio.cs" />
+    <Compile Include="..\Radio\Sikradio.Fmt.cs" Link="Linked\Sikradio.Fmt.cs" />
     <Compile Include="..\Radio\Sikradio.Designer.cs" Link="Linked\Sikradio.Designer.cs" />
     <Compile Include="..\Radio\Uploader.cs">
       <Link>Linked\Uploader.cs</Link>

@@ -7,6 +7,7 @@ namespace MissionPlanner.FMT
     {
         internal const string SplashBackground = "MissionPlanner.FMT.Assets.fmt-splash-v111.png";
         internal const string LoginBackground = "MissionPlanner.FMT.Assets.fmt-login-v111.png";
+        internal const string MqttTrafficIcon = "MissionPlanner.FMT.Assets.mqtt-toolbar-transparent.png";
 
         internal static Bitmap LoadBitmap(string resourceName)
         {

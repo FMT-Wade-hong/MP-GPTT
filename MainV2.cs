@@ -7,6 +7,7 @@ using log4net;
 using MissionPlanner.ArduPilot;
 using MissionPlanner.Comms;
 using MissionPlanner.Controls;
+using MissionPlanner.FMT;
 using MissionPlanner.GCSViews.ConfigurationView;
 using MissionPlanner.Log;
 using MissionPlanner.Maps;
@@ -54,6 +55,9 @@ namespace MissionPlanner
     {
         private static readonly ILog log =
             LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        private readonly FMT.FmtConnectionCloseGuard fmtConnectionCloseGuard = new FMT.FmtConnectionCloseGuard();
+        private bool fmtShutdownStarted;
 
         public static menuicons displayicons; //do not initialize to allow update of custom icons
         public static string running_directory = Settings.GetRunningDirectory();
@@ -599,6 +603,7 @@ namespace MissionPlanner
         private Label FmtGpsPrimaryLabel;
         private Label FmtGpsDopLabel;
         private ToolStripControlHost MenuFmtFlightTime;
+        private FmtMqttTrafficIndicator MenuFmtMqttTraffic;
         private Label FmtFlightTimeLabel;
         private Label FmtTotalFlightTimeLabel;
         private ToolStripControlHost MenuFmtRotorRpm;
@@ -2021,15 +2026,24 @@ namespace MissionPlanner
 
 
         /// <summary>
-        /// overriding the OnCLosing is a bit cleaner than handling the event, since it
-        /// is this object.
-        ///
-        /// This happens before FormClosed
+        /// Confirm before disposing views, stopping workers or closing transports.
         /// </summary>
         /// <param name="e"></param>
-        protected override void OnClosing(CancelEventArgs e)
+        protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            base.OnClosing(e);
+            base.OnFormClosing(e);
+            if (e.Cancel) return;
+            // Cleanup pumps messages; do not run it twice on reentry.
+            if (fmtShutdownStarted) { e.Cancel = true; return; }
+            if (fmtConnectionCloseGuard.ShouldCancel(e.CloseReason,
+                HasFmtOpenTelemetryConnection(), FlightData?.HasRunningMqttBridge == true,
+                message => MessageBox.Show(this, message, "連線中，確定要關閉？",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2)))
+            {
+                e.Cancel = true;
+                return;
+            }
+            fmtShutdownStarted = true;
 
             log.Info("MainV2_FormClosing");
 
@@ -2220,6 +2234,21 @@ namespace MissionPlanner
                 this.Dispose();
         }
 
+        private static bool HasFmtOpenTelemetryConnection()
+        {
+            try
+            {
+                if (comPort?.BaseStream?.IsOpen == true) return true;
+                // Protect every active vehicle, not just the selected vehicle.
+                return Comports != null && Comports.ToArray().Any(port => port?.BaseStream?.IsOpen == true);
+            }
+            catch (Exception ex)
+            {
+                log.Debug("Unable to inspect connection state before closing; requesting confirmation", ex);
+                return true; // An uncertain transport state should still prompt.
+            }
+        }
+
 
         /// <summary>
         /// this happens after FormClosing...
@@ -2228,6 +2257,7 @@ namespace MissionPlanner
         /// <param name="e"></param>
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
+            MenuFmtMqttTraffic?.Dispose();
             base.OnFormClosed(e);
 
             Console.WriteLine("MainV2_FormClosed");
@@ -4694,7 +4724,7 @@ namespace MissionPlanner
                     continue;
                 }
 
-                if (item == MenuFmtGpsStatus || item == MenuFmtFlightTime || item == MenuFmtRotorRpm)
+                if (item == MenuFmtGpsStatus || item == MenuFmtFlightTime || item == MenuFmtRotorRpm || item == MenuFmtMqttTraffic)
                 {
                     item.BackgroundImage = null;
                     item.BackColor = Color.FromArgb(24, 24, 24);
@@ -5060,6 +5090,11 @@ namespace MissionPlanner
             // Adding this after GPS places the flight-time panel immediately to its left.
             MainMenu.Items.Add(MenuFmtFlightTime);
 
+            // Right alignment reverses insertion order: RPM -> MQTT -> flight time -> GPS.
+            MenuFmtMqttTraffic = new FmtMqttTrafficIndicator(
+                () => FlightData?.MqttTrafficSnapshot ?? default(FmtMqttTrafficSnapshot));
+            MainMenu.Items.Add(MenuFmtMqttTraffic);
+
             var rotorRpmPanel = new Panel
             {
                 Name = "FmtRotorRpmPanel",
@@ -5095,13 +5130,14 @@ namespace MissionPlanner
                 Name = "MenuFmtRotorRpm",
                 Alignment = ToolStripItemAlignment.Right,
                 AutoSize = false,
+                Visible = false,
                 Size = new Size(112, 35),
                 Margin = Padding.Empty,
                 Padding = Padding.Empty,
                 BackColor = Color.FromArgb(24, 24, 24),
                 ToolTipText = "RPM1 主旋翼轉速與上下限警告"
             };
-            // Right aligned items are reversed: this appears immediately left of flight time.
+            // MQTT automatically relinquishes its slot when stopped; RPM then adjoins flight time.
             MainMenu.Items.Add(MenuFmtRotorRpm);
             UpdateFmtQuickActionButtons();
         }
@@ -5284,6 +5320,7 @@ namespace MissionPlanner
             var hdop = connected ? comPort.MAV.cs.gpshdop : 0;
             var vdop = connected ? comPort.MAV.cs.gpsvdop : 0;
             var rotorRpm = connected ? comPort.MAV.cs.rpm1 : 0;
+            var showRotorRpm = connected && IsFmtTraditionalHelicopter();
             var flightSeconds = connected ? Math.Max(0, comPort.MAV.cs.timeInAir) : 0;
             double totalFlightSeconds = 0;
             var hasTotalFlightTime = connected && TryGetFmtTotalFlightSeconds(out totalFlightSeconds);
@@ -5302,18 +5339,55 @@ namespace MissionPlanner
                 ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
                 ApplyFmtQuickActionButtonStyle(MenuFmtQnh);
                 UpdateFmtGpsStatus(connected, gpsStatus, satCount, hdop, vdop);
-                UpdateFmtRotorRpm(connected, rotorRpm);
+                UpdateFmtRotorRpm(showRotorRpm, rotorRpm);
                 UpdateFmtFlightTime(connected, flightSeconds,
                     hasTotalFlightTime ? (double?)totalFlightSeconds : null);
             }));
         }
 
-        private void UpdateFmtRotorRpm(bool connected, float rpmValue)
+        private bool IsFmtTraditionalHelicopter()
         {
-            if (FmtRotorRpmLabel == null)
+            try
+            {
+                var mav = comPort?.MAV;
+                if (mav == null || mav.cs.firmware != Firmwares.ArduCopter2)
+                    return false;
+
+                if (mav.aptype == MAVLink.MAV_TYPE.HELICOPTER)
+                    return true;
+
+                var parameters = mav.param;
+                if (parameters == null)
+                    return false;
+
+                if (parameters.ContainsKey("H_RSC_MODE") || parameters.ContainsKey("H_SW_TYPE") ||
+                    parameters.ContainsKey("H_SWASH_TYPE") || parameters.ContainsKey("H_COL_MIN"))
+                    return true;
+
+                if (!parameters.ContainsKey("FRAME_CLASS"))
+                    return false;
+
+                var frameClass = (int)Math.Round(parameters["FRAME_CLASS"].Value);
+                return frameClass == 6 || frameClass == 11 || frameClass == 13;
+            }
+            catch (Exception ex)
+            {
+                log.Debug("Unable to identify helicopter for the FMT rotor RPM display", ex);
+                return false;
+            }
+        }
+
+        private void UpdateFmtRotorRpm(bool isHelicopter, float rpmValue)
+        {
+            if (FmtRotorRpmLabel == null || MenuFmtRotorRpm == null)
                 return;
 
-            if (!connected || float.IsNaN(rpmValue) || float.IsInfinity(rpmValue))
+            var visibilityChanged = MenuFmtRotorRpm.Visible != isHelicopter;
+            MenuFmtRotorRpm.Visible = isHelicopter;
+            if (visibilityChanged)
+                MainMenu.PerformLayout();
+
+            if (!isHelicopter || float.IsNaN(rpmValue) || float.IsInfinity(rpmValue))
             {
                 FmtRotorRpmLabel.Text = "主旋翼\r\nRPM1：--";
                 FmtRotorRpmLabel.ForeColor = Color.Gray;

@@ -1,6 +1,7 @@
-param(
+﻿param(
     [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot),
-    [string]$PackagePath = ''
+    [string]$PackagePath = '',
+    [string]$SourceDirectory = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -26,9 +27,9 @@ function Test-File([string]$Name, [string]$Path) {
     }
 }
 
-Test-Source 'V1.1.2 product version' 'FMT\FmtAuthentication.cs' 'ProductVersion = "1.1.2"'
-Test-Source 'V1.1.2 project version' 'MissionPlanner.csproj' '<Version>1.1.2</Version>'
-Test-Source 'V1.1.2 assembly version' 'Properties\AssemblyInfo.cs' 'AssemblyFileVersion("1.1.2.0")'
+Test-Source 'V1.1.3 product version' 'FMT\FmtAuthentication.cs' 'ProductVersion = "1.1.3"'
+Test-Source 'V1.1.3 project version' 'MissionPlanner.csproj' '<Version>1.1.3</Version>'
+Test-Source 'V1.1.3 assembly version' 'Properties\AssemblyInfo.cs' 'AssemblyFileVersion("1.1.3.0")'
 Test-Source 'Splash resource' 'FMT\FmtVisualAssets.cs' 'fmt-splash-v111.png'
 Test-Source 'Login resource' 'FMT\FmtVisualAssets.cs' 'fmt-login-v111.png'
 Test-File 'Splash artwork exists' 'FMT\Assets\fmt-splash-v111.png'
@@ -64,10 +65,11 @@ Test-Source 'Airspace restricted high contrast' 'GCSViews\FlightPlanner.cs' 'Col
 Test-Source 'QNH hPa entry' 'GCSViews\FlightData.cs' 'qnhHectopascals * 100.0'
 Test-Source 'Privacy-safe GitHub report' 'FMT\FmtCrashReportForm.cs' 'OpenGitHub_Click'
 
-$exe = Join-Path $ProjectRoot 'bin\Release\net461\FMTPlanner.exe'
+if (!$SourceDirectory) { $SourceDirectory = Join-Path $ProjectRoot 'bin\Release\net461' }
+$exe = Join-Path $SourceDirectory 'FMTPlanner.exe'
 if (Test-Path -LiteralPath $exe -PathType Leaf) {
     $version = (Get-Item -LiteralPath $exe).VersionInfo.FileVersion
-    if ($version -eq '1.1.2.0') { Write-Host 'PASS executable version' -ForegroundColor Green }
+    if ($version -eq '1.1.3.0') { Write-Host 'PASS executable version' -ForegroundColor Green }
     else { $failures.Add('executable version'); Write-Host "FAIL executable version: $version" -ForegroundColor Red }
 } else {
     $failures.Add('executable exists'); Write-Host 'FAIL executable exists' -ForegroundColor Red
@@ -82,20 +84,25 @@ if ($PackagePath) {
         try {
             $entries = @($archive.Entries | ForEach-Object FullName)
             foreach ($required in @(
-                'FMTPlanner-V1.1.2/FMTPlanner-V1.1.2.exe',
-                'FMTPlanner-V1.1.2/FMTPlanner-V1.1.2.exe.config',
-                'FMTPlanner-V1.1.2/README-FMT.md',
-                'FMTPlanner-V1.1.2/CHANGELOG-FMT.md',
-                'FMTPlanner-V1.1.2/RELEASE-MANIFEST.txt')) {
+                'FMTPlanner-V1.1.3/FMTPlanner-V1.1.3.exe',
+                'FMTPlanner-V1.1.3/FMTPlanner-V1.1.3.exe.config',
+                'FMTPlanner-V1.1.3/README-FMT.md',
+                'FMTPlanner-V1.1.3/CHANGELOG-FMT.md',
+                'FMTPlanner-V1.1.3/RELEASE-MANIFEST.txt',
+                'FMTPlanner-V1.1.3/FMT/MQTT-EMBEDDED.md',
+                'FMTPlanner-V1.1.3/FMT/SIK-SETTINGS.md',
+                'FMTPlanner-V1.1.3/FMT/Assets/mqtt-toolbar-transparent.png')) {
                 if ($entries -notcontains $required) { $failures.Add('package entry ' + $required) }
             }
             foreach ($obsolete in @(
-                'FMTPlanner-V1.1.2/FMTPlanner.exe',
-                'FMTPlanner-V1.1.2/FMTPlanner.exe.config')) {
+                'FMTPlanner-V1.1.3/FMTPlanner.exe',
+                'FMTPlanner-V1.1.3/FMTPlanner.exe.config')) {
                 if ($entries -contains $obsolete) { $failures.Add('obsolete package entry ' + $obsolete) }
             }
             $forbidden = @($entries | Where-Object {
-                $_ -match '(?i)\.(pdb|so|dylib)$' -or $_ -match '(?i)/plugins/example.*\.cs$'
+                $_ -match '(?i)\.(pdb|so|dylib|pfx|p12|key|tlog|rlog|dmp)$' -or $_ -match '(?i)/plugins/example.*\.cs$' -or
+                $_ -match '(?i)/(private-signing|tmp|logs|gmapcache|mqtt)/' -or
+                $_ -match '(?i)/(config\.xml|settings\.json|password\.bin|\.env|\.git)$'
             })
             if ($forbidden.Count -eq 0) { Write-Host 'PASS package exclusion policy' -ForegroundColor Green }
             else { $failures.Add('package exclusion policy') }
@@ -106,7 +113,7 @@ if ($PackagePath) {
 }
 
 if ($failures.Count -gt 0) {
-    throw ('V1.1.2 verification failed: ' + ($failures -join ', '))
+    throw ('V1.1.3 verification failed: ' + ($failures -join ', '))
 }
 
-Write-Host 'FMTPlanner V1.1.2 verification passed.' -ForegroundColor Cyan
+Write-Host 'FMTPlanner V1.1.3 verification passed.' -ForegroundColor Cyan

@@ -321,6 +321,16 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 graphics.DrawString("構型與馬達旋向", titleFont, Brushes.Black, 14, 12);
                 graphics.DrawString("機頭方向 ↑", labelFont, Brushes.DarkRed, 14, 38);
 
+                var officialDiagram = GetArduPilotMotorDiagram();
+                if (officialDiagram != null)
+                {
+                    DrawArduPilotMotorDiagram(graphics, officialDiagram,
+                        new Rectangle(18, 62, width - 36, height - 78));
+                    graphics.DrawString("ArduPilot 官方馬達配置圖", labelFont, Brushes.DimGray, 14,
+                        height - labelFont.Height - 7);
+                    return;
+                }
+
                 var center = new PointF(width / 2F, height / 2F + 18F);
                 var span = Math.Min(width, height) * 0.72F;
                 var positions = new PointF[Math.Max(0, motormax)];
@@ -344,8 +354,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     }
                 }
 
-                foreach (var point in positions)
-                    graphics.DrawLine(bodyPen, center, point);
+                DrawFmtFrameBody(graphics, bodyPen, center, positions);
                 graphics.FillRectangle(bodyBrush, center.X - 22, center.Y - 32, 44, 64);
                 graphics.DrawRectangle(bodyPen, center.X - 22, center.Y - 32, 44, 64);
                 graphics.FillPolygon(Brushes.DarkRed, new[]
@@ -387,6 +396,122 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     }
                 }
             }
+        }
+
+        private Image GetArduPilotMotorDiagram()
+        {
+            // These images are the official ArduPilot motor-order / rotation
+            // diagrams bundled with Mission Planner. Only use an image when
+            // the frame mapping is unambiguous; uncommon layouts continue to
+            // use the data-driven renderer below instead of showing a wrong
+            // airframe.
+            switch (motor_layout.Class)
+            {
+                case 1: // Quad
+                    switch (motor_layout.Type)
+                    {
+                        case 0:
+                            return Properties.Resources.quad;
+                        case 1:
+                            return Properties.Resources.quadx;
+                        case 3:
+                            return Properties.Resources.frames_h;
+                    }
+                    break;
+
+                case 2: // Hexa
+                    if (motor_layout.Type == 0)
+                        return Properties.Resources.hexa;
+                    break;
+
+                case 3: // Octa
+                    if (motor_layout.Type == 0)
+                        return Properties.Resources.octo;
+                    break;
+
+                case 5: // Y6
+                    return Properties.Resources.y6a;
+
+                case 7: // Tri
+                    return Properties.Resources.tri;
+            }
+
+            return null;
+        }
+
+        private static void DrawArduPilotMotorDiagram(Graphics graphics, Image diagram, Rectangle bounds)
+        {
+            if (diagram == null || bounds.Width <= 0 || bounds.Height <= 0)
+                return;
+
+            var scale = Math.Min((double)bounds.Width / diagram.Width,
+                (double)bounds.Height / diagram.Height);
+            var drawWidth = Math.Max(1, (int)Math.Round(diagram.Width * scale));
+            var drawHeight = Math.Max(1, (int)Math.Round(diagram.Height * scale));
+            var destination = new Rectangle(
+                bounds.Left + (bounds.Width - drawWidth) / 2,
+                bounds.Top + (bounds.Height - drawHeight) / 2,
+                drawWidth,
+                drawHeight);
+
+            var previousInterpolation = graphics.InterpolationMode;
+            graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            graphics.DrawImage(diagram, destination);
+            graphics.InterpolationMode = previousInterpolation;
+        }
+
+        private void DrawFmtFrameBody(Graphics graphics, Pen bodyPen, PointF center, PointF[] positions)
+        {
+            // ArduPilot FRAME_CLASS=1 / FRAME_TYPE=3 is Quad H.  Its motor
+            // mixing positions are the same four corners used by an X frame,
+            // but the airframe itself must be drawn as an H rather than as
+            // four diagonal arms radiating from the flight controller.
+            if (motor_layout.Class == 1 && motor_layout.Type == 3 && positions.Length == 4)
+            {
+                var leftTop = PointF.Empty;
+                var leftBottom = PointF.Empty;
+                var rightTop = PointF.Empty;
+                var rightBottom = PointF.Empty;
+                var hasLeft = false;
+                var hasRight = false;
+
+                foreach (var point in positions)
+                {
+                    if (point.X < center.X)
+                    {
+                        if (!hasLeft || point.Y < leftTop.Y)
+                            leftTop = point;
+                        if (!hasLeft || point.Y > leftBottom.Y)
+                            leftBottom = point;
+                        hasLeft = true;
+                    }
+                    else
+                    {
+                        if (!hasRight || point.Y < rightTop.Y)
+                            rightTop = point;
+                        if (!hasRight || point.Y > rightBottom.Y)
+                            rightBottom = point;
+                        hasRight = true;
+                    }
+                }
+
+                if (!hasLeft || !hasRight)
+                {
+                    foreach (var point in positions)
+                        graphics.DrawLine(bodyPen, center, point);
+                    return;
+                }
+
+                var leftMid = new PointF(leftTop.X, center.Y);
+                var rightMid = new PointF(rightTop.X, center.Y);
+                graphics.DrawLine(bodyPen, leftTop, leftBottom);
+                graphics.DrawLine(bodyPen, rightTop, rightBottom);
+                graphics.DrawLine(bodyPen, leftMid, rightMid);
+                return;
+            }
+
+            foreach (var point in positions)
+                graphics.DrawLine(bodyPen, center, point);
         }
 
         private int get_motormax()

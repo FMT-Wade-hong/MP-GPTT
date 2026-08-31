@@ -1,12 +1,12 @@
-# FeiMaoTecPlanner V1.1.2 customization
+﻿# FeiMaoTecPlanner V1.1.3 customization
 
 > 使用者圖文操作手冊請見儲存庫根目錄的 [README-FMT.md](../README-FMT.md)。本文件保留開發、建置與客製技術資訊。
 
-FeiMaoTecPlanner V1.1.2 is the FMT branded mission-panel, vehicle-configuration, Traditional Chinese UI and stability release of the FMT 飛貓科技 customization layer for Mission Planner.
+FeiMaoTecPlanner V1.1.3 adds embedded MQTT bridging and traffic telemetry, connection-aware close confirmation, Chinese SiK configuration, and compact localized action controls to the FMT 飛貓科技 customization layer for Mission Planner.
 
 ## Defaults
 
-- Product: `FeiMaoTecPlanner V1.1.2`
+- Product: `FeiMaoTecPlanner V1.1.3`
 - Company: `FMT飛貓科技`
 - Login branding: embedded `FMT/Assets/fmt-logo.png`
 - Application icon: generated from `FMT/Assets/fmt-app-icon-source.png` with `FMT/Build-FmtIcon.ps1`
@@ -41,7 +41,9 @@ CAA GIS information is a planning reference only. The official announcement and 
 
 Open `MissionPlanner.sln` in Visual Studio 2022 and build `Debug` or `Release`.
 
-After a Release build, run `FMT/Build-FMTPlannerPackage.ps1` to produce the versioned portable ZIP, for example `bin/Package/FMTPlanner-V1.1.2.zip`. The version comes from `FMT/VERSION` unless `-ReleaseVersion X.X.X` is supplied. Extract the ZIP and run `FMTPlanner.exe`. The Windows stable package excludes PDB symbols, macOS/Linux native libraries and developer `plugins/example*.cs` samples while retaining runtime plugins, drivers, maps, metadata and FMT resources. The package deliberately avoids self-extracting launchers because McAfee Real Protect classifies their extract-and-launch behavior as suspicious until the publisher has trusted code-signing reputation.
+After a Release build, run `FMT/Build-FMTPlannerPackage.ps1` to produce the versioned portable ZIP, for example `bin/Package/FMTPlanner-V1.1.3.zip`. The version comes from `FMT/VERSION` unless `-ReleaseVersion X.X.X` is supplied. Extract the ZIP and run `FMTPlanner-V1.1.3.exe`. The Windows package excludes debug symbols, non-Windows native libraries, developer examples and local settings/logs while retaining runtime plugins, drivers, maps, metadata and FMT resources. It is a portable ZIP, not a self-extracting launcher.
+
+Run `Verify-FMTPlannerV113.ps1`, `Verify-FmtMqtt.ps1`, `Verify-FmtSiK.ps1` and `Verify-FmtFlightActions.ps1` before publishing. The UI/bridge tests are offline or loopback-only; no production credentials or physical vehicle/radio are used. Hardware and live TLS interoperability still need ground validation.
 
 A locally generated self-signed certificate can verify whether a file changed, but it does not establish public publisher trust on other computers. Public releases should remain ZIP packages until FMT has a trusted code-signing certificate; future signed builds should use an RFC 3161 timestamp server.
 

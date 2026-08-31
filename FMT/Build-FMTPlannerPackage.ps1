@@ -27,6 +27,9 @@ $applicationPath = Join-Path $sourcePath 'FMTPlanner.exe'
 if (-not (Test-Path -LiteralPath $applicationPath -PathType Leaf)) {
     throw "FMTPlanner.exe was not found in $sourcePath. Build Release first."
 }
+if ((Get-Item -LiteralPath $applicationPath).VersionInfo.FileVersion -ne "$ReleaseVersion.0") {
+    throw 'Executable version does not match the requested package version.'
+}
 
 $outputFullPath = [IO.Path]::GetFullPath($OutputPath)
 $outputDirectory = Split-Path $outputFullPath -Parent
@@ -38,6 +41,8 @@ Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $temporaryOutput = Join-Path $outputDirectory ('.fmtplanner-' + [Guid]::NewGuid().ToString('N') + '.zip')
 $rootFolder = "FMTPlanner-V$ReleaseVersion"
+$versionedExecutableName = "FMTPlanner-V$ReleaseVersion.exe"
+$versionedConfigName = "$versionedExecutableName.config"
 $documentationFiles = @(
     [PSCustomObject]@{
         Source = Join-Path $projectRoot 'README-FMT.md'
@@ -49,10 +54,22 @@ $documentationFiles = @(
     }
 )
 $documentationAssetRoot = Join-Path $projectRoot 'FMT'
+# Ship only embedded/public artwork, never unrelated local image drafts.
+$projectXml = [xml](Get-Content -LiteralPath (Join-Path $projectRoot 'MissionPlanner.csproj') -Raw)
+$publicArtwork = @($projectXml.SelectNodes('//EmbeddedResource[@Include]') |
+    Where-Object { $_.Include -like 'FMT\Assets\*' } |
+    ForEach-Object { [IO.Path]::GetFileName($_.Include) })
+foreach ($guide in 'MQTT-EMBEDDED.md', 'SIK-SETTINGS.md') {
+    $documentationFiles += [PSCustomObject]@{
+        Source = Join-Path $documentationAssetRoot $guide
+        Entry = "$rootFolder/FMT/$guide"
+    }
+}
 foreach ($assetDirectory in 'Assets', 'ManualImages') {
     $assetPath = Join-Path $documentationAssetRoot $assetDirectory
     if (Test-Path -LiteralPath $assetPath -PathType Container) {
         foreach ($asset in Get-ChildItem -LiteralPath $assetPath -Recurse -File) {
+            if ($assetDirectory -eq 'Assets' -and $publicArtwork -notcontains $asset.Name) { continue }
             $relativeAsset = $asset.FullName.Substring($projectRoot.Length).TrimStart('\', '/')
             $documentationFiles += [PSCustomObject]@{
                 Source = $asset.FullName
@@ -71,6 +88,11 @@ $excludedBytes = 0L
 
 function Get-ReleaseExclusionReason([string]$RelativePath) {
     $extension = [IO.Path]::GetExtension($RelativePath)
+    if ($RelativePath -match '(?i)(^|[\\/])(private-signing|tmp|logs|gmapcache|mqtt|\.git)([\\/]|$)' -or
+        $RelativePath -match '(?i)(^|[\\/])(config\.xml|settings\.json|password\.bin|\.env)$' -or
+        $extension -match '(?i)^\.(pfx|p12|key|tlog|rlog|dmp)$') {
+        return 'private configuration, credentials, logs or test artifacts'
+    }
     if ($staleMissionPlannerOutputs -contains $RelativePath) {
         return 'stale Mission Planner output'
     }
@@ -83,7 +105,21 @@ function Get-ReleaseExclusionReason([string]$RelativePath) {
     if ($RelativePath -like 'plugins\example*.cs') {
         return 'developer example plugin source'
     }
+    if ($RelativePath -match '(?i)^FMTPlanner-V\d+\.\d+\.\d+(?:-IconTest)?\.exe(?:\.config)?$' -or
+        $RelativePath -match '(?i)^FMTPlanner-.*-IconTest\.exe(?:\.config)?$') {
+        return 'stale versioned executable copy'
+    }
     return $null
+}
+
+function Get-ReleaseEntryRelativePath([string]$RelativePath) {
+    if ($RelativePath -ieq 'FMTPlanner.exe') {
+        return $versionedExecutableName
+    }
+    if ($RelativePath -ieq 'FMTPlanner.exe.config') {
+        return $versionedConfigName
+    }
+    return $RelativePath
 }
 
 try {
@@ -110,7 +146,8 @@ try {
 
             foreach ($file in $files) {
                 $relativePath = $file.FullName.Substring($sourcePath.Length).TrimStart('\', '/')
-                $entryName = ($rootFolder + '/' + $relativePath.Replace('\', '/'))
+                $releaseRelativePath = Get-ReleaseEntryRelativePath $relativePath
+                $entryName = ($rootFolder + '/' + $releaseRelativePath.Replace('\', '/'))
                 [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
                     $archive,
                     $file.FullName,
@@ -137,7 +174,7 @@ try {
                 $writer.WriteLine('FMTPlanner V' + $ReleaseVersion)
                 $writer.WriteLine('')
                 $writer.WriteLine('1. Extract this ZIP to a normal local folder.')
-                $writer.WriteLine('2. Run FMTPlanner.exe.')
+                $writer.WriteLine('2. Run ' + $versionedExecutableName + '.')
                 $writer.WriteLine('3. Do not run files directly from inside the ZIP viewer.')
                 $writer.WriteLine('4. Open README-FMT.md for the Traditional Chinese illustrated user manual.')
                 $writer.WriteLine('')

@@ -70,9 +70,20 @@ S14: RTSCTS=0
 S15: MAX_WINDOW=131
          */
 
-        public Sikradio()
+        public Sikradio() : this(false) { }
+
+        public Sikradio(bool useFmtChinese)
         {
-            InitializeComponent();
+            // Older zh-TW resources describe an obsolete, narrower SiK layout.
+            // Use current neutral geometry, then translate captions explicitly.
+            var originalCulture = Thread.CurrentThread.CurrentUICulture;
+            try
+            {
+                if (useFmtChinese) Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+                InitializeComponent();
+            }
+            finally { Thread.CurrentThread.CurrentUICulture = originalCulture; }
+            if (useFmtChinese) ConfigureFmtChinese();
 
             // hide advanced view
             //SPLIT_local.Panel2Collapsed = true;
@@ -277,18 +288,22 @@ S15: MAX_WINDOW=131
 
         public void Disconnect()
         {
-            var S = _Session;
-            if ((S != null) && S.Port.IsOpen)
+            try
             {
-                S.PutIntoTransparentMode();
+                var S = _Session;
+                if ((S != null) && S.Port.IsOpen) S.PutIntoTransparentMode();
             }
-            EndSession();
-            MissionPlanner.Radio.ComPort.FinishedWithComPortForSiKRadio();
+            finally
+            {
+                EndSession();
+                if (EmbeddedPortProvider == null)
+                    MissionPlanner.Radio.ComPort.FinishedWithComPortForSiKRadio();
+            }
         }
 
         void DisposedEvtHdlr(object sender, EventArgs e)
         {
-            Disconnect();
+            RequestEmbeddedDisconnect();
         }
 
         private void SaveDefaultCBObjects(ComboBox CB)
@@ -395,7 +410,7 @@ S15: MAX_WINDOW=131
         {
             using (var openFileDialog1 = new OpenFileDialog())
             {
-                string Filter = "Firmware|";
+                string Filter = fmtChinese ? "韌體檔案|" : "Firmware|";
                 string[] Exts = RFD900.FirmwareFileNameExtensions;
                 for (int n = 0; n < Exts.Length; n++)
                 {
@@ -419,7 +434,7 @@ S15: MAX_WINDOW=131
                     }
                     catch (Exception ex)
                     {
-                        MsgBox.CustomMessageBox.Show("Error copying file\n" + ex, "ERROR");
+                        ShowRadioMessage("Error copying file\n" + ex, "ERROR");
                         return false;
                     }
                     return true;
@@ -449,7 +464,7 @@ S15: MAX_WINDOW=131
 
         private void BUT_upload_Click(object sender, EventArgs e)
         {
-            ProgramFirmware(false);
+            ExecuteEmbeddedOperation(() => ProgramFirmware(false));
         }
 
         private void iHex_ProgressEvent(double completed)
@@ -689,14 +704,16 @@ S15: MAX_WINDOW=131
             }
             else
             {
-                string ErrorMsg = Remote ? "Remote" : "Local" + " settings invalid, operation aborted:";
+                string ErrorMsg = fmtChinese
+                    ? (Remote ? "遠端" : "本機") + "設定無效，已取消操作："
+                    : (Remote ? "Remote" : "Local") + " settings invalid, operation aborted:";
 
                 foreach (var em in Errors)
                 {
                     ErrorMsg += "\n\t" + em;
                 }
 
-                MsgBox.CustomMessageBox.Show(ErrorMsg);
+                ShowRadioMessage(ErrorMsg);
 
                 return false;
             }
@@ -749,7 +766,7 @@ S15: MAX_WINDOW=131
                         }
                         if (!cmdanswer.Contains("OK"))
                         {
-                            MsgBox.CustomMessageBox.Show("Set Command error");
+                            ShowRadioMessage("Set Command error");
                         }
 
                     }
@@ -763,7 +780,7 @@ S15: MAX_WINDOW=131
                         }
                         else
                         {
-                            MsgBox.CustomMessageBox.Show("Set Command error");
+                            ShowRadioMessage("Set Command error");
                         }
                     }
                 }
@@ -848,6 +865,16 @@ S15: MAX_WINDOW=131
 
         private void BUT_savesettings_Click(object sender, EventArgs e)
         {
+            ExecuteEmbeddedOperation(SaveCurrentSettings);
+        }
+
+        private void SaveCurrentSettings()
+        {
+            if (_LocalSettings == null) { ShowRadioMessage("Please read settings first."); return; }
+            if (EmbeddedPortProvider != null &&
+                (!ValidateEmbeddedKey(ENCRYPTION_LEVEL, AESKEY, "本機") ||
+                (RTI.Text != "" && !ValidateEmbeddedKey(RENCRYPTION_LEVEL, RAESKEY, "遠端")))) return;
+            if (!ConfirmEmbeddedWrite("寫入設定", "將寫入本機及可連線的遠端數傳參數；不相容的設定可能使數傳斷線。")) return;
             if (
                     (
                         (RTI.Text == "") || 
@@ -947,7 +974,7 @@ S15: MAX_WINDOW=131
                             {
                                 //Complain that encryption key invalid.
                                 lbl_status.Text = "Fail";
-                                MsgBox.CustomMessageBox.Show("Encryption key not valid hex number <= " + MaxKeyLength.ToString() + " hex numerals");
+                                ShowRadioMessage("Encryption key not valid hex number <= " + MaxKeyLength.ToString() + " hex numerals");
                             }
                         }
                         if (GetIsEncryptionEnabled(ENCRYPTION_LEVEL))
@@ -964,7 +991,7 @@ S15: MAX_WINDOW=131
                             {
                                 //Complain that encryption key invalid.
                                 lbl_status.Text = "Fail";
-                                MsgBox.CustomMessageBox.Show("Encryption key not valid hex number <= " + MaxKeyLength.ToString() + " hex numerals");
+                                ShowRadioMessage("Encryption key not valid hex number <= " + MaxKeyLength.ToString() + " hex numerals");
                             }
                         }
 
@@ -982,7 +1009,7 @@ S15: MAX_WINDOW=131
                         var cmdwriteanswer = doCommand(Session.Port, "AT&W");
                         if (!cmdwriteanswer.Contains("OK"))
                         {
-                            MsgBox.CustomMessageBox.Show("Failed to save parameters");
+                            ShowRadioMessage("Failed to save parameters");
                         }
 
                         // return to normal mode
@@ -998,7 +1025,7 @@ S15: MAX_WINDOW=131
                     doCommand(Session.Port, "ATZ");
 
                     lbl_status.Text = "Fail";
-                    MsgBox.CustomMessageBox.Show("Failed to enter command mode");
+                    ShowRadioMessage("Failed to enter command mode");
                     EnableConfigControls(true, false);
                 }
 
@@ -1466,6 +1493,11 @@ S15: MAX_WINDOW=131
         /// <param name="e"></param>
         private void BUT_getcurrent_Click(object sender, EventArgs e)
         {
+            ExecuteEmbeddedOperation(ReadCurrentSettings);
+        }
+
+        private void ReadCurrentSettings()
+        {
             //System.Diagnostics.Stopwatch SW = new System.Diagnostics.Stopwatch();
             //SW.Start();
             //EndSession();
@@ -1820,7 +1852,7 @@ S15: MAX_WINDOW=131
 
                         if ((RemoteFWVer != null) &&  (LocalFWVer != RemoteFWVer) && UsedAltRanges)
                         {
-                            MsgBox.CustomMessageBox.Show("The ranges and options shown for the remote modem may not be accurate.  To ensure accurate, use the same firmware version in both the local and remote modems");
+                            ShowRadioMessage("The ranges and options shown for the remote modem may not be accurate.  To ensure accurate, use the same firmware version in both the local and remote modems");
                         }
 
                         items = answer.Split('\n');
@@ -1880,7 +1912,7 @@ S15: MAX_WINDOW=131
                     Session.PutIntoTransparentMode();
 
                     lbl_status.Text = "Fail";
-                    MsgBox.CustomMessageBox.Show("Failed to enter command mode.  Try power-cycling modem.");
+                    ShowRadioMessage("Failed to enter command mode.  Try power-cycling modem.");
                     EnableConfigControls(true, false);
                 }
 
@@ -1895,7 +1927,7 @@ S15: MAX_WINDOW=131
             catch (Exception ex)
             {
                 lbl_status.Text = "Error";
-                MsgBox.CustomMessageBox.Show("Error during read " + ex);
+                ShowRadioMessage("Error during read " + ex);
             }
             _AlreadyInEncCheckChangedEvtHdlr = false;
 
@@ -2089,7 +2121,7 @@ S15: MAX_WINDOW=131
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            MsgBox.CustomMessageBox.Show(@"The Sik Radios have 2 status LEDs, one red and one green.
+            ShowRadioMessage(@"The Sik Radios have 2 status LEDs, one red and one green.
 green LED blinking - searching for another radio 
 green LED solid - link is established with another radio 
 red LED flashing - transmitting data 
@@ -2101,12 +2133,18 @@ red LED solid - in firmware update mode");
             string Result = doCommand(Port, cmd);
             if (!Result.Contains("OK"))
             {
-                MsgBox.CustomMessageBox.Show(ErrorMsg);
+                ShowRadioMessage(ErrorMsg);
             }
         }
 
         private void BUT_resettodefault_Click(object sender, EventArgs e)
         {
+            ExecuteEmbeddedOperation(ResetRadioDefaults);
+        }
+
+        private void ResetRadioDefaults()
+        {
+            if (!ConfirmEmbeddedWrite("恢復預設", "將覆寫本機及可連線的遠端數傳設定並重新啟動數傳。")) return;
             //EndSession();
             var Session = GetSession();
             if (Session == null)
@@ -2160,7 +2198,7 @@ red LED solid - in firmware update mode");
                 Session.PutIntoTransparentMode();
 
                 lbl_status.Text = "Fail";
-                MsgBox.CustomMessageBox.Show("Failed to enter command mode.  Try power-cycling modem.");
+                ShowRadioMessage("Failed to enter command mode.  Try power-cycling modem.");
             }
         }
 
@@ -2242,11 +2280,12 @@ red LED solid - in firmware update mode");
 
         private void BUT_loadcustom_Click(object sender, EventArgs e)
         {
-            ProgramFirmware(true);
+            ExecuteEmbeddedOperation(() => ProgramFirmware(true));
         }
 
         void ProgramFirmware(bool Custom)
         {
+            if (!ConfirmEmbeddedWrite("更新韌體", "數傳將暫時中斷。請確認硬體型號、韌體來源與供電穩定。")) return;
             EnableProgrammingControls(false);
             EnableConfigControls(false, false);
 
@@ -2254,6 +2293,7 @@ red LED solid - in firmware update mode");
             {
                 //EndSession();
                 var Session = GetSession();
+                if (Session == null) return;
                 UpdateStatus("Determining mode...");
                 var Mode = Session.GetMode();
                 UpdateStatus("Mode is " + Mode.ToString());
@@ -2265,7 +2305,7 @@ red LED solid - in firmware update mode");
                 if (RFD900 == null)
                 {
                     UpdateStatus("Unknown modem");
-                    MsgBox.CustomMessageBox.Show("Couldn't communicate with modem.  Try power-cycling modem.");
+                    ShowRadioMessage("Couldn't communicate with modem.  Try power-cycling modem.");
                     EndSession();
                 }
                 else
@@ -2308,8 +2348,11 @@ red LED solid - in firmware update mode");
                 {
                 }
             }
-            EnableProgrammingControls(true);
-            EnableConfigControls(true, false);
+            finally
+            {
+                EnableProgrammingControls(true);
+                EnableConfigControls(true, false);
+            }
             //UploadFW(true);
         }
 
@@ -2332,7 +2375,7 @@ red LED solid - in firmware update mode");
         private void Progressbar_Click(object sender, EventArgs e)
         {
             beta = !beta;
-            MsgBox.CustomMessageBox.Show("Beta set to " + beta);
+            ShowRadioMessage("Beta set to " + beta);
         }
 
         private void linkLabel_mavlink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -2421,18 +2464,36 @@ red LED solid - in firmware update mode");
                 //doCommand(Session.Port, "ATO");
 
                 lbl_status.Text = "Fail";
-                MsgBox.CustomMessageBox.Show("Failed to enter command mode");
+                ShowRadioMessage("Failed to enter command mode");
             }
         }
 
 
         private void BUT_SetPPMFailSafe_Click(object sender, EventArgs e)
         {
-            SetPPMFailSafe("AT&R", "AT&W");
+            ExecuteEmbeddedOperation(() =>
+            {
+                if (ConfirmEmbeddedWrite("設定 PPM 失控保護", "將記錄本機目前 PPM 訊號作為失控保護值。"))
+                    SetPPMFailSafe("AT&R", "AT&W");
+            });
         }
 
         RFD.RFD900.TSession GetSession()
         {
+
+            if (EmbeddedPortProvider != null)
+            {
+                try
+                {
+                    // The embedded page owns a dedicated port; never close or
+                    // reconfigure MainV2.comPort to acquire the radio.
+                    var port = EmbeddedPortProvider();
+                    if (port == null) return null;
+                    if (_Session == null) _Session = new RFD.RFD900.TSession(port, port.BaudRate);
+                    return _Session;
+                }
+                catch (Exception ex) { ShowRadioMessage("Invalid ComPort or in use" + "\r\n" + ex.Message); return null; }
+            }
 
             if (_Session == null)
             {
@@ -2447,7 +2508,7 @@ red LED solid - in firmware update mode");
                 }
                 catch
                 {
-                    MsgBox.CustomMessageBox.Show("Invalid ComPort or in use");
+                    ShowRadioMessage("Invalid ComPort or in use");
                     return null;
                 }
             }
@@ -2472,6 +2533,7 @@ red LED solid - in firmware update mode");
             {
                 DoDisconnectReconnect();
             }
+            if (EmbeddedPortProvider != null) EmbeddedPortRelease?.Invoke();
         }
 
         bool SetSetting(string Designator, int Value, bool Remote)
@@ -2547,6 +2609,14 @@ red LED solid - in firmware update mode");
             {
                 return;
             }
+            if (EmbeddedPortProvider != null)
+            {
+                // Editing/importing/copying settings is staged in the MP page.
+                // The legacy standalone handler writes immediately; do not run
+                // that path until the user explicitly confirms Save Settings.
+                EncKeyTextBox.Enabled = GetIsEncryptionEnabled(CB);
+                return;
+            }
             _AlreadyInEncCheckChangedEvtHdlr = true;
             try
             {
@@ -2620,7 +2690,11 @@ red LED solid - in firmware update mode");
 
         private void BUT_SetPPMFailSafeRemote_Click(object sender, EventArgs e)
         {
-            SetPPMFailSafe("RT&R", "RT&W");
+            ExecuteEmbeddedOperation(() =>
+            {
+                if (ConfirmEmbeddedWrite("設定遠端 PPM 失控保護", "將記錄遠端目前 PPM 訊號作為失控保護值。"))
+                    SetPPMFailSafe("RT&R", "RT&W");
+            });
         }
 
         /// <summary>
@@ -2632,6 +2706,7 @@ red LED solid - in firmware update mode");
         void SaveToFile(RFD.RFD900.TSettings S, GroupBox GB,
             bool Remote)
         {
+            if (S == null) { ShowRadioMessage("Please read settings first."); return; }
             //Get the settings which have changed in the GUI, and their values.
             var Updated = GetUpdatedSettingsFromGroupBox(
                 RFDLib.Collections.Translate(S.Settings, (x) => (RFD.RFD900.TBaseSetting)x),
@@ -2653,11 +2728,11 @@ red LED solid - in firmware update mode");
             {
                 if (ToSave.SaveToFile(dlgSave.FileName))
                 {
-                    System.Windows.Forms.MessageBox.Show("Saved settings to " + dlgSave.FileName + " OK");
+                    ShowRadioMessage("Saved settings to " + dlgSave.FileName + " OK");
                 }
                 else
                 {
-                    System.Windows.Forms.MessageBox.Show("Failed to save settings to " + dlgSave.FileName);
+                    ShowRadioMessage("Failed to save settings to " + dlgSave.FileName);
                 }
             }
         }
@@ -2675,6 +2750,7 @@ red LED solid - in firmware update mode");
         /// <param name="Remote">true if for the remote modem, false if for the local modem.</param>
         private void LoadFromFile(RFD.RFD900.TSettings S, GroupBox GB, bool Remote)
         {
+            if (S == null) { ShowRadioMessage("Please read settings first."); return; }
             if (dlgOpen.ShowDialog() == DialogResult.OK)
             {
                 S = S.Clone();
@@ -2683,7 +2759,7 @@ red LED solid - in firmware update mode");
 
                 if (x == null)
                 {
-                    System.Windows.Forms.MessageBox.Show("Failed to load settings from " + dlgOpen.FileName);
+                    ShowRadioMessage("Failed to load settings from " + dlgOpen.FileName);
                 }
                 else
                 {
@@ -2698,7 +2774,7 @@ red LED solid - in firmware update mode");
 
                     Temp += "from " + dlgOpen.FileName + " OK";
 
-                    System.Windows.Forms.MessageBox.Show(Temp);
+                    ShowRadioMessage(Temp);
                 }
             }
         }

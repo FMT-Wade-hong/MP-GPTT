@@ -1,4 +1,4 @@
-﻿# FeiMaoTecPlanner V1.1.2（FMTPlanner）使用手冊
+﻿# FeiMaoTecPlanner V1.1.3（FMTPlanner）使用手冊
 
 <p align="center">
   <img src="FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="360">
@@ -6,7 +6,7 @@
 
 **FeiMaoTecPlanner** 是由 **FMT 飛貓科技**以 ArduPilot Mission Planner 為基礎製作的客製化地面站軟體，重點包含 FMT 品牌介面、飛行快捷操作、TitanPlanner 風格姿態儀、台灣限禁航區、任務安全檢查、參數保護及繁體中文介面。
 
-> 本手冊對應 V1.1.2 穩定版。V1.1.2 重製 AUTO 任務狀態列，加入飛行前檢查、直升機 RPM 與常用設定、RTK 入口及嵌入式 3D 地圖，並完成多項繁體中文化、版面、效能與穩定性修正。
+> 本手冊對應 V1.1.3。新增內嵌 MQTT 橋接、工具列收發速度、連線中關閉確認及中文 SiK 數傳設定，並修正動作分頁與地圖底部選項列的排版。部分既有示意圖沿用前版；實際版本以視窗標題為準。
 
 ## 目錄
 
@@ -14,6 +14,7 @@
 - [下載、啟動與登入](#下載啟動與登入)
 - [主畫面導覽](#主畫面導覽)
 - [連線飛控](#連線飛控)
+- [MQTT 橋接與數傳設定](#mqtt-橋接與數傳設定)
 - [解鎖與上鎖](#解鎖與上鎖)
 - [空速計歸零](#空速計歸零)
 - [QNH 海平面氣壓校正](#qnh-海平面氣壓校正)
@@ -50,7 +51,7 @@
 | 穩定版清理 | 外掛空目錄不再建立無效工作；修正重複事件與 Theme 套用；更新視窗改為 UTF-8 可捲動介面；Windows ZIP 排除偵錯與非 Windows 檔案 |
 | 錯誤回報 | 移除原第三方 HTTP 自動回報；改為本機預覽、去識別化並由使用者自行送出 GitHub Issue |
 
-![FMTPlanner V1.1.2 飛行資料主畫面](FMT/ManualImages/v110-flight-data.png)
+![FMTPlanner V1.1.3 飛行資料主畫面](FMT/ManualImages/v110-flight-data.png)
 
 主畫面左側為 TitanPlanner 風格姿態儀與資料區，右側為地圖及台灣限禁航區圖層；上方提供飛行快捷按鈕、GPS 狀態、FMT Logo、連線埠與傳輸速率。
 
@@ -58,15 +59,15 @@
 
 ### 啟動畫面
 
-![FMTPlanner V1.1.2 啟動畫面](FMT/Assets/fmt-splash-v111.png)
+![FMTPlanner V1.1.3 啟動畫面](FMT/Assets/fmt-splash-v111.png)
 
 ### 登入畫面
 
-![FMTPlanner V1.1.2 登入畫面](FMT/Assets/fmt-login-v111.png)
+![FMTPlanner V1.1.3 登入畫面](FMT/Assets/fmt-login-v111.png)
 
 1. 到 GitHub 專案右側的 **Releases／發布**下載最新版 `FMTPlanner-VX.X.X.zip`。
 2. 將 ZIP 完整解壓縮到可寫入的資料夾，不要直接在壓縮檔內執行。
-3. 執行解壓縮後的 `FMTPlanner.exe`。
+3. 執行解壓縮後的 `FMTPlanner-V1.1.3.exe`。
 4. 在登入畫面輸入預設帳號與密碼：
 
    - 帳號：`FMT`
@@ -75,6 +76,16 @@
 5. 登入後才會進入主程式。
 
 > 正式使用前應變更預設密碼。FMTPlanner 是可攜式程式，正常啟動時不會另外顯示命令提示字元視窗。
+
+## MQTT 橋接與數傳設定
+
+- 在地圖下方勾選「MQTT 連線」，設定自己的 Broker／TLS／Client ID／帳密與上下行 Topic，再啟動橋接。同機 MP 透過 TCP 連線至面板提示的 `127.0.0.1` 與埠號（預設 8080）。收合面板不會停止橋接；請使用「停止橋接」。詳見 [MQTT 操作說明](FMT/MQTT-EMBEDDED.md)。
+- 橋接啟動後，工具列飛行時間左側顯示接收／傳送速度；有轉速計時排列為「轉速計 → MQTT → 飛行時間」。這些數值不代表飛控 MAVLink 已就緒。
+- 任一 MP 遙測連線或 MQTT 橋接執行中，關閉主視窗會先確認，預設「否」。強制結束、關機或斷電不受此提示保護。
+- 「初始設置 → RTK 下方 → 數傳設定」提供中文 SiK 本機／遠端設定。先中斷 MP 飛行連線，明確選擇 COM 與鮑率後讀取；寫入、恢復預設與韌體更新仍需確認。詳見 [SiK 操作說明](FMT/SIK-SETTINGS.md)。
+- 「動作」分頁已中文化，保留原命令值；原本標示「手動」但執行 Loiter 的按鈕改標示「定點盤旋」。速度／高度／盤旋半徑欄位固定同列，視窗過窄時捲動查看。
+
+發布檔不包含個人 Broker 帳密、VM 管理資料或手機 App。`.fmt` 不含 MQTT 密碼；請在本機重新輸入並自行選擇是否安全記住。
 
 ## 主畫面導覽
 
@@ -184,7 +195,7 @@ DOP 數值通常越低越好，但是否可執行任務仍應依飛控 EKF、GPS
 5. 拖曳航點時，航點標記及路線會跟隨滑鼠移動；放開後才提交新位置。
 6. 完成任務後先執行高度與限禁航區檢查，再按 **Write／上傳**寫入飛控。
 
-![FMTPlanner V1.1.2 任務規劃畫面](FMT/ManualImages/v110-mission-planning.png)
+![FMTPlanner V1.1.3 任務規劃畫面](FMT/ManualImages/v110-mission-planning.png)
 
 ## 限禁航區與任務檢查
 

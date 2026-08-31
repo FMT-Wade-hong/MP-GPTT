@@ -1,15 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
+    <!-- Standalone companion apps and local build/test artifacts are not MP sources. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);FeimaoMqttBridge\**;FMT-MQTT-UAS-Android\**;FMT-MQTT-UAS-iOS\**;FMT-MQTT-UAS-publish\**;FMT-MQTT-Admin\**;MQTT-GUI-publish\**;analysis_extracted\**;private-signing\**;tmp\**;.dotnet-home\**;.nuget\**</DefaultItemExcludes>
     <AssemblyName>FMTPlanner</AssemblyName>
     <ApplicationIcon>mpdesktop.ico</ApplicationIcon>
     <OutputType>WinExe</OutputType>
     <StartupObject>MissionPlanner.Program</StartupObject>
     <Authors>FMT飛貓科技; Mission Planner contributors</Authors>
-    <Version>1.1.2</Version>
+    <Version>1.1.3</Version>
     <Company>FMT飛貓科技</Company>
     <Product>FeiMaoTecPlanner</Product>
-    <Description>FeiMaoTecPlanner V1.1.2 stable ground control station for ArduPilot</Description>
+    <Description>FeiMaoTecPlanner V1.1.3 stable ground control station for ArduPilot</Description>
     <Copyright>Mission Planner contributors; FMT飛貓科技 customization</Copyright>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -1207,6 +1209,7 @@
     <EmbeddedResource Include="FMT\Assets\fmt-logo.png" LogicalName="MissionPlanner.FMT.Assets.fmt-logo.png" />
     <EmbeddedResource Include="FMT\Assets\fmt-app-icon-source.png" LogicalName="MissionPlanner.FMT.Assets.fmt-app-icon-source.png" />
     <EmbeddedResource Include="FMT\Assets\fmt-satellite-icon.png" LogicalName="MissionPlanner.FMT.Assets.fmt-satellite-icon.png" />
+    <EmbeddedResource Include="FMT\Assets\mqtt-toolbar-transparent.png" LogicalName="MissionPlanner.FMT.Assets.mqtt-toolbar-transparent.png" />
     <EmbeddedResource Include="FMT\Assets\fmt-splash-v111.png" LogicalName="MissionPlanner.FMT.Assets.fmt-splash-v111.png" />
     <EmbeddedResource Include="FMT\Assets\fmt-login-v111.png" LogicalName="MissionPlanner.FMT.Assets.fmt-login-v111.png" />
   </ItemGroup>
