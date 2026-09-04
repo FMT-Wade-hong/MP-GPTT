@@ -16,10 +16,21 @@ Copy-Item -LiteralPath $json -Destination $artifactDirectory -Force
 if ($LASTEXITCODE -ne 0) { throw 'MQTT regression harness failed.' }
 
 $flightData = Get-Content -LiteralPath (Join-Path $ProjectRoot 'GCSViews\FlightData.cs') -Raw
-foreach ($required in @('Text = "MQTT 連線"', 'CB_tuning, chkFmt3DMap, chkFmtMqtt', 'splitContainer1.Panel1.Controls.Add(fmtMqttPanel)', 'fmtMqttPanel.Visible = showMqtt', 'SetFmtEmbeddedPanelHeight();')) {
+foreach ($required in @('Text = "MQTT 連線"', 'CB_tuning, chkFmt3DMap, chkFmtMqtt, chkFmtSafety', 'splitContainer1.Panel1.Controls.Add(fmtMqttPanel)', 'fmtMqttPanel.Visible = showMqtt', 'SetFmtEmbeddedPanelHeight();')) {
     if (!$flightData.Contains($required)) { throw "Missing embedded integration: $required" }
 }
 Write-Host 'PASS FlightData shared 3D/MQTT/tuning panel integration'
+$mqttPanel = Get-Content -LiteralPath (Join-Path $ProjectRoot 'FMT\FmtMqttPanel.cs') -Raw
+$mqttSettings = Get-Content -LiteralPath (Join-Path $ProjectRoot 'FMT\FmtMqttSettings.cs') -Raw
+foreach ($required in @('FmtMqttSettings.LoadRemembered()', 'if (remember.Checked) settings.SaveRemembered(password);',
+    'else FmtMqttSettings.ClearRemembered();')) {
+    if (!$mqttPanel.Contains($required)) { throw "Missing opt-in MQTT persistence behavior: $required" }
+}
+if ($mqttPanel.Contains('settings.Save();') -or !$mqttSettings.Contains('remember-settings.optin') -or
+    !$mqttSettings.Contains('if (!File.Exists(RememberConsentPath) || !File.Exists(SettingsPath)) return new FmtMqttSettings();')) {
+    throw 'MQTT settings must remain blank unless the user explicitly opts in to remembering them.'
+}
+Write-Host 'PASS MQTT connection data is blank by default and persistence requires explicit opt-in'
 if (!$flightData.Contains('new RowStyle(SizeType.Absolute, FmtMapOptionsLayout.RowHeight)') -or
     !$flightData.Contains('FmtMapOptionsLayout.Configure(panel1, coords1,') -or
     $flightData.Contains('tableMap.RowStyles[2].Height =')) { throw 'Map option row must remain fixed, independent of content resize.' }

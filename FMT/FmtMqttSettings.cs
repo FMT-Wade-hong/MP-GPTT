@@ -24,6 +24,8 @@ namespace MissionPlanner.FMT
 
         internal static string StorageDirectory => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FMTPlanner", "Mqtt");
+        private static string RememberConsentPath => Path.Combine(StorageDirectory, "remember-settings.optin");
+        private static string SettingsPath => Path.Combine(StorageDirectory, "settings.json");
 
         internal void Validate()
         {
@@ -50,17 +52,32 @@ namespace MissionPlanner.FMT
                 throw new InvalidDataException(label + " 不可為空、包含空字元或超過 MQTT 長度限制。");
         }
 
-        internal static FmtMqttSettings Load()
+        internal static FmtMqttSettings LoadRemembered()
         {
-            var path = Path.Combine(StorageDirectory, "settings.json");
-            if (!File.Exists(path)) return new FmtMqttSettings();
-            return JsonConvert.DeserializeObject<FmtMqttSettings>(File.ReadAllText(path)) ?? new FmtMqttSettings();
+            // Older builds wrote connection data on every start, even when the user did not
+            // opt in to persistence. Do not surface that legacy state as product defaults.
+            if (!File.Exists(RememberConsentPath) || !File.Exists(SettingsPath)) return new FmtMqttSettings();
+            return JsonConvert.DeserializeObject<FmtMqttSettings>(File.ReadAllText(SettingsPath)) ?? new FmtMqttSettings();
         }
 
-        internal void Save()
+        internal void SaveRemembered(string password)
         {
             Directory.CreateDirectory(StorageDirectory);
-            File.WriteAllText(Path.Combine(StorageDirectory, "settings.json"), JsonConvert.SerializeObject(this, Formatting.Indented));
+            File.WriteAllText(SettingsPath, JsonConvert.SerializeObject(this, Formatting.Indented));
+            SavePassword(password, true);
+            File.WriteAllText(RememberConsentPath, "1");
+        }
+
+        internal static void ClearRemembered()
+        {
+            DeleteIfPresent(RememberConsentPath);
+            DeleteIfPresent(SettingsPath);
+            DeleteIfPresent(SecretPath);
+        }
+
+        private static void DeleteIfPresent(string path)
+        {
+            if (File.Exists(path)) File.Delete(path);
         }
 
         internal void Export(string path)

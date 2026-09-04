@@ -1,6 +1,7 @@
 ﻿using log4net;
 using MissionPlanner.Controls;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Reflection;
@@ -20,8 +21,14 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private MAVLink.ACCELCAL_VEHICLE_POS pos;
         private int sub1;
         private int sub2;
-        private PictureBox fmtAccelPromptImage;
-        private Label fmtAccelPromptTitle;
+        private static readonly string[] FmtAccelPoses =
+        {
+            "水平", "左側", "右側", "機頭向下", "機頭向上", "倒置"
+        };
+        private readonly Dictionary<string, Panel> fmtAccelPosePanels = new Dictionary<string, Panel>();
+        private readonly Dictionary<string, Label> fmtAccelPoseLabels = new Dictionary<string, Label>();
+        private readonly HashSet<string> fmtAccelCompletedPoses = new HashSet<string>();
+        private string fmtAccelCurrentPose;
 
         public ConfigAccelerometerCalibration()
         {
@@ -52,13 +59,16 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             var root = new TableLayoutPanel
             {
-                Dock = DockStyle.Top,
+                Dock = DockStyle.None,
+                Location = new Point(8, 8),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left,
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                Padding = new Padding(18),
+                Padding = new Padding(12),
                 ColumnCount = 1,
                 RowCount = 6,
-                MinimumSize = new Size(720, 0)
+                MinimumSize = new Size(800, 0),
+                MaximumSize = new Size(800, 0)
             };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
 
@@ -88,44 +98,91 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private Control CreateFmtAccelPromptPanel(bool chinese)
         {
-            var panel = new TableLayoutPanel
+            fmtAccelPosePanels.Clear();
+            fmtAccelPoseLabels.Clear();
+            var panel = new Panel
             {
                 Dock = DockStyle.Top,
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                ColumnCount = 2,
-                RowCount = 2,
                 Margin = new Padding(0, 2, 0, 0),
-                Padding = new Padding(12),
                 BackColor = Color.FromArgb(22, 43, 53),
-                MinimumSize = new Size(680, 116)
+                Size = new Size(776, 246),
+                MinimumSize = new Size(776, 246),
+                MaximumSize = new Size(776, 246)
             };
-            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F));
-            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            panel.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
-            panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-
-            fmtAccelPromptImage = new PictureBox
-            {
-                Name = "FmtAccelPromptImage",
-                Image = CreateAccelPromptImage("等待"),
-                SizeMode = PictureBoxSizeMode.CenterImage,
-                Dock = DockStyle.Fill,
-                Margin = new Padding(0, 0, 12, 0)
-            };
-            fmtAccelPromptTitle = new Label
+            var promptTitle = new Label
             {
                 Name = "FmtAccelPromptTitle",
                 Text = chinese ? "校準姿態提示" : "Calibration pose prompt",
-                Dock = DockStyle.Fill,
+                Location = new Point(12, 8),
+                Size = new Size(145, 32),
                 Font = new Font(Font, FontStyle.Bold),
                 ForeColor = Color.FromArgb(61, 196, 235),
                 TextAlign = ContentAlignment.MiddleLeft
             };
-            panel.Controls.Add(fmtAccelPromptImage, 0, 0);
-            panel.SetRowSpan(fmtAccelPromptImage, 2);
-            panel.Controls.Add(fmtAccelPromptTitle, 1, 0);
-            panel.Controls.Add(lbl_Accel_user, 1, 1);
+            lbl_Accel_user.AutoSize = false;
+            lbl_Accel_user.Dock = DockStyle.None;
+            lbl_Accel_user.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+            lbl_Accel_user.Location = new Point(158, 8);
+            lbl_Accel_user.Size = new Size(602, 34);
+            lbl_Accel_user.TextAlign = ContentAlignment.MiddleLeft;
+
+            var grid = new TableLayoutPanel
+            {
+                Name = "FmtAccelPoseGrid",
+                Location = new Point(8, 45),
+                Size = new Size(760, 193),
+                ColumnCount = 3,
+                RowCount = 2,
+                BackColor = Color.Transparent,
+                Margin = Padding.Empty,
+                Padding = Padding.Empty
+            };
+            for (var column = 0; column < 3; column++)
+                grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.333F));
+            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+
+            for (var index = 0; index < FmtAccelPoses.Length; index++)
+            {
+                var pose = FmtAccelPoses[index];
+                var poseCard = new Panel
+                {
+                    Name = "FmtAccelPose" + index,
+                    Dock = DockStyle.Fill,
+                    Margin = new Padding(4),
+                    Padding = new Padding(3),
+                    BackColor = Color.FromArgb(105, 112, 118)
+                };
+                var poseLabel = new Label
+                {
+                    Dock = DockStyle.Bottom,
+                    Height = 25,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    BackColor = Color.FromArgb(42, 47, 51),
+                    ForeColor = Color.White,
+                    Font = new Font("Microsoft JhengHei UI", 8.5F, FontStyle.Bold)
+                };
+                var poseImage = new PictureBox
+                {
+                    Dock = DockStyle.Fill,
+                    Image = CreateAccelPoseImage(pose),
+                    SizeMode = PictureBoxSizeMode.CenterImage,
+                    BackColor = Color.FromArgb(42, 47, 51)
+                };
+                poseCard.Controls.Add(poseImage);
+                poseCard.Controls.Add(poseLabel);
+                poseLabel.BringToFront();
+                fmtAccelPosePanels[pose] = poseCard;
+                fmtAccelPoseLabels[pose] = poseLabel;
+                grid.Controls.Add(poseCard, index % 3, index / 3);
+            }
+
+            panel.Controls.Add(grid);
+            panel.Controls.Add(promptTitle);
+            panel.Controls.Add(lbl_Accel_user);
+            promptTitle.BringToFront();
+            lbl_Accel_user.BringToFront();
+            UpdateAccelPoseCards();
             return panel;
         }
 
@@ -141,11 +198,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 Margin = new Padding(0, 0, 0, 12),
                 Padding = new Padding(12),
                 BackColor = Color.FromArgb(22, 43, 53),
-                MinimumSize = new Size(680, 92)
+                MinimumSize = new Size(776, 82),
+                MaximumSize = new Size(776, 0)
             };
-            card.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 58F));
+            card.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 50F));
             card.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            card.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F));
+            card.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F));
 
             var icon = new PictureBox
             {
@@ -164,11 +222,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             };
             description.AutoSize = true;
             description.Dock = DockStyle.Fill;
-            description.MaximumSize = new Size(700, 0);
+            description.MaximumSize = new Size(520, 0);
             description.Margin = Padding.Empty;
             button.Dock = DockStyle.Fill;
-            button.MinimumSize = new Size(160, 40);
-            button.Margin = new Padding(12, 8, 0, 8);
+            button.MinimumSize = new Size(132, 34);
+            button.Margin = new Padding(8, 6, 0, 6);
 
             card.Controls.Add(icon, 0, 0);
             card.SetRowSpan(icon, 2);
@@ -212,15 +270,14 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             return image;
         }
 
-        private static Image CreateAccelPromptImage(string pose)
+        private static Image CreateAccelPoseImage(string pose)
         {
-            var image = new Bitmap(138, 88);
+            var image = new Bitmap(170, 58);
             using (var g = Graphics.FromImage(image))
-            using (var bodyPen = new Pen(Color.WhiteSmoke, 3F))
-            using (var accentPen = new Pen(Color.FromArgb(61, 196, 235), 3F))
+            using (var bodyBrush = new SolidBrush(Color.WhiteSmoke))
+            using (var bodyPen = new Pen(Color.FromArgb(105, 210, 235), 1.5F))
+            using (var floorPen = new Pen(Color.FromArgb(87, 98, 105), 1F))
             using (var accentBrush = new SolidBrush(Color.FromArgb(61, 196, 235)))
-            using (var textBrush = new SolidBrush(Color.WhiteSmoke))
-            using (var font = new Font("Microsoft JhengHei UI", 8F, FontStyle.Bold))
             {
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
@@ -233,25 +290,94 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 else if (normalized.Contains("機頭向上")) angle = 0F;
                 else if (normalized.Contains("倒置") || normalized.Contains("背面")) angle = 180F;
 
+                g.DrawPolygon(floorPen, new[]
+                {
+                    new Point(24, 42), new Point(65, 16), new Point(146, 16), new Point(112, 50)
+                });
+                g.DrawLine(floorPen, 24, 42, 112, 42);
+                g.DrawLine(floorPen, 65, 16, 65, 42);
+
                 var state = g.Save();
-                g.TranslateTransform(68F, 39F);
+                g.TranslateTransform(85F, 29F);
                 g.RotateTransform(angle);
-                g.DrawLine(bodyPen, 0, -22, 0, 20);
-                g.DrawLine(bodyPen, -28, 4, 28, 4);
-                g.DrawLine(bodyPen, -12, 18, 12, 18);
-                g.DrawLine(bodyPen, -28, 4, -15, 13);
-                g.DrawLine(bodyPen, 28, 4, 15, 13);
-                g.DrawLine(accentPen, 0, -25, 0, -12);
+                var aircraft = new[]
+                {
+                    new Point(0, -23), new Point(-4, -12), new Point(-5, -3),
+                    new Point(-29, 7), new Point(-29, 12), new Point(-5, 8),
+                    new Point(-4, 18), new Point(-13, 23), new Point(-13, 26),
+                    new Point(0, 23), new Point(13, 26), new Point(13, 23),
+                    new Point(4, 18), new Point(5, 8), new Point(29, 12),
+                    new Point(29, 7), new Point(5, -3), new Point(4, -12)
+                };
+                g.FillPolygon(bodyBrush, aircraft);
+                g.DrawPolygon(bodyPen, aircraft);
                 g.FillPolygon(accentBrush, new[]
                 {
-                    new Point(0, -29), new Point(-5, -20), new Point(5, -20)
+                    new Point(0, -26), new Point(-5, -17), new Point(5, -17)
                 });
+                if (normalized.Contains("倒置") || normalized.Contains("背面"))
+                    g.FillEllipse(accentBrush, -4, -3, 8, 8);
                 g.Restore(state);
-
-                g.DrawLine(accentPen, 12, 70, 126, 70);
-                g.DrawString(GetAccelPoseShortText(pose), font, textBrush, 6, 72);
             }
             return image;
+        }
+
+        private void ResetAccelPoseCards()
+        {
+            fmtAccelCompletedPoses.Clear();
+            fmtAccelCurrentPose = null;
+            UpdateAccelPoseCards();
+        }
+
+        private void SetAccelCurrentPose(string pose)
+        {
+            if (!string.IsNullOrEmpty(fmtAccelCurrentPose) &&
+                !string.Equals(fmtAccelCurrentPose, pose, StringComparison.Ordinal))
+                fmtAccelCompletedPoses.Add(fmtAccelCurrentPose);
+
+            fmtAccelCurrentPose = pose;
+            UpdateAccelPoseCards();
+        }
+
+        private void CompleteAccelCalibration()
+        {
+            foreach (var pose in FmtAccelPoses)
+                fmtAccelCompletedPoses.Add(pose);
+            fmtAccelCurrentPose = null;
+            UpdateAccelPoseCards();
+        }
+
+        private void UpdateAccelPoseCards()
+        {
+            var chinese = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+            foreach (var pose in FmtAccelPoses)
+            {
+                Panel panel;
+                Label label;
+                if (!fmtAccelPosePanels.TryGetValue(pose, out panel) ||
+                    !fmtAccelPoseLabels.TryGetValue(pose, out label))
+                    continue;
+
+                var completed = fmtAccelCompletedPoses.Contains(pose);
+                var current = string.Equals(fmtAccelCurrentPose, pose, StringComparison.Ordinal);
+                panel.BackColor = completed
+                    ? Color.FromArgb(35, 170, 78)
+                    : current
+                        ? Color.FromArgb(245, 196, 24)
+                        : Color.FromArgb(105, 112, 118);
+
+                var status = completed
+                    ? (chinese ? "已完成" : "Completed")
+                    : current
+                        ? (chinese ? "請擺放" : "Place now")
+                        : (chinese ? "尚未校正" : "Not calibrated");
+                label.Text = GetAccelPoseShortText(pose) + "｜" + status;
+                label.ForeColor = current
+                    ? Color.FromArgb(255, 221, 70)
+                    : completed
+                        ? Color.FromArgb(103, 235, 139)
+                        : Color.Gainsboro;
+            }
         }
 
         private static string GetAccelPoseShortText(string pose)
@@ -301,6 +427,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         {
             BUT_calib_accell.Enabled = true;
             _incalibrate = false;
+            ResetAccelPoseCards();
         }
 
         public void Deactivate()
@@ -342,6 +469,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     MAVLink.MAV_CMD.PREFLIGHT_CALIBRATION, 0, 0, 0, 0, 1, 0, 0))
                 {
                     _incalibrate = true;
+                    ResetAccelPoseCards();
 
                     sub1 = MainV2.comPort.SubscribeToPacketType(MAVLink.MAVLINK_MSG_ID.STATUSTEXT, receivedPacket, (byte)MainV2.comPort.sysidcurrent, (byte)MainV2.comPort.compidcurrent);
                     sub2 = MainV2.comPort.SubscribeToPacketType(MAVLink.MAVLINK_MSG_ID.COMMAND_LONG, receivedPacket, (byte)MainV2.comPort.sysidcurrent, (byte)MainV2.comPort.compidcurrent);
@@ -419,16 +547,17 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 var chinese = CultureInfo.CurrentUICulture.Name.StartsWith("zh",
                     StringComparison.OrdinalIgnoreCase);
                 lbl_Accel_user.Text = chinese ? translated : (message ?? string.Empty).Trim('\0');
-                if (!string.IsNullOrEmpty(poseText))
+                var normalized = (message ?? string.Empty).Trim('\0', ' ', '\r', '\n').ToLowerInvariant();
+                if (normalized.Contains("calibration successful") || normalized.Contains("calibration complete"))
+                    CompleteAccelCalibration();
+                else if (normalized.Contains("calibration failed") || normalized.Contains("calibration cancelled") ||
+                         normalized.Contains("calibration canceled"))
                 {
-                    fmtAccelPromptTitle.Text = chinese
-                        ? "目前姿態：" + GetAccelPoseShortText(poseText)
-                        : "Current pose: " + poseText;
-                    var oldImage = fmtAccelPromptImage.Image;
-                    fmtAccelPromptImage.Image = CreateAccelPromptImage(poseText);
-                    if (oldImage != null)
-                        oldImage.Dispose();
+                    fmtAccelCurrentPose = null;
+                    UpdateAccelPoseCards();
                 }
+                else if (!string.IsNullOrEmpty(poseText))
+                    SetAccelCurrentPose(poseText);
             };
 
             if (InvokeRequired)

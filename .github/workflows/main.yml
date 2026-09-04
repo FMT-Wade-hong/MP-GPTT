@@ -54,7 +54,7 @@ jobs:
           }
           .\FMT\Build-FMTPlannerPackage.ps1 -ReleaseVersion $releaseVersion
           $packagePath = "bin\Package\FMTPlanner-V$releaseVersion.zip"
-          .\FMT\Verify-FMTPlannerV113.ps1 -PackagePath $packagePath
+          .\FMT\Verify-FMTPlannerV114.ps1 -PackagePath $packagePath
           $hash = (Get-FileHash $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
           $checksumPath = "$packagePath.sha256"
           "$hash  $([IO.Path]::GetFileName($packagePath))" | Set-Content -LiteralPath $checksumPath -Encoding ascii

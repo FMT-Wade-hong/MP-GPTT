@@ -134,18 +134,23 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             var root = new TableLayoutPanel
             {
-                Dock = DockStyle.Top,
-                AutoSize = true,
+                Dock = DockStyle.None,
+                Location = new Point(8, 8),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left,
+                AutoSize = false,
+                Size = new Size(760, 610),
+                MinimumSize = new Size(760, 610),
+                MaximumSize = new Size(760, 610),
                 ColumnCount = 1,
                 RowCount = 5,
                 BackColor = BackColor,
                 Padding = new Padding(12)
             };
             root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 66F));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 225F));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 112F));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 190F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 60F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 210F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 88F));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 174F));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 46F));
 
             var header = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(27, 39, 47), Margin = new Padding(0, 0, 0, 8) };
@@ -169,8 +174,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             label6.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 12F, FontStyle.Bold);
             label1.AutoSize = false;
             label1.Location = new Point(67, 33);
-            label1.Size = new Size(Math.Max(520, ClientSize.Width - 110), 28);
-            label1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            label1.Size = new Size(660, 24);
+            label1.Anchor = AnchorStyles.Top | AnchorStyles.Left;
             label1.ForeColor = Color.Gainsboro;
             header.Controls.Add(label6);
             header.Controls.Add(label1);
@@ -217,8 +222,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             groupBoxonboardcalib.Margin = new Padding(0, 0, 0, 8);
             groupBoxonboardcalib.ForeColor = Color.White;
             groupBoxonboardcalib.BackColor = Color.FromArgb(22, 34, 42);
-            lbl_obmagresult.Width = Math.Max(250, groupBoxonboardcalib.Width - lbl_obmagresult.Left - 20);
-            lbl_obmagresult.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            lbl_obmagresult.Size = new Size(360, 108);
+            lbl_obmagresult.Anchor = AnchorStyles.Top | AnchorStyles.Left;
             root.Controls.Add(groupBoxonboardcalib, 0, 3);
 
             var footer = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };

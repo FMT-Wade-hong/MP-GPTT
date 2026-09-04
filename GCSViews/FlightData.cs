@@ -62,8 +62,10 @@ namespace MissionPlanner.GCSViews
         private readonly CheckBox chkFmtAirspace;
         private readonly CheckBox chkFmt3DMap;
         private readonly CheckBox chkFmtMqtt;
+        private readonly CheckBox chkFmtSafety;
         private OpenGLtest2 fmt3DMapControl;
         private FmtMqttPanel fmtMqttPanel;
+        private FmtSafetySettingsPanel fmtSafetyPanel;
         internal bool HasRunningMqttBridge => fmtMqttPanel?.IsBridgeRunning == true;
         internal FmtMqttTrafficSnapshot MqttTrafficSnapshot => fmtMqttPanel?.TrafficSnapshot ?? default(FmtMqttTrafficSnapshot);
         private bool fmtChangingEmbeddedMapView;
@@ -307,6 +309,16 @@ namespace MissionPlanner.GCSViews
                 UseVisualStyleBackColor = true
             };
             chkFmtMqtt.CheckedChanged += (sender, args) => SelectFmtEmbeddedMapView(chkFmtMqtt);
+            chkFmtSafety = new CheckBox
+            {
+                Name = "CHK_fmtSafety",
+                AutoSize = true,
+                Text = "安全設定",
+                Checked = false,
+                Anchor = AnchorStyles.Left | AnchorStyles.Bottom,
+                UseVisualStyleBackColor = true
+            };
+            chkFmtSafety.CheckedChanged += (sender, args) => SelectFmtEmbeddedMapView(chkFmtSafety);
             splitContainer1.Resize += (sender, args) =>
             {
                 if (!splitContainer1.Panel1Collapsed)
@@ -2220,7 +2232,7 @@ namespace MissionPlanner.GCSViews
         private FlowLayoutPanel ConfigureFmtMapOptionsPanel()
         {
             return FmtMapOptionsLayout.Configure(panel1, coords1,
-                CB_tuning, CHK_autopan, chkFmtAirspace, chkFmt3DMap, chkFmtMqtt);
+                CB_tuning, CHK_autopan, chkFmtAirspace, chkFmt3DMap, chkFmtMqtt, chkFmtSafety);
         }
 
         private void BUT_setwp_Click(object sender, EventArgs e)
@@ -3699,7 +3711,7 @@ namespace MissionPlanner.GCSViews
                 fmtChangingEmbeddedMapView = true;
                 try
                 {
-                    foreach (var option in new[] { CB_tuning, chkFmt3DMap, chkFmtMqtt })
+                    foreach (var option in new[] { CB_tuning, chkFmt3DMap, chkFmtMqtt, chkFmtSafety })
                         if (option != null && option != selected) option.Checked = false;
                 }
                 finally
@@ -3718,7 +3730,8 @@ namespace MissionPlanner.GCSViews
 
             var show3D = chkFmt3DMap != null && chkFmt3DMap.Checked;
             var showMqtt = !show3D && chkFmtMqtt != null && chkFmtMqtt.Checked;
-            var showTuning = !show3D && !showMqtt && CB_tuning != null && CB_tuning.Checked;
+            var showSafety = !show3D && !showMqtt && chkFmtSafety != null && chkFmtSafety.Checked;
+            var showTuning = !show3D && !showMqtt && !showSafety && CB_tuning != null && CB_tuning.Checked;
 
             ZedGraphTimer.Enabled = showTuning;
             if (showTuning)
@@ -3733,8 +3746,10 @@ namespace MissionPlanner.GCSViews
             // map/tuning/3D view must not disconnect a live aircraft link.
             if (fmtMqttPanel != null && !fmtMqttPanel.IsDisposed)
                 fmtMqttPanel.Visible = showMqtt;
+            if (fmtSafetyPanel != null && !fmtSafetyPanel.IsDisposed)
+                fmtSafetyPanel.Visible = showSafety;
 
-            if (!show3D && !showTuning && !showMqtt)
+            if (!show3D && !showTuning && !showMqtt && !showSafety)
             {
                 splitContainer1.Panel1Collapsed = true;
                 splitContainer1_Panel2_Resize(null, null);
@@ -3788,6 +3803,30 @@ namespace MissionPlanner.GCSViews
                     if (fmtMqttPanel != null) { fmtMqttPanel.Dispose(); fmtMqttPanel = null; }
                     chkFmtMqtt.Checked = false;
                     CustomMessageBox.Show("無法開啟 MQTT 連線面板。", "MQTT 連線");
+                    return;
+                }
+            }
+
+            if (showSafety)
+            {
+                try
+                {
+                    if (fmtSafetyPanel == null || fmtSafetyPanel.IsDisposed)
+                    {
+                        fmtSafetyPanel = new FmtSafetySettingsPanel();
+                        splitContainer1.Panel1.Controls.Add(fmtSafetyPanel);
+                        ThemeManager.ApplyThemeTo(fmtSafetyPanel);
+                    }
+                    fmtSafetyPanel.RefreshParameters();
+                    fmtSafetyPanel.Visible = true;
+                    fmtSafetyPanel.BringToFront();
+                }
+                catch (Exception ex)
+                {
+                    log.Error("Unable to open embedded safety settings panel", ex);
+                    if (fmtSafetyPanel != null) { fmtSafetyPanel.Dispose(); fmtSafetyPanel = null; }
+                    chkFmtSafety.Checked = false;
+                    CustomMessageBox.Show("無法開啟安全設定面板。\r\n\r\n" + ex.Message, "安全設定");
                     return;
                 }
             }

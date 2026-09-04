@@ -63,7 +63,10 @@ internal static class FmtMqttHarness
         Check(restored.Host == settings.Host && restored.InboundTopic == settings.InboundTopic && !restored.UseTls, ".fmt round trip");
         Check(File.ReadLines(path).First() == "FMT-UAV-BRIDGE-SETTINGS/1", "standalone bridge format header");
         Check(File.ReadAllText(path).IndexOf("password", StringComparison.OrdinalIgnoreCase) < 0, "no password in exported file");
-        Check(new FmtMqttSettings().UseTls && new FmtMqttSettings().Host == "", "safe blank defaults with TLS");
+        var defaults = new FmtMqttSettings();
+        Check(defaults.UseTls && defaults.Host == "" && defaults.ClientId == "" && defaults.Username == "" &&
+            defaults.InboundTopic == "" && defaults.OutboundTopic == "" && defaults.TcpAddress == "" &&
+            defaults.Port == 0 && defaults.TcpPort == 0, "safe blank defaults with TLS and no bundled MQTT data");
         settings.OutboundTopic = settings.InboundTopic;
         bool rejected = false;
         try { settings.Validate(); } catch (InvalidDataException) { rejected = true; }
@@ -85,7 +88,11 @@ internal static class FmtMqttHarness
             Application.DoEvents();
             host.PerformLayout(); panel.PerformLayout();
             var password = (TextBox)panel.Controls.Find("mqttPassword", true).Single();
+            var hostField = (TextBox)panel.Controls.Find("mqttHost", true).Single();
+            var topicField = (TextBox)panel.Controls.Find("mqttInboundTopic", true).Single();
             Check(password.UseSystemPasswordChar, "password masking");
+            Check(hostField.Text == "" && topicField.Text == "" && password.Text == "",
+                "first launch ignores legacy MQTT state unless the user explicitly opted in");
             Check(panel.Dock == DockStyle.Fill && panel.AutoScroll, "embedded fill and small-window scrolling");
             panel.Visible = false; panel.Visible = true;
             Check(!panel.IsDisposed, "hide/show preserves control lifetime");

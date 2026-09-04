@@ -61,4 +61,15 @@ obj3/
 /FMT-MQTT-UAS-publish/
 /FeimaoMqttBridge/
 /MQTT-GUI-publish/
+/FMT-MAVLink-GCS-Android/
+/FeimaoTunnel/
+/cad_review/
+/.pytest_cache/
+/pyinstaller_extract.py
+/FMT/ExtractedExeIcon.png
+/FMT/IconPreview16.png
+/FMT/MapIconPreview.png
+/FMT/MapIconPreviewGlow.png
+/FMT/Assets/fmt-login-v110.png
+/FMT/Assets/fmt-splash-v110.png
 /*.apk

@@ -69,7 +69,7 @@ namespace MissionPlanner.FMT
             refresh.Start();
             try
             {
-                var settings = FmtMqttSettings.Load();
+                var settings = FmtMqttSettings.LoadRemembered();
                 ApplySettings(settings);
                 fields["Password"].Text = settings.LoadPassword();
                 remember.Checked = fields["Password"].Text.Length > 0;
@@ -147,8 +147,8 @@ namespace MissionPlanner.FMT
                 if (!settings.UseTls && MessageBox.Show(this,
                     "未使用 TLS：MQTT 帳密及飛行資料將以未加密方式傳送。確定僅在可信任的測試網路使用？",
                     "未加密連線", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
-                settings.Save();
-                settings.SavePassword(password, remember.Checked);
+                if (remember.Checked) settings.SaveRemembered(password);
+                else FmtMqttSettings.ClearRemembered();
                 bridge = new FmtMqttBridge();
                 bridge.Log += Enqueue;
                 bridge.Start(settings, password);
@@ -207,11 +207,10 @@ namespace MissionPlanner.FMT
                 try
                 {
                     var settings = FmtMqttSettings.Import(dialog.FileName);
-                    settings.Save();
                     ApplySettings(settings);
                     fields["Password"].Clear(); // Never carry a previous broker's password across imports.
                     remember.Checked = false;
-                    Enqueue("設定已匯入；.fmt 不包含密碼，請重新輸入 MQTT 密碼。");
+                    Enqueue("設定已匯入至本次工作階段；.fmt 不包含密碼。若要下次載入，請勾選安全記住密碼。");
                 }
                 catch (Exception ex) { MessageBox.Show(this, SafeMessage(ex), "匯入失敗"); }
             }

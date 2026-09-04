@@ -1,5 +1,6 @@
 ﻿using MissionPlanner.ArduPilot;
 using MissionPlanner.Controls;
+using MissionPlanner.FMT;
 using MissionPlanner.Utilities;
 using System;
 using System.Drawing;
@@ -21,6 +22,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private int chyaw = -1;
         private bool run;
         private bool startup;
+        private GroupBox fmtThrottleModeGroup;
+        private RadioButton fmtCenteredThrottle;
+        private RadioButton fmtManualThrottle;
+        private Button fmtApplyThrottleMode;
+        private Button fmtCheckThrottleMode;
+        private Label fmtThrottleModeStatus;
 
         public ConfigRadioInput()
         {
@@ -175,6 +182,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             }
 
             startup = false;
+            RefreshFmtThrottleMode();
         }
 
         private void ApplyFmtRadioLayout()
@@ -277,7 +285,203 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             BUT_Calibrateradio.ForeColor = Color.Black;
             BUT_Calibrateradio.UseVisualStyleBackColor = false;
 
+            CreateFmtThrottleModePanel();
+
             ResumeLayout(true);
+        }
+
+        private void CreateFmtThrottleModePanel()
+        {
+            var panelTop = Math.Max(groupBox1.Bottom, groupBoxElevons.Bottom) + 12;
+            fmtThrottleModeGroup = new GroupBox
+            {
+                Name = "fmtThrottleModeGroup",
+                Text = "油門模式與參數檢查",
+                Location = new Point(3, panelTop),
+                Size = new Size(760, 148),
+                // Keep this content card at its designed width. Anchoring its right edge made
+                // WinForms stretch the border across the entire configuration workspace.
+                Anchor = AnchorStyles.Top | AnchorStyles.Left,
+                ForeColor = Color.White,
+                BackColor = Color.FromArgb(18, 28, 35),
+                Enabled = false,
+                Visible = false,
+                TabStop = false
+            };
+
+            fmtCenteredThrottle = new RadioButton
+            {
+                Name = "fmtCenteredThrottle",
+                Text = "中立回中油門",
+                Location = new Point(18, 24),
+                Size = new Size(145, 25),
+                ForeColor = Color.White,
+                AutoSize = false
+            };
+            fmtManualThrottle = new RadioButton
+            {
+                Name = "fmtManualThrottle",
+                Text = "手動油門（低位為零）",
+                Location = new Point(178, 24),
+                Size = new Size(185, 25),
+                ForeColor = Color.White,
+                AutoSize = false
+            };
+            fmtApplyThrottleMode = new Button
+            {
+                Name = "fmtApplyThrottleMode",
+                Text = "套用油門模式",
+                Location = new Point(380, 20),
+                Size = new Size(132, 31),
+                BackColor = Color.FromArgb(46, 174, 220),
+                ForeColor = Color.Black,
+                UseVisualStyleBackColor = false
+            };
+            fmtCheckThrottleMode = new Button
+            {
+                Name = "fmtCheckThrottleMode",
+                Text = "重新檢查參數",
+                Location = new Point(522, 20),
+                Size = new Size(132, 31),
+                BackColor = Color.FromArgb(46, 174, 220),
+                ForeColor = Color.Black,
+                UseVisualStyleBackColor = false
+            };
+            var explanation = new Label
+            {
+                Name = "fmtThrottleModeExplanation",
+                Text = "中立回中油門適用具回中彈簧的油門搖桿；手動油門適用最低位置為零輸出的傳統油門。\r\n" +
+                       "套用時只變更 PILOT_THR_BHV 的回中油門位元，不會改寫其他油門行為或遙控器校準值。",
+                Location = new Point(18, 58),
+                Size = new Size(720, 39),
+                ForeColor = Color.FromArgb(205, 215, 220),
+                AutoSize = false
+            };
+            fmtThrottleModeStatus = new Label
+            {
+                Name = "fmtThrottleModeStatus",
+                Text = "尚未讀取參數。",
+                Location = new Point(18, 103),
+                Size = new Size(720, 35),
+                ForeColor = Color.FromArgb(255, 174, 72),
+                AutoSize = false
+            };
+
+            fmtCenteredThrottle.CheckedChanged += (sender, args) => MarkFmtThrottleModePending();
+            fmtManualThrottle.CheckedChanged += (sender, args) => MarkFmtThrottleModePending();
+            fmtApplyThrottleMode.Click += FmtApplyThrottleMode_Click;
+            fmtCheckThrottleMode.Click += (sender, args) => RefreshFmtThrottleMode();
+
+            fmtThrottleModeGroup.Controls.Add(fmtCenteredThrottle);
+            fmtThrottleModeGroup.Controls.Add(fmtManualThrottle);
+            fmtThrottleModeGroup.Controls.Add(fmtApplyThrottleMode);
+            fmtThrottleModeGroup.Controls.Add(fmtCheckThrottleMode);
+            fmtThrottleModeGroup.Controls.Add(explanation);
+            fmtThrottleModeGroup.Controls.Add(fmtThrottleModeStatus);
+            Controls.Add(fmtThrottleModeGroup);
+        }
+
+        private void MarkFmtThrottleModePending()
+        {
+            if (startup || fmtThrottleModeStatus == null || !fmtThrottleModeGroup.Enabled)
+                return;
+
+            fmtThrottleModeStatus.Text = "選項已變更，請按「套用油門模式」寫入飛控。";
+            fmtThrottleModeStatus.ForeColor = Color.FromArgb(255, 174, 72);
+        }
+
+        private void FmtApplyThrottleMode_Click(object sender, EventArgs e)
+        {
+            if (MainV2.comPort.MAV.cs.armed)
+            {
+                CustomMessageBox.Show("飛行器已解鎖，請先鎖定後再變更油門模式。", "油門模式");
+                return;
+            }
+
+            int behavior;
+            if (!TryGetFmtIntParameter("PILOT_THR_BHV", out behavior))
+            {
+                CustomMessageBox.Show("飛控未提供 PILOT_THR_BHV，無法套用油門模式。", "油門模式");
+                RefreshFmtThrottleMode();
+                return;
+            }
+
+            var updated = FmtThrottleMode.SetCenteredThrottle(behavior, fmtCenteredThrottle.Checked);
+            try
+            {
+                if (updated != behavior)
+                    MainV2.comPort.setParam((byte)MainV2.comPort.sysidcurrent,
+                        (byte)MainV2.comPort.compidcurrent, "PILOT_THR_BHV", updated, true);
+
+                RefreshFmtThrottleMode();
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("寫入 PILOT_THR_BHV 失敗：" + ex.Message, "油門模式");
+            }
+        }
+
+        private void RefreshFmtThrottleMode()
+        {
+            if (fmtThrottleModeGroup == null)
+                return;
+
+            int behavior = 0;
+            var supported = MainV2.comPort.MAV.cs.firmware == Firmwares.ArduCopter2 &&
+                            TryGetFmtIntParameter("PILOT_THR_BHV", out behavior);
+            fmtThrottleModeGroup.Enabled = supported;
+            fmtThrottleModeGroup.Visible = MainV2.comPort.MAV.cs.firmware == Firmwares.ArduCopter2;
+
+            if (!supported)
+            {
+                fmtThrottleModeStatus.Text = "目前構型未提供 PILOT_THR_BHV 油門模式參數。";
+                fmtThrottleModeStatus.ForeColor = Color.FromArgb(160, 170, 175);
+                return;
+            }
+
+            startup = true;
+            var centered = FmtThrottleMode.IsCenteredThrottle(behavior);
+            fmtCenteredThrottle.Checked = centered;
+            fmtManualThrottle.Checked = !centered;
+            startup = false;
+
+            int throttleChannel;
+            if (!TryGetFmtIntParameter("RCMAP_THROTTLE", out throttleChannel) || throttleChannel < 1 || throttleChannel > 16)
+                throttleChannel = chthro >= 1 && chthro <= 16 ? chthro : 3;
+
+            int minimum = 0;
+            int trim = 0;
+            int maximum = 0;
+            int deadZone = 0;
+            var hasCalibration = TryGetFmtIntParameter("RC" + throttleChannel + "_MIN", out minimum) &&
+                                 TryGetFmtIntParameter("RC" + throttleChannel + "_TRIM", out trim) &&
+                                 TryGetFmtIntParameter("RC" + throttleChannel + "_MAX", out maximum);
+            var hasDeadZone = TryGetFmtIntParameter("THR_DZ", out deadZone);
+
+            var calibrationText = hasCalibration
+                ? "RC" + throttleChannel + "：MIN " + minimum + " / TRIM " + trim + " / MAX " + maximum
+                : "RC" + throttleChannel + "：校準參數不完整";
+            var deadZoneText = hasDeadZone ? "；THR_DZ " + deadZone : "；THR_DZ 未提供";
+            var consistent = hasCalibration &&
+                             FmtThrottleMode.CalibrationLooksConsistent(centered, minimum, trim, maximum);
+
+            fmtThrottleModeStatus.Text = (consistent ? "✓ " : "⚠ ") + "PILOT_THR_BHV " + behavior + "；" +
+                                         calibrationText + deadZoneText +
+                                         (consistent ? "；參數與所選模式相符。" : "；請重新執行遙控器校準並確認油門位置。");
+            fmtThrottleModeStatus.ForeColor = consistent
+                ? Color.FromArgb(74, 210, 116)
+                : Color.FromArgb(255, 174, 72);
+        }
+
+        private static bool TryGetFmtIntParameter(string name, out int value)
+        {
+            value = 0;
+            if (MainV2.comPort.MAV.param == null || !MainV2.comPort.MAV.param.ContainsKey(name) ||
+                MainV2.comPort.MAV.param[name] == null)
+                return false;
+
+            value = Convert.ToInt32(MainV2.comPort.MAV.param[name].Value);
+            return true;
         }
 
         public void Deactivate()
@@ -432,7 +636,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 return;
             }
 
-            CustomMessageBox.Show("Ensure all your sticks are centered and throttle is down, and click ok to continue");
+            CustomMessageBox.Show(fmtCenteredThrottle != null && fmtCenteredThrottle.Checked
+                ? "請將橫滾、俯仰與偏航搖桿置中，放開油門讓它回到中立位置，再按確定。"
+                : "請將所有搖桿置中、油門移到最低位置，再按確定。");
 
             MainV2.comPort.MAV.cs.UpdateCurrentSettings(currentStateBindingSource.UpdateDataSource(MainV2.comPort.MAV.cs), true, MainV2.comPort);
 
@@ -507,6 +713,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 data, "Radio");
 
             BUT_Calibrateradio.Text = Strings.Completed;
+            RefreshFmtThrottleMode();
         }
 
         private float Constrain(float chin, int v)

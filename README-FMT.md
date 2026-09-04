@@ -1,4 +1,4 @@
-﻿# FeiMaoTecPlanner V1.1.3（FMTPlanner）使用手冊
+﻿# FeiMaoTecPlanner V1.1.4（FMTPlanner）使用手冊
 
 <p align="center">
   <img src="FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="360">
@@ -6,7 +6,7 @@
 
 **FeiMaoTecPlanner** 是由 **FMT 飛貓科技**以 ArduPilot Mission Planner 為基礎製作的客製化地面站軟體，重點包含 FMT 品牌介面、飛行快捷操作、TitanPlanner 風格姿態儀、台灣限禁航區、任務安全檢查、參數保護及繁體中文介面。
 
-> 本手冊對應 V1.1.3。新增內嵌 MQTT 橋接、工具列收發速度、連線中關閉確認及中文 SiK 數傳設定，並修正動作分頁與地圖底部選項列的排版。部分既有示意圖沿用前版；實際版本以視窗標題為準。
+> 本手冊對應 V1.1.4。新增獨立安全設定、油門模式檢查與六面加速度計校正提示；MQTT 改為使用者明確選擇後才記住設定。部分既有示意圖沿用前版；實際版本以視窗標題為準。
 
 ## 目錄
 
@@ -51,7 +51,7 @@
 | 穩定版清理 | 外掛空目錄不再建立無效工作；修正重複事件與 Theme 套用；更新視窗改為 UTF-8 可捲動介面；Windows ZIP 排除偵錯與非 Windows 檔案 |
 | 錯誤回報 | 移除原第三方 HTTP 自動回報；改為本機預覽、去識別化並由使用者自行送出 GitHub Issue |
 
-![FMTPlanner V1.1.3 飛行資料主畫面](FMT/ManualImages/v110-flight-data.png)
+![FMTPlanner V1.1.4 飛行資料主畫面](FMT/ManualImages/v110-flight-data.png)
 
 主畫面左側為 TitanPlanner 風格姿態儀與資料區，右側為地圖及台灣限禁航區圖層；上方提供飛行快捷按鈕、GPS 狀態、FMT Logo、連線埠與傳輸速率。
 
@@ -59,15 +59,15 @@
 
 ### 啟動畫面
 
-![FMTPlanner V1.1.3 啟動畫面](FMT/Assets/fmt-splash-v111.png)
+![FMTPlanner V1.1.4 啟動畫面](FMT/Assets/fmt-splash-v111.png)
 
 ### 登入畫面
 
-![FMTPlanner V1.1.3 登入畫面](FMT/Assets/fmt-login-v111.png)
+![FMTPlanner V1.1.4 登入畫面](FMT/Assets/fmt-login-v111.png)
 
 1. 到 GitHub 專案右側的 **Releases／發布**下載最新版 `FMTPlanner-VX.X.X.zip`。
 2. 將 ZIP 完整解壓縮到可寫入的資料夾，不要直接在壓縮檔內執行。
-3. 執行解壓縮後的 `FMTPlanner-V1.1.3.exe`。
+3. 執行解壓縮後的 `FMTPlanner-V1.1.4.exe`。
 4. 在登入畫面輸入預設帳號與密碼：
 
    - 帳號：`FMT`
@@ -195,7 +195,7 @@ DOP 數值通常越低越好，但是否可執行任務仍應依飛控 EKF、GPS
 5. 拖曳航點時，航點標記及路線會跟隨滑鼠移動；放開後才提交新位置。
 6. 完成任務後先執行高度與限禁航區檢查，再按 **Write／上傳**寫入飛控。
 
-![FMTPlanner V1.1.3 任務規劃畫面](FMT/ManualImages/v110-mission-planning.png)
+![FMTPlanner V1.1.4 任務規劃畫面](FMT/ManualImages/v110-mission-planning.png)
 
 ## 限禁航區與任務檢查
 
