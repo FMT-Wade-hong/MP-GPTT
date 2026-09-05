@@ -22,8 +22,11 @@ namespace MissionPlanner.FMT
         public int TcpPort { get; set; }
         public bool UseTls { get; set; } = true;
 
-        internal static string StorageDirectory => Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FMTPlanner", "Mqtt");
+        // Regression harnesses override this path so tests never read or delete a user's saved broker data.
+        internal static string StorageDirectoryOverride { get; set; }
+        internal static string StorageDirectory => string.IsNullOrWhiteSpace(StorageDirectoryOverride)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FMTPlanner", "Mqtt")
+            : StorageDirectoryOverride;
         private static string RememberConsentPath => Path.Combine(StorageDirectory, "remember-settings.optin");
         private static string SettingsPath => Path.Combine(StorageDirectory, "settings.json");
 

@@ -503,6 +503,12 @@ namespace MissionPlanner
         public static Joystick.JoystickBase joystick { get; set; }
 
         /// <summary>
+        /// FMT safety gate for joystick RC_CHANNELS_OVERRIDE / MANUAL_CONTROL output.
+        /// It is enabled only when RC_OPTIONS explicitly ignores the physical receiver.
+        /// </summary>
+        internal static volatile bool FmtGroundControlInputEnabled;
+
+        /// <summary>
         /// track last joystick packet sent. used to control rate
         /// </summary>
         DateTime lastjoystick = DateTime.Now;
@@ -599,6 +605,13 @@ namespace MissionPlanner
         private ToolStripButton MenuFmtArmDisarm;
         private ToolStripButton MenuFmtAirspeedZero;
         private ToolStripButton MenuFmtQnh;
+        private ToolStripControlHost MenuFmtControlSource;
+        private Button FmtRcControlButton;
+        private Button FmtGcsControlButton;
+        private Label FmtControlSourceArrow;
+        private int FmtControlSourceState = 1;
+        private bool FmtControlSourceStartupDefaultApplied;
+        private List<FmtCriticalRcSwitch> FmtCriticalSwitchSnapshot = new List<FmtCriticalRcSwitch>();
         private ToolStripControlHost MenuFmtGpsStatus;
         private Label FmtGpsPrimaryLabel;
         private Label FmtGpsDopLabel;
@@ -2344,7 +2357,7 @@ namespace MissionPlanner
                     {
                         //joystick stuff
 
-                        if (joystick != null && joystick.enabled)
+                        if (joystick != null && joystick.enabled && FmtGroundControlInputEnabled)
                         {
                             if (!joystick.manual_control)
                             {
@@ -4724,6 +4737,13 @@ namespace MissionPlanner
                     continue;
                 }
 
+                if (item == MenuFmtControlSource)
+                {
+                    item.BackgroundImage = null;
+                    item.BackColor = Color.FromArgb(24, 24, 24);
+                    continue;
+                }
+
                 if (item == MenuFmtGpsStatus || item == MenuFmtFlightTime || item == MenuFmtRotorRpm || item == MenuFmtMqttTraffic)
                 {
                     item.BackgroundImage = null;
@@ -4913,11 +4933,49 @@ namespace MissionPlanner
             };
             MenuFmtQnh.Click += MenuFmtQnh_Click;
 
+            var controlSourcePanel = new Panel
+            {
+                Name = "FmtControlSourcePanel",
+                BackColor = Color.FromArgb(24, 24, 24),
+                Size = new Size(236, 35),
+                Margin = Padding.Empty
+            };
+            FmtRcControlButton = CreateFmtControlSourceButton("遙控器控制", new Point(0, 1), 104);
+            FmtControlSourceArrow = new Label
+            {
+                Name = "FmtControlSourceArrow",
+                Text = "⇄",
+                Location = new Point(104, 1),
+                Size = new Size(28, 32),
+                TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = Color.Gray,
+                BackColor = Color.Transparent,
+                Font = new Font(SystemFonts.MenuFont.FontFamily, 12F, FontStyle.Bold)
+            };
+            FmtGcsControlButton = CreateFmtControlSourceButton("導控控制", new Point(132, 1), 104);
+            FmtRcControlButton.Click += (sender, args) => SetFmtControlSource(false);
+            FmtGcsControlButton.Click += (sender, args) => SetFmtControlSource(true);
+            controlSourcePanel.Controls.Add(FmtRcControlButton);
+            controlSourcePanel.Controls.Add(FmtControlSourceArrow);
+            controlSourcePanel.Controls.Add(FmtGcsControlButton);
+            MenuFmtControlSource = new ToolStripControlHost(controlSourcePanel)
+            {
+                Name = "MenuFmtControlSource",
+                Alignment = ToolStripItemAlignment.Left,
+                AutoSize = false,
+                Size = new Size(236, 35),
+                Margin = new Padding(0, 0, 4, 0),
+                Padding = Padding.Empty,
+                BackColor = Color.FromArgb(24, 24, 24),
+                ToolTipText = "選擇實體 SBUS／RC 或 MAVLink 導控輸入；兩者互斥以避免控制衝突"
+            };
+
             var quickActionIndex = MainMenu.Items.IndexOf(MenuFmtParameterSettings) + 1;
             MainMenu.Items.Insert(quickActionIndex, MenuFmtPreflightCheck);
             MainMenu.Items.Insert(quickActionIndex + 1, MenuFmtArmDisarm);
             MainMenu.Items.Insert(quickActionIndex + 2, MenuFmtAirspeedZero);
             MainMenu.Items.Insert(quickActionIndex + 3, MenuFmtQnh);
+            MainMenu.Items.Insert(quickActionIndex + 4, MenuFmtControlSource);
             ApplyFmtQuickActionButtonStyle(MenuFmtPreflightCheck);
             ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
             ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
@@ -5310,7 +5368,7 @@ namespace MissionPlanner
         private void UpdateFmtQuickActionButtons()
         {
             if (MenuFmtPreflightCheck == null || MenuFmtArmDisarm == null ||
-                MenuFmtAirspeedZero == null || MenuFmtQnh == null)
+                MenuFmtAirspeedZero == null || MenuFmtQnh == null || MenuFmtControlSource == null)
                 return;
 
             var connected = comPort?.BaseStream != null && comPort.BaseStream.IsOpen;
@@ -5338,11 +5396,333 @@ namespace MissionPlanner
                 ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
                 ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
                 ApplyFmtQuickActionButtonStyle(MenuFmtQnh);
+                UpdateFmtControlSourceButtons(connected);
                 UpdateFmtGpsStatus(connected, gpsStatus, satCount, hdop, vdop);
                 UpdateFmtRotorRpm(showRotorRpm, rotorRpm);
                 UpdateFmtFlightTime(connected, flightSeconds,
                     hasTotalFlightTime ? (double?)totalFlightSeconds : null);
             }));
+        }
+
+        private static Button CreateFmtControlSourceButton(string text, Point location, int width)
+        {
+            var button = new Button
+            {
+                Text = text,
+                Location = location,
+                Size = new Size(width, 32),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(18, 50, 65),
+                ForeColor = Color.White,
+                Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
+                TabStop = false,
+                UseVisualStyleBackColor = false
+            };
+            button.FlatAppearance.BorderSize = 1;
+            button.FlatAppearance.BorderColor = Color.FromArgb(65, 194, 235);
+            button.FlatAppearance.MouseOverBackColor = Color.FromArgb(25, 76, 96);
+            return button;
+        }
+
+        private void UpdateFmtControlSourceButtons(bool connected)
+        {
+            var parameterAvailable = false;
+            var nextState = connected ? 0 : 1;
+            var startupDefaultWarning = string.Empty;
+            try
+            {
+                var parameters = connected ? comPort.MAV.param : null;
+                if (parameters != null && parameters.ContainsKey("RC_OPTIONS"))
+                {
+                    parameterAvailable = true;
+                    nextState = GetFmtControlSourceState((int)Math.Round(parameters["RC_OPTIONS"].Value));
+
+                    if (!FmtControlSourceStartupDefaultApplied && IsFmtHeartbeatFresh())
+                    {
+                        FmtControlSourceStartupDefaultApplied = true;
+                        if (comPort.ReadOnly)
+                        {
+                            startupDefaultWarning = "唯讀連線無法套用啟動預設的遙控器控制";
+                        }
+                        else if (comPort.MAV.cs.armed)
+                        {
+                            startupDefaultWarning = "飛行器已解鎖，為避免飛行中突變，未自動切換控制來源";
+                        }
+                        else
+                        {
+                            var currentOptions = (int)Math.Round(parameters["RC_OPTIONS"].Value);
+                            var receiverOptions = (currentOptions & ~3) | 2;
+                            FmtGroundControlInputEnabled = false;
+                            if (joystick != null && joystick.enabled)
+                                joystick.releaseRCOverride();
+
+                            if (currentOptions != receiverOptions)
+                            {
+                                if (!comPort.setParam((byte)comPort.sysidcurrent, (byte)comPort.compidcurrent,
+                                        "RC_OPTIONS", receiverOptions, true))
+                                    throw new InvalidOperationException("飛控拒絕啟動預設的 RC_OPTIONS 設定。");
+                            }
+
+                            nextState = 1;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                startupDefaultWarning = "無法套用啟動預設的遙控器控制";
+                log.Warn("Unable to initialize the FMT control source to receiver control", ex);
+            }
+
+            if (!connected)
+                FmtControlSourceStartupDefaultApplied = false;
+
+            var canChange = connected && parameterAvailable && !comPort.ReadOnly;
+            var joystickReady = joystick != null && joystick.enabled;
+            FmtRcControlButton.Enabled = canChange;
+            FmtGcsControlButton.Enabled = canChange && joystickReady;
+            FmtGroundControlInputEnabled = nextState == 2 && joystickReady;
+
+            if (nextState != 2 && FmtControlSourceState != nextState && joystick != null && joystick.enabled)
+            {
+                try
+                {
+                    joystick.releaseRCOverride();
+                }
+                catch (Exception ex)
+                {
+                    log.Warn("Unable to release joystick RC override while selecting receiver control", ex);
+                }
+            }
+
+            ApplyFmtControlSourceButtonState(FmtRcControlButton, nextState == 1,
+                Color.FromArgb(18, 122, 72), Color.FromArgb(89, 224, 145));
+            ApplyFmtControlSourceButtonState(FmtGcsControlButton, nextState == 2,
+                Color.FromArgb(19, 105, 140), Color.FromArgb(65, 194, 235));
+
+            if (!string.IsNullOrEmpty(startupDefaultWarning))
+            {
+                FmtControlSourceArrow.Text = "!";
+                FmtControlSourceArrow.ForeColor = Color.OrangeRed;
+                MenuFmtControlSource.ToolTipText = startupDefaultWarning;
+            }
+            else if (!connected)
+            {
+                FmtControlSourceArrow.Text = "⇄";
+                FmtControlSourceArrow.ForeColor = Color.Gray;
+                MenuFmtControlSource.ToolTipText = "啟動預設為遙控器控制；連線飛控後才能變更";
+            }
+            else if (!parameterAvailable)
+            {
+                FmtControlSourceArrow.Text = "!";
+                FmtControlSourceArrow.ForeColor = Color.OrangeRed;
+                MenuFmtControlSource.ToolTipText = "飛控未提供 RC_OPTIONS，無法保證實體遙控器與導控輸入互斥";
+            }
+            else if (nextState == 0)
+            {
+                FmtControlSourceArrow.Text = "!";
+                FmtControlSourceArrow.ForeColor = Color.OrangeRed;
+                MenuFmtControlSource.ToolTipText = "控制來源尚未隔離；請選擇遙控器控制或導控控制";
+            }
+            else if (!joystickReady && nextState == 2)
+            {
+                FmtControlSourceArrow.Text = "!";
+                FmtControlSourceArrow.ForeColor = Color.OrangeRed;
+                MenuFmtControlSource.ToolTipText = "飛控目前設定為導控控制，但本機搖桿尚未建立並啟用；導控輸出已封鎖";
+            }
+            else
+            {
+                FmtControlSourceArrow.Text = "⇄";
+                FmtControlSourceArrow.ForeColor = Color.FromArgb(65, 194, 235);
+                MenuFmtControlSource.ToolTipText = nextState == 1
+                    ? "目前只接受實體 SBUS／RC；MAVLink 遙控覆寫已忽略"
+                    : joystickReady
+                        ? "目前只接受 MAVLink 導控輸入；實體 SBUS／RC 已忽略"
+                        : "請先建立並啟用本機搖桿，才能切換為導控控制";
+            }
+
+            FmtControlSourceState = nextState;
+        }
+
+        private bool IsFmtHeartbeatFresh()
+        {
+            try
+            {
+                var heartbeat = comPort?.MAV?.getPacketLast((uint)MAVLink.MAVLINK_MSG_ID.HEARTBEAT);
+                return heartbeat != null && heartbeat.rxtime != DateTime.MinValue &&
+                       (DateTime.UtcNow - heartbeat.rxtime).TotalSeconds <= 3;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static void ApplyFmtControlSourceButtonState(Button button, bool selected, Color fill, Color border)
+        {
+            button.BackColor = selected ? fill : Color.FromArgb(18, 50, 65);
+            button.ForeColor = button.Enabled ? Color.White : Color.Gray;
+            button.FlatAppearance.BorderColor = selected ? border : Color.FromArgb(65, 194, 235);
+        }
+
+        private static int GetFmtControlSourceState(int rcOptions)
+        {
+            var ignoreReceiver = (rcOptions & 1) != 0;
+            var ignoreMavlinkOverrides = (rcOptions & 2) != 0;
+            if (!ignoreReceiver && ignoreMavlinkOverrides)
+                return 1;
+            if (ignoreReceiver && !ignoreMavlinkOverrides)
+                return 2;
+            return 0;
+        }
+
+        private void SetFmtControlSource(bool groundControl)
+        {
+            const string title = "FMT 控制來源";
+            if (comPort?.BaseStream == null || !comPort.BaseStream.IsOpen)
+            {
+                CustomMessageBox.Show("請先連線飛控。", title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (comPort.ReadOnly)
+            {
+                CustomMessageBox.Show("目前為唯讀連線，無法切換控制來源。", title,
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var parameters = comPort.MAV.param;
+            if (parameters == null || !parameters.ContainsKey("RC_OPTIONS"))
+            {
+                CustomMessageBox.Show("目前飛控未提供 RC_OPTIONS，無法安全隔離實體遙控器與導控輸入。", title,
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var current = (int)Math.Round(parameters["RC_OPTIONS"].Value);
+            var updated = (current & ~3) | (groundControl ? 1 : 2);
+            if (GetFmtControlSourceState(current) == (groundControl ? 2 : 1))
+                return;
+
+            if (groundControl)
+            {
+                if (joystick == null || !joystick.enabled || !joystick.IsJoystickValid())
+                {
+                    CustomMessageBox.Show(
+                        "尚未啟用有效的導控搖桿。請先到「接力控制 → 本機搖桿設定」完成配置並啟用。",
+                        title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (joystick.manual_control)
+                {
+                    CustomMessageBox.Show(
+                        "目前搖桿使用 MANUAL_CONTROL，無法直接與接收機 PWM 做無擾對位。\r\n" +
+                        "請在本機搖桿設定取消 Manual Control，改用 RC_CHANNELS_OVERRIDE。",
+                        title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (joystick.elevons)
+                {
+                    CustomMessageBox.Show(
+                        "目前啟用 Elevons 混控，導控站無法在切換前用單通道 PWM 完整驗證混控輸出。\r\n" +
+                        "請先取消 Elevons 或使用飛控端控制仲裁器。",
+                        title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                try
+                {
+                    comPort.requestDatastream(MAVLink.MAV_DATA_STREAM.RC_CHANNELS, 10);
+                }
+                catch (Exception ex)
+                {
+                    log.Warn("Unable to request RC channel stream for FMT handover", ex);
+                }
+
+                using (var handover = new FmtControlHandoverDialog(comPort, joystick))
+                {
+                    if (handover.ShowDialog(this) != DialogResult.OK)
+                        return;
+                    FmtCriticalSwitchSnapshot = handover.CriticalSwitches
+                        .Select(item => new FmtCriticalRcSwitch
+                        {
+                            Channel = item.Channel,
+                            Option = item.Option,
+                            FunctionName = item.FunctionName,
+                            InitialPwm = item.InitialPwm,
+                            InitialPosition = item.InitialPosition
+                        }).ToList();
+                }
+            }
+
+            // The enabled button in the live alignment dialog is the final confirmation for
+            // receiver-to-GCS handover. Do not add a second dialog that would leave time for
+            // the joystick to move after it was verified.
+            if (!groundControl)
+            {
+                var criticalSwitches = FmtControlHandoverDialog.GetConfiguredCriticalSwitches(comPort);
+                foreach (var criticalSwitch in criticalSwitches)
+                {
+                    var saved = FmtCriticalSwitchSnapshot.FirstOrDefault(item =>
+                        item.Channel == criticalSwitch.Channel && item.Option == criticalSwitch.Option);
+                    if (saved != null)
+                    {
+                        criticalSwitch.InitialPwm = saved.InitialPwm;
+                        criticalSwitch.InitialPosition = saved.InitialPosition;
+                    }
+                }
+
+                if (criticalSwitches.Count > 0)
+                {
+                    using (var safetyCheck = new FmtCriticalSwitchReturnDialog(criticalSwitches,
+                               comPort.MAV.cs.armed))
+                    {
+                        if (safetyCheck.ShowDialog(this) != DialogResult.OK)
+                            return;
+                    }
+                }
+
+                const string confirmation =
+                    "切換為「遙控器控制」後，導控站會停止輸出並釋放 RC Override。\r\n\r\n" +
+                    "注意：目前 MAVLink 無法回報被隔離接收機的待命原始位置，因此本方向無法由導控站驗證無擾對位。請先人工對齊實體遙控器。確定切換嗎？";
+                if (CustomMessageBox.Show(confirmation, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) !=
+                    (int)DialogResult.Yes)
+                    return;
+            }
+
+            var previousGroundGate = FmtGroundControlInputEnabled;
+            var joystickWasEnabled = joystick != null && joystick.enabled;
+            if (!groundControl)
+            {
+                FmtGroundControlInputEnabled = false;
+                if (joystickWasEnabled)
+                {
+                    try { joystick.releaseRCOverride(); }
+                    catch (Exception ex) { log.Warn("Unable to clear RC override before receiver control", ex); }
+                }
+            }
+
+            try
+            {
+                var accepted = comPort.setParam((byte)comPort.sysidcurrent, (byte)comPort.compidcurrent,
+                    "RC_OPTIONS", updated, true);
+                if (!accepted)
+                    throw new InvalidOperationException("飛控拒絕 RC_OPTIONS 設定。");
+
+                FmtGroundControlInputEnabled = groundControl;
+                FmtControlSourceState = groundControl ? 2 : 1;
+                UpdateFmtQuickActionButtons();
+            }
+            catch (Exception ex)
+            {
+                FmtGroundControlInputEnabled = previousGroundGate;
+                if (joystickWasEnabled && joystick != null)
+                    joystick.enabled = true;
+                log.Error("FMT control-source switch failed", ex);
+                CustomMessageBox.Show("控制來源切換失敗：" + ex.Message, title,
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UpdateFmtQuickActionButtons();
+            }
         }
 
         private bool IsFmtTraditionalHelicopter()

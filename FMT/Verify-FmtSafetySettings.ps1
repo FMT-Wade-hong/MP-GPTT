@@ -18,7 +18,7 @@ $flightData = Get-Content -LiteralPath (Join-Path $ProjectRoot 'GCSViews\FlightD
 $panel = Get-Content -LiteralPath (Join-Path $ProjectRoot 'FMT\FmtSafetySettingsPanel.cs') -Raw
 foreach ($required in @(
     'Text = "安全設定"',
-    'CB_tuning, chkFmt3DMap, chkFmtMqtt, chkFmtSafety',
+    'chkFmtRelay, chkFmt3DMap, chkFmtMqtt, chkFmtSafety',
     'splitContainer1.Panel1.Controls.Add(fmtSafetyPanel)',
     'fmtSafetyPanel.RefreshParameters()',
     'fmtSafetyPanel.Visible = showSafety')) {

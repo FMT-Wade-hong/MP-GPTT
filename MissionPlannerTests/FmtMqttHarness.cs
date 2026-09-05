@@ -24,6 +24,9 @@ internal static class FmtMqttHarness
         {
             artifactDirectory = args[0];
             Directory.CreateDirectory(artifactDirectory);
+            FmtMqttSettings.StorageDirectoryOverride = Path.Combine(artifactDirectory, "isolated-settings");
+            if (Directory.Exists(FmtMqttSettings.StorageDirectoryOverride))
+                Directory.Delete(FmtMqttSettings.StorageDirectoryOverride, true);
             TestSettings();
             TestPanel();
             TestTrafficRates();
@@ -38,6 +41,10 @@ internal static class FmtMqttHarness
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
+        finally
+        {
+            FmtMqttSettings.StorageDirectoryOverride = null;
+        }
     }
 
     private static void Check(bool success, string label)
@@ -79,6 +86,9 @@ internal static class FmtMqttHarness
 
     private static void TestPanel()
     {
+        Directory.CreateDirectory(FmtMqttSettings.StorageDirectory);
+        File.WriteAllText(Path.Combine(FmtMqttSettings.StorageDirectory, "settings.json"),
+            "{\"Host\":\"legacy.example\",\"InboundTopic\":\"legacy/topic\"}");
         Application.EnableVisualStyles();
         using (var host = new Form { ClientSize = new Size(960, 390), ShowInTaskbar = false, StartPosition = FormStartPosition.Manual, Location = new Point(-20000, -20000) })
         using (var panel = new FmtMqttPanel())
@@ -105,6 +115,11 @@ internal static class FmtMqttHarness
             host.PerformLayout(); panel.PerformLayout();
             Check(panel.VerticalScroll.Visible, "short embedded area scrolls instead of clipping controls");
         }
+
+        File.WriteAllText(Path.Combine(FmtMqttSettings.StorageDirectory, "remember-settings.optin"), "1");
+        Check(FmtMqttSettings.LoadRemembered().Host == "legacy.example",
+            "explicit remember consent restores MQTT settings");
+        FmtMqttSettings.ClearRemembered();
     }
 
     private static void TestTrafficRates()

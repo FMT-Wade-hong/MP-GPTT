@@ -98,7 +98,9 @@ namespace MissionPlanner.FMT
 
             foreach (var item in definitions)
             {
-                var card = new SafetyParameterCard(item.Definition, item.Name, connected);
+                var writeBlockedReason = GetWriteBlockedReason(item.Name, parameters);
+                var card = new SafetyParameterCard(item.Definition, item.Name,
+                    connected && writeBlockedReason == null, writeBlockedReason);
                 card.ApplyRequested += ApplyParameter;
                 cards.Controls.Add(card);
             }
@@ -107,6 +109,17 @@ namespace MissionPlanner.FMT
                 ? "各安全項目獨立寫入；飛行器解鎖時禁止修改。共載入 " + definitions.Length + " 項。"
                 : "目前未連線；可檢視快取值，但無法寫入。共載入 " + definitions.Length + " 項。";
             status.ForeColor = connected ? Color.FromArgb(74, 210, 116) : Color.FromArgb(255, 174, 72);
+        }
+
+        private static string GetWriteBlockedReason(string parameterName, MAVLink.MAVLinkParamList parameters)
+        {
+            if (!string.Equals(parameterName, "FENCE_ACTION", StringComparison.OrdinalIgnoreCase) ||
+                parameters == null || !parameters.ContainsKey("FENCE_ENABLE"))
+                return null;
+
+            return parameters["FENCE_ENABLE"].Value > 0
+                ? null
+                : "電子圍籬未啟用；請先啟用 FENCE_ENABLE。";
         }
 
         private void ApplyParameter(SafetyParameterCard card, string parameterName, float value)
@@ -122,6 +135,15 @@ namespace MissionPlanner.FMT
             {
                 MessageBox.Show(this, "飛行器已解鎖，請先鎖定後再修改安全設定。", "安全設定",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var writeBlockedReason = GetWriteBlockedReason(parameterName, port.MAV.param);
+            if (writeBlockedReason != null)
+            {
+                MessageBox.Show(this, writeBlockedReason, "安全設定",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                RefreshParameters();
                 return;
             }
 
@@ -172,7 +194,8 @@ namespace MissionPlanner.FMT
             private readonly ContextMenuStrip bitmaskMenu;
             private readonly Label current;
 
-            internal SafetyParameterCard(FmtSafetyParameterDefinition definition, string parameterName, bool canWrite)
+            internal SafetyParameterCard(FmtSafetyParameterDefinition definition, string parameterName, bool canWrite,
+                string writeBlockedReason)
             {
                 Title = definition.Title;
                 ParameterName = parameterName;
@@ -335,6 +358,23 @@ namespace MissionPlanner.FMT
                 Controls.Add(apply);
                 Controls.Add(description);
                 SetCurrentValue(MainV2.comPort.MAV.param[parameterName].Value);
+
+                if (!canWrite)
+                {
+                    if (choices != null)
+                        choices.Enabled = false;
+                    if (number != null)
+                        number.Enabled = false;
+                    if (bitmaskButton != null)
+                        bitmaskButton.Enabled = false;
+                }
+
+                if (!string.IsNullOrEmpty(writeBlockedReason))
+                {
+                    current.Text = "目前：未啟用";
+                    current.ForeColor = Color.FromArgb(255, 174, 72);
+                    description.Text = parameterName + "｜" + writeBlockedReason;
+                }
             }
 
             internal string Title { get; }

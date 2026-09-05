@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Device.Location;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Globalization;
@@ -57,15 +58,24 @@ namespace MissionPlanner.GCSViews
         internal GMapMarker CurrentGMapMarker;
         private readonly GMapOverlay taiwanCaaOverlay = new GMapOverlay("Taiwan CAA Airspace");
         private readonly HashSet<string> taiwanCaaZoneIds = new HashSet<string>();
+        private readonly GMapOverlay fmtGroundStationOverlay = new GMapOverlay("FMT Ground Stations");
+        private readonly Dictionary<int, GMapMarker> fmtGroundStationMarkers =
+            new Dictionary<int, GMapMarker>();
+        private readonly Dictionary<int, bool> fmtGroundStationMarkerActive =
+            new Dictionary<int, bool>();
+        private GeoCoordinateWatcher fmtGroundStationWatcher;
+        private DateTime fmtLastGroundStationMarkerRefresh = DateTime.MinValue;
         private readonly FmtFlightModeBar fmtFlightModeBar;
         private readonly FmtAutoMissionPanel fmtAutoMissionPanel;
         private readonly CheckBox chkFmtAirspace;
         private readonly CheckBox chkFmt3DMap;
         private readonly CheckBox chkFmtMqtt;
         private readonly CheckBox chkFmtSafety;
+        private readonly CheckBox chkFmtRelay;
         private OpenGLtest2 fmt3DMapControl;
         private FmtMqttPanel fmtMqttPanel;
         private FmtSafetySettingsPanel fmtSafetyPanel;
+        private FmtRelayControlPanel fmtRelayPanel;
         internal bool HasRunningMqttBridge => fmtMqttPanel?.IsBridgeRunning == true;
         internal FmtMqttTrafficSnapshot MqttTrafficSnapshot => fmtMqttPanel?.TrafficSnapshot ?? default(FmtMqttTrafficSnapshot);
         private bool fmtChangingEmbeddedMapView;
@@ -319,6 +329,16 @@ namespace MissionPlanner.GCSViews
                 UseVisualStyleBackColor = true
             };
             chkFmtSafety.CheckedChanged += (sender, args) => SelectFmtEmbeddedMapView(chkFmtSafety);
+            chkFmtRelay = new CheckBox
+            {
+                Name = "CHK_fmtRelay",
+                AutoSize = true,
+                Text = "接力控制",
+                Checked = false,
+                Anchor = AnchorStyles.Left | AnchorStyles.Bottom,
+                UseVisualStyleBackColor = true
+            };
+            chkFmtRelay.CheckedChanged += (sender, args) => SelectFmtEmbeddedMapView(chkFmtRelay);
             splitContainer1.Resize += (sender, args) =>
             {
                 if (!splitContainer1.Panel1Collapsed)
@@ -536,6 +556,7 @@ namespace MissionPlanner.GCSViews
             gMapControl1.Overlays.Add(rallypointoverlay);
 
             gMapControl1.Overlays.Add(poioverlay);
+            gMapControl1.Overlays.Add(fmtGroundStationOverlay);
 
             float gspeedMax = Settings.Instance.GetFloat("GspeedMAX");
             if (gspeedMax != 0)
@@ -566,8 +587,10 @@ namespace MissionPlanner.GCSViews
 
             OnResize(EventArgs.Empty);
 
-            if (CB_tuning.Checked)
-                ZedGraphTimer.Start();
+            // The legacy tuning/servo-adjustment strip has been replaced by the
+            // fail-closed relay-control panel.
+            ZedGraphTimer.Stop();
+            StartFmtGroundStationLocation();
 
             hud1.altunit = CurrentState.AltUnit;
             hud1.speedunit = CurrentState.SpeedUnit;
@@ -806,6 +829,7 @@ namespace MissionPlanner.GCSViews
             Settings.Instance["maplast_zoom"] = gMapControl1.Zoom.ToString();
 
             ZedGraphTimer.Stop();
+            StopFmtGroundStationLocation();
         }
 
         public void LoadLogFile(string file)
@@ -2231,8 +2255,10 @@ namespace MissionPlanner.GCSViews
 
         private FlowLayoutPanel ConfigureFmtMapOptionsPanel()
         {
+            CB_tuning.Checked = false;
+            CB_tuning.Visible = false;
             return FmtMapOptionsLayout.Configure(panel1, coords1,
-                CB_tuning, CHK_autopan, chkFmtAirspace, chkFmt3DMap, chkFmtMqtt, chkFmtSafety);
+                chkFmtRelay, CHK_autopan, chkFmtAirspace, chkFmt3DMap, chkFmtMqtt, chkFmtSafety);
         }
 
         private void BUT_setwp_Click(object sender, EventArgs e)
@@ -3711,7 +3737,7 @@ namespace MissionPlanner.GCSViews
                 fmtChangingEmbeddedMapView = true;
                 try
                 {
-                    foreach (var option in new[] { CB_tuning, chkFmt3DMap, chkFmtMqtt, chkFmtSafety })
+                    foreach (var option in new[] { chkFmtRelay, chkFmt3DMap, chkFmtMqtt, chkFmtSafety })
                         if (option != null && option != selected) option.Checked = false;
                 }
                 finally
@@ -3731,7 +3757,9 @@ namespace MissionPlanner.GCSViews
             var show3D = chkFmt3DMap != null && chkFmt3DMap.Checked;
             var showMqtt = !show3D && chkFmtMqtt != null && chkFmtMqtt.Checked;
             var showSafety = !show3D && !showMqtt && chkFmtSafety != null && chkFmtSafety.Checked;
-            var showTuning = !show3D && !showMqtt && !showSafety && CB_tuning != null && CB_tuning.Checked;
+            var showRelay = !show3D && !showMqtt && !showSafety &&
+                            chkFmtRelay != null && chkFmtRelay.Checked;
+            const bool showTuning = false;
 
             ZedGraphTimer.Enabled = showTuning;
             if (showTuning)
@@ -3748,8 +3776,10 @@ namespace MissionPlanner.GCSViews
                 fmtMqttPanel.Visible = showMqtt;
             if (fmtSafetyPanel != null && !fmtSafetyPanel.IsDisposed)
                 fmtSafetyPanel.Visible = showSafety;
+            if (fmtRelayPanel != null && !fmtRelayPanel.IsDisposed)
+                fmtRelayPanel.Visible = showRelay;
 
-            if (!show3D && !showTuning && !showMqtt && !showSafety)
+            if (!show3D && !showTuning && !showMqtt && !showSafety && !showRelay)
             {
                 splitContainer1.Panel1Collapsed = true;
                 splitContainer1_Panel2_Resize(null, null);
@@ -3831,6 +3861,30 @@ namespace MissionPlanner.GCSViews
                 }
             }
 
+            if (showRelay)
+            {
+                try
+                {
+                    if (fmtRelayPanel == null || fmtRelayPanel.IsDisposed)
+                    {
+                        fmtRelayPanel = new FmtRelayControlPanel();
+                        splitContainer1.Panel1.Controls.Add(fmtRelayPanel);
+                        ThemeManager.ApplyThemeTo(fmtRelayPanel);
+                    }
+                    fmtRelayPanel.RefreshRuntimeStatus();
+                    fmtRelayPanel.Visible = true;
+                    fmtRelayPanel.BringToFront();
+                }
+                catch (Exception ex)
+                {
+                    log.Error("Unable to open embedded relay control panel", ex);
+                    if (fmtRelayPanel != null) { fmtRelayPanel.Dispose(); fmtRelayPanel = null; }
+                    chkFmtRelay.Checked = false;
+                    CustomMessageBox.Show("無法開啟接力控制面板。\r\n\r\n" + ex.Message, "接力控制");
+                    return;
+                }
+            }
+
             splitContainer1.Panel1Collapsed = false;
             SetFmtEmbeddedPanelHeight();
 
@@ -3870,7 +3924,8 @@ namespace MissionPlanner.GCSViews
 
             const int minimumMapHeight = 220;
             var maximumEmbeddedHeight = Math.Max(60, available - minimumMapHeight);
-            var desiredEmbeddedHeight = Math.Max(160, (int)Math.Round(available * 0.42));
+            var minimumEmbeddedHeight = chkFmtRelay != null && chkFmtRelay.Checked ? 330 : 160;
+            var desiredEmbeddedHeight = Math.Max(minimumEmbeddedHeight, (int)Math.Round(available * 0.42));
             desiredEmbeddedHeight = Math.Min(desiredEmbeddedHeight, maximumEmbeddedHeight);
             desiredEmbeddedHeight = Math.Max(25, Math.Min(desiredEmbeddedHeight, available - 25));
 
@@ -3882,6 +3937,124 @@ namespace MissionPlanner.GCSViews
             {
                 // The split container may still be completing its first layout pass.
             }
+        }
+
+        private void StartFmtGroundStationLocation()
+        {
+            try
+            {
+                if (fmtGroundStationWatcher == null)
+                {
+                    fmtGroundStationWatcher = new GeoCoordinateWatcher(GeoPositionAccuracy.Default);
+                    fmtGroundStationWatcher.PositionChanged += FmtGroundStationWatcher_PositionChanged;
+                    fmtGroundStationWatcher.StatusChanged += FmtGroundStationWatcher_StatusChanged;
+                }
+
+                fmtGroundStationWatcher.Start(false);
+            }
+            catch (Exception ex)
+            {
+                log.Debug("Windows ground-station location is unavailable", ex);
+                FmtGroundStationPositionStore.Remove(1);
+                UpdateFmtGroundStationMarkers(true);
+            }
+        }
+
+        private void StopFmtGroundStationLocation()
+        {
+            try
+            {
+                fmtGroundStationWatcher?.Stop();
+            }
+            catch (Exception ex)
+            {
+                log.Debug("Unable to stop Windows ground-station location", ex);
+            }
+
+            FmtGroundStationPositionStore.Remove(1);
+            UpdateFmtGroundStationMarkers(true);
+        }
+
+        private void FmtGroundStationWatcher_PositionChanged(object sender,
+            GeoPositionChangedEventArgs<GeoCoordinate> args)
+        {
+            var coordinate = args?.Position.Location;
+            if (coordinate == null || coordinate.IsUnknown ||
+                !IsFmtValidLocation(new PointLatLng(coordinate.Latitude, coordinate.Longitude)))
+            {
+                FmtGroundStationPositionStore.Remove(1);
+            }
+            else
+            {
+                FmtGroundStationPositionStore.Update(1, coordinate.Latitude, coordinate.Longitude,
+                    coordinate.HorizontalAccuracy, "Windows 定位", DateTime.UtcNow);
+            }
+
+            this.BeginInvokeIfRequired((Action)(() => UpdateFmtGroundStationMarkers(true)));
+        }
+
+        private void FmtGroundStationWatcher_StatusChanged(object sender,
+            GeoPositionStatusChangedEventArgs args)
+        {
+            if (args.Status != GeoPositionStatus.Disabled && args.Status != GeoPositionStatus.NoData)
+                return;
+
+            FmtGroundStationPositionStore.Remove(1);
+            this.BeginInvokeIfRequired((Action)(() => UpdateFmtGroundStationMarkers(true)));
+        }
+
+        private void UpdateFmtGroundStationMarkers(bool force)
+        {
+            if (gMapControl1 == null || gMapControl1.IsDisposed)
+                return;
+            if (!force && DateTime.UtcNow - fmtLastGroundStationMarkerRefresh < TimeSpan.FromSeconds(1))
+                return;
+
+            fmtLastGroundStationMarkerRefresh = DateTime.UtcNow;
+            var positions = FmtGroundStationPositionStore.Snapshot(TimeSpan.FromSeconds(60));
+            var visibleStations = new HashSet<int>(positions.Select(item => item.StationNumber));
+
+            foreach (var station in positions)
+            {
+                GMapMarker marker;
+                bool wasActive;
+                var replace = !fmtGroundStationMarkers.TryGetValue(station.StationNumber, out marker) ||
+                              !fmtGroundStationMarkerActive.TryGetValue(station.StationNumber, out wasActive) ||
+                              wasActive != station.IsActiveController;
+                if (replace)
+                {
+                    if (marker != null)
+                        fmtGroundStationOverlay.Markers.Remove(marker);
+                    marker = new GMarkerGoogle(
+                        new PointLatLng(station.Latitude, station.Longitude),
+                        station.IsActiveController ? GMarkerGoogleType.green : GMarkerGoogleType.blue_dot);
+                    fmtGroundStationMarkers[station.StationNumber] = marker;
+                    fmtGroundStationMarkerActive[station.StationNumber] = station.IsActiveController;
+                    fmtGroundStationOverlay.Markers.Add(marker);
+                }
+
+                marker.Position = new PointLatLng(station.Latitude, station.Longitude);
+                marker.Tag = "FMT_GCS_" + station.StationNumber;
+                marker.ToolTipMode = MarkerTooltipMode.Always;
+                var role = station.StationNumber == 1 ? "本機主站" : "接力站";
+                var control = station.IsActiveController ? "｜控制中" : "";
+                var accuracy = station.AccuracyMeters >= 0
+                    ? "｜精度約 " + station.AccuracyMeters.ToString("0") + " m"
+                    : "";
+                marker.ToolTipText = station.StationNumber + " 號導控站｜" + role + control +
+                                     "\n" + station.Source + accuracy;
+            }
+
+            foreach (var stationNumber in fmtGroundStationMarkers.Keys
+                         .Where(number => !visibleStations.Contains(number)).ToList())
+            {
+                fmtGroundStationOverlay.Markers.Remove(fmtGroundStationMarkers[stationNumber]);
+                fmtGroundStationMarkers.Remove(stationNumber);
+                fmtGroundStationMarkerActive.Remove(stationNumber);
+            }
+
+            fmtGroundStationOverlay.ForceUpdate();
+            gMapControl1.Invalidate(false);
         }
 
         private void RefreshFmtAirspaceForAircraft(bool force)
@@ -4647,6 +4820,8 @@ namespace MissionPlanner.GCSViews
                             MainV2.comPort.MAV.cs.lng);
                         if (!IsFmtValidLocation(currentloc))
                             currentloc = FmtDefaultMapPosition;
+
+                        UpdateFmtGroundStationMarkers(false);
 
                         gMapControl1.HoldInvalidation = true;
 

@@ -16,10 +16,10 @@ Copy-Item -LiteralPath $json -Destination $artifactDirectory -Force
 if ($LASTEXITCODE -ne 0) { throw 'MQTT regression harness failed.' }
 
 $flightData = Get-Content -LiteralPath (Join-Path $ProjectRoot 'GCSViews\FlightData.cs') -Raw
-foreach ($required in @('Text = "MQTT 連線"', 'CB_tuning, chkFmt3DMap, chkFmtMqtt, chkFmtSafety', 'splitContainer1.Panel1.Controls.Add(fmtMqttPanel)', 'fmtMqttPanel.Visible = showMqtt', 'SetFmtEmbeddedPanelHeight();')) {
+foreach ($required in @('Text = "MQTT 連線"', 'chkFmtRelay, chkFmt3DMap, chkFmtMqtt, chkFmtSafety', 'splitContainer1.Panel1.Controls.Add(fmtMqttPanel)', 'fmtMqttPanel.Visible = showMqtt', 'SetFmtEmbeddedPanelHeight();')) {
     if (!$flightData.Contains($required)) { throw "Missing embedded integration: $required" }
 }
-Write-Host 'PASS FlightData shared 3D/MQTT/tuning panel integration'
+Write-Host 'PASS FlightData shared relay/3D/MQTT/safety panel integration'
 $mqttPanel = Get-Content -LiteralPath (Join-Path $ProjectRoot 'FMT\FmtMqttPanel.cs') -Raw
 $mqttSettings = Get-Content -LiteralPath (Join-Path $ProjectRoot 'FMT\FmtMqttSettings.cs') -Raw
 foreach ($required in @('FmtMqttSettings.LoadRemembered()', 'if (remember.Checked) settings.SaveRemembered(password);',

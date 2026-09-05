@@ -293,8 +293,23 @@ namespace MissionPlanner.Joystick
 
         public void clearRCOverride()
         {
-            // disable it, before continuing
-            this.enabled = false;
+            clearRCOverride(true);
+        }
+
+        /// <summary>
+        /// Releases all MAVLink RC overrides without stopping joystick sampling.
+        /// This is used by the FMT control-source handover so the standby joystick
+        /// can still be compared with the active receiver before it is allowed to take control.
+        /// </summary>
+        public void releaseRCOverride()
+        {
+            clearRCOverride(false);
+        }
+
+        private void clearRCOverride(bool disableJoystick)
+        {
+            if (disableJoystick)
+                this.enabled = false;
 
             MAVLink.mavlink_rc_channels_override_t rc = new MAVLink.mavlink_rc_channels_override_t();
 
