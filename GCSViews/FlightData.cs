@@ -3955,7 +3955,7 @@ namespace MissionPlanner.GCSViews
             catch (Exception ex)
             {
                 log.Debug("Windows ground-station location is unavailable", ex);
-                FmtGroundStationPositionStore.Remove(1);
+                FmtGroundStationPositionStore.Remove(FmtRelayStationIdentity.StationNumber);
                 UpdateFmtGroundStationMarkers(true);
             }
         }
@@ -3971,7 +3971,7 @@ namespace MissionPlanner.GCSViews
                 log.Debug("Unable to stop Windows ground-station location", ex);
             }
 
-            FmtGroundStationPositionStore.Remove(1);
+            FmtGroundStationPositionStore.Remove(FmtRelayStationIdentity.StationNumber);
             UpdateFmtGroundStationMarkers(true);
         }
 
@@ -3982,11 +3982,12 @@ namespace MissionPlanner.GCSViews
             if (coordinate == null || coordinate.IsUnknown ||
                 !IsFmtValidLocation(new PointLatLng(coordinate.Latitude, coordinate.Longitude)))
             {
-                FmtGroundStationPositionStore.Remove(1);
+                FmtGroundStationPositionStore.Remove(FmtRelayStationIdentity.StationNumber);
             }
             else
             {
-                FmtGroundStationPositionStore.Update(1, coordinate.Latitude, coordinate.Longitude,
+                FmtGroundStationPositionStore.Update(FmtRelayStationIdentity.StationNumber,
+                    coordinate.Latitude, coordinate.Longitude,
                     coordinate.HorizontalAccuracy, "Windows 定位", DateTime.UtcNow);
             }
 
@@ -3999,7 +4000,7 @@ namespace MissionPlanner.GCSViews
             if (args.Status != GeoPositionStatus.Disabled && args.Status != GeoPositionStatus.NoData)
                 return;
 
-            FmtGroundStationPositionStore.Remove(1);
+            FmtGroundStationPositionStore.Remove(FmtRelayStationIdentity.StationNumber);
             this.BeginInvokeIfRequired((Action)(() => UpdateFmtGroundStationMarkers(true)));
         }
 
@@ -4007,6 +4008,9 @@ namespace MissionPlanner.GCSViews
         {
             if (gMapControl1 == null || gMapControl1.IsDisposed)
                 return;
+            FmtRelayControlService.UpdateLocalRuntime(
+                MainV2.comPort?.BaseStream != null && MainV2.comPort.BaseStream.IsOpen,
+                MainV2.joystick != null && MainV2.joystick.enabled);
             if (!force && DateTime.UtcNow - fmtLastGroundStationMarkerRefresh < TimeSpan.FromSeconds(1))
                 return;
 
@@ -4036,7 +4040,10 @@ namespace MissionPlanner.GCSViews
                 marker.Position = new PointLatLng(station.Latitude, station.Longitude);
                 marker.Tag = "FMT_GCS_" + station.StationNumber;
                 marker.ToolTipMode = MarkerTooltipMode.Always;
-                var role = station.StationNumber == 1 ? "本機主站" : "接力站";
+                var isLocalStation = station.StationNumber == FmtRelayStationIdentity.StationNumber;
+                var role = isLocalStation
+                    ? station.StationNumber == 1 ? "本機主站" : "本機接力站"
+                    : station.StationNumber == 1 ? "主站" : "接力站";
                 var control = station.IsActiveController ? "｜控制中" : "";
                 var accuracy = station.AccuracyMeters >= 0
                     ? "｜精度約 " + station.AccuracyMeters.ToString("0") + " m"

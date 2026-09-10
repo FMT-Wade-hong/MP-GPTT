@@ -260,7 +260,8 @@ namespace MissionPlanner.GCSViews
                     true, mand);
             }
 
-            AddBackstageViewPage(typeof(ConfigSiKRadio), "數傳設定", true, mand);
+            AddBackstageViewPage(typeof(ConfigSiKRadio), "SIK 數傳設定", true, mand);
+            AddBackstageViewPage(typeof(ConfigP400), "P400 數傳設定", true, mand);
 
             // FMTPlanner intentionally hides the remaining Optional Hardware pages.
             // The underlying drivers remain compiled because other flight functions still depend on them.

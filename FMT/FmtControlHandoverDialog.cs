@@ -34,10 +34,12 @@ namespace MissionPlanner.FMT
         private readonly Label statusLabel;
         private readonly ProgressBar stableProgress;
         private readonly Button acceptButton;
+        private readonly Button forceButton;
         private readonly Timer updateTimer;
         private DateTime? stableSinceUtc;
 
         internal List<FmtCriticalRcSwitch> CriticalSwitches { get; }
+        internal bool ForcedSwitch { get; private set; }
 
         internal FmtControlHandoverDialog(MAVLinkInterface port, JoystickBase joystick)
         {
@@ -122,6 +124,14 @@ namespace MissionPlanner.FMT
                 Padding = new Padding(10, 3, 10, 3),
                 Margin = new Padding(6)
             };
+            forceButton = new Button
+            {
+                Text = "強制切換",
+                AutoSize = true,
+                Padding = new Padding(10, 3, 10, 3),
+                Margin = new Padding(6)
+            };
+            forceButton.Click += ForceButton_Click;
             var cancelButton = new Button
             {
                 Text = "取消",
@@ -134,11 +144,13 @@ namespace MissionPlanner.FMT
             {
                 Dock = DockStyle.Bottom,
                 Height = 46,
-                FlowDirection = FlowDirection.RightToLeft,
-                Padding = new Padding(4)
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Padding = new Padding(8, 4, 4, 4)
             };
-            buttonPanel.Controls.Add(cancelButton);
             buttonPanel.Controls.Add(acceptButton);
+            buttonPanel.Controls.Add(forceButton);
+            buttonPanel.Controls.Add(cancelButton);
 
             var footerPanel = new Panel { Dock = DockStyle.Bottom, Height = 84, Padding = new Padding(8, 4, 8, 2) };
             footerPanel.Controls.Add(stableProgress);
@@ -155,6 +167,31 @@ namespace MissionPlanner.FMT
             Shown += (sender, args) => updateTimer.Start();
             FormClosed += (sender, args) => updateTimer.Dispose();
             ThemeManager.ApplyThemeTo(this);
+            forceButton.BackColor = Color.FromArgb(184, 92, 0);
+            forceButton.ForeColor = Color.White;
+        }
+
+        private void ForceButton_Click(object sender, EventArgs e)
+        {
+            if (port.BaseStream == null || !port.BaseStream.IsOpen)
+            {
+                CustomMessageBox.Show("MAVLink 已中斷，無法強制切換控制來源。",
+                    "強制切換", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            const string warning =
+                "強制切換會略過搖桿 PWM 對位與穩定時間檢查。\r\n\r\n" +
+                "若導控搖桿位置與目前實體遙控器不同，切換瞬間可能造成飛機姿態、油門或總距突然變化。\r\n" +
+                "請確認導控搖桿已人工對齊，且周圍人員與飛機處於安全狀態。\r\n\r\n" +
+                "確定要強制切換為導控控制嗎？";
+            if (CustomMessageBox.Show(warning, "強制切換導控控制",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != (int)DialogResult.Yes)
+                return;
+
+            ForcedSwitch = true;
+            DialogResult = DialogResult.OK;
+            Close();
         }
 
         private List<ChannelState> BuildChannelList()

@@ -1,4 +1,6 @@
-# FeiMaoTecPlanner V1.1.5（FMTPlanner）使用手冊
+# FeiMaoTecPlanner V1.1.6（FMTPlanner）使用手冊
+
+V1.1.6：請下載最新版完整 ZIP 並執行 `FMTPlanner-V1.1.6.exe`。新增 P400 設定、頻率表及參數編輯，詳見 [P400 操作說明](FMT/P400-AT-README.md)；版本差異見 [更新紀錄](CHANGELOG-FMT.md)。下方舊版操作截圖與檔名僅供介面參考。
 
 <p align="center">
   <img src="FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="360">

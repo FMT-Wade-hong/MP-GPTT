@@ -28,7 +28,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             layout.Controls.Add(new Label { AutoSize = true, Dock = DockStyle.Fill,
-                Text = "SiK 數傳設定｜本機與遠端參數\r\n請先中斷 MP 飛行連線；僅於地面安全狀態設定。頻段、功率及配對參數須符合設備與所在地規定。" }, 0, 0);
+                Text = "SIK 數傳設定｜本機與遠端參數\r\n請先中斷 MP 飛行連線；僅於地面安全狀態設定。頻段、功率及配對參數須符合設備與所在地規定。" }, 0, 0);
             var toolbar = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, WrapContents = true };
             toolbar.Controls.Add(new Label { Text = "序列埠", AutoSize = true, Margin = new Padding(0, 7, 4, 0) });
             toolbar.Controls.Add(ports);

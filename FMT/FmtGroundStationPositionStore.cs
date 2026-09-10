@@ -56,6 +56,26 @@ namespace MissionPlanner.FMT
                 Positions.Remove(stationNumber);
         }
 
+        internal static void Move(int previousStationNumber, int newStationNumber)
+        {
+            if (previousStationNumber == newStationNumber || newStationNumber < 1 || newStationNumber > 5)
+                return;
+
+            lock (Sync)
+            {
+                FmtGroundStationPosition position;
+                if (!Positions.TryGetValue(previousStationNumber, out position))
+                    return;
+
+                Positions.Remove(previousStationNumber);
+                position.StationNumber = newStationNumber;
+                if (activeController == previousStationNumber)
+                    activeController = newStationNumber;
+                position.IsActiveController = newStationNumber == activeController;
+                Positions[newStationNumber] = position;
+            }
+        }
+
         internal static void SetActiveController(int stationNumber)
         {
             lock (Sync)

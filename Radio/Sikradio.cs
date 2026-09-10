@@ -1119,6 +1119,29 @@ S15: MAX_WINDOW=131
         private bool SetupCBWithSetting(ComboBox CB, Dictionary<string, RFD.RFD900.TBaseSetting> Settings,
             string Value, bool Remote, string SettingName)
         {
+            if (SettingName == "TXPOWER")
+            {
+                CB.Tag = null;
+                CB.DataSource = new[] { "1", "2", "5", "8", "11", "14", "17", "20" };
+                CB.SelectedIndex = -1;
+                CB.SelectedItem = Value;
+                return CB.Text == Value;
+            }
+            // Handle frequencies before metadata: old radios return TShortSetting,
+            // and generated ranges need not contain the exact reported frequency.
+            if (SettingName == "MIN_FREQ" || SettingName == "MAX_FREQ")
+            {
+                int frequency;
+                if (!int.TryParse(Value, out frequency))
+                    return false;
+                var options = CB.Items.Cast<object>().Select(item => item.ToString()).ToList();
+                if (!options.Contains(Value))
+                    options.Add(Value);
+                CB.Tag = null;
+                CB.DataSource = options;
+                CB.SelectedItem = Value;
+                return CB.Text == Value;
+            }
             if (Settings.ContainsKey(SettingName) && Settings[SettingName] is RFD.RFD900.TSetting)
             {
                 var Setting = (RFD.RFD900.TSetting)Settings[SettingName];
@@ -1348,6 +1371,11 @@ S15: MAX_WINDOW=131
             {
                 ((TextBox)control).Text = Value;
             }
+            else if (control is ComboBox && (SettingName == "MIN_FREQ" || SettingName == "MAX_FREQ" || SettingName == "TXPOWER"))
+            {
+                SomeSettingsInvalid = !SetupCBWithSetting((ComboBox)control, Settings,
+                    Value, Remote, SettingName);
+            }
             else if (Settings.ContainsKey(SettingName) && Settings[SettingName] is RFD.RFD900.TSetting)
             {
                 if (control.Name.Contains("MAVLINK") && 
@@ -1391,7 +1419,7 @@ S15: MAX_WINDOW=131
 
                 if (control != null)
                 {
-                    UpdateControlWithValue(control, Settings, EditorName, kvp.Value.GetValueAsString(), Remote);
+                    UpdateControlWithValue(control, Settings, kvp.Key, kvp.Value.GetValueAsString(), Remote);
                 }
             } 
         }
@@ -1671,13 +1699,13 @@ S15: MAX_WINDOW=131
                             || Session.Board == Uploader.Board.DEVICE_ID_RFD900P ||
                             Session.Board == Uploader.Board.DEVICE_ID_RFD900X)
                     {
-                        TXPOWER.DataSource = Range(0, 1, 30);
-                        RTXPOWER.DataSource = Range(0, 1, 30);
+                        TXPOWER.DataSource = new[] { 1, 2, 5, 8, 11, 14, 17, 20 };
+                        RTXPOWER.DataSource = new[] { 1, 2, 5, 8, 11, 14, 17, 20 };
                     }
                     else
                     {
-                        TXPOWER.DataSource = Range(0, 1, 20);
-                        RTXPOWER.DataSource = Range(0, 1, 20);
+                        TXPOWER.DataSource = new[] { 1, 2, 5, 8, 11, 14, 17, 20 };
+                        RTXPOWER.DataSource = new[] { 1, 2, 5, 8, 11, 14, 17, 20 };
                     }
 
                     if (Session.Board == Uploader.Board.DEVICE_ID_RFD900X)
@@ -1771,7 +1799,7 @@ S15: MAX_WINDOW=131
                     //System.Diagnostics.Debug.WriteLine(SW.ElapsedMilliseconds.ToString() + ":  Done getting info out of local modem");
 
                     //For each of the settings returned by the radio...
-                    SetUpControlsWithValues(groupBoxLocal, false, ModifyReturnedStringsForMultipoint(items, multipoint_fix), Settings);
+                    SomeSettingsInvalid |= SetUpControlsWithValues(groupBoxLocal, false, ModifyReturnedStringsForMultipoint(items, multipoint_fix), Settings);
 
                     btnRandom.Enabled = GetIsEncryptionEnabled(ENCRYPTION_LEVEL);
                     //System.Diagnostics.Debug.WriteLine(SW.ElapsedMilliseconds.ToString() + ":  Done setting up controls for local modem");

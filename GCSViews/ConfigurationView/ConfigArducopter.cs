@@ -117,6 +117,17 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             THR_ACCEL_P.setup(0, 0, 1, 0.001f, new[] { "THR_ACCEL_P", "ACCEL_Z_P", "PSC_ACCZ_P", "Q_P_ACCZ_P", "PSC_D_ACC_P", "Q_P_D_ACC_P" },
                 MainV2.comPort.MAV.param);
+            // Copter 4.6 PSC_ACCZ_P permits 0.200..1.500. Missing or stale
+            // metadata must not prevent entering the supported lower endpoint.
+            // Do not apply this range to the renamed 4.7 parameters (different units).
+            if (THR_ACCEL_P.ParamName == "PSC_ACCZ_P")
+            {
+                var currentP = THR_ACCEL_P.Value;
+                THR_ACCEL_P.Minimum = Math.Min(0.2m, currentP);
+                THR_ACCEL_P.Maximum = Math.Max(1.5m, currentP);
+                THR_ACCEL_P.DecimalPlaces = 3;
+                THR_ACCEL_P.Increment = 0.001m;
+            }
             THR_ACCEL_I.setup(0, 0, 1, 0.001f, new[] { "THR_ACCEL_I", "ACCEL_Z_I", "PSC_ACCZ_I", "Q_P_ACCZ_I", "PSC_D_ACC_I", "Q_P_D_ACC_I" },
                 MainV2.comPort.MAV.param);
             THR_ACCEL_D.setup(0, 0, 1, 0.001f, new[] {"THR_ACCEL_D", "ACCEL_Z_D", "PSC_ACCZ_D", "Q_P_ACCZ_D", "PSC_D_ACC_D", "Q_P_D_ACC_D"},
@@ -483,6 +494,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void OnEnter_NumUpDown(object sender, EventArgs e)
         {
+            if (sender is MavlinkNumericUpDown editor)
+                editor.Select(0, editor.Text.Length);
             // show unit change warning for Copter 4.7 renamed parameters
             if (VersionDetection.GetVersion(MainV2.comPort.MAV.VersionString) >= new Version(4, 7)
                 && sender is MavlinkNumericUpDown mnud)

@@ -169,6 +169,7 @@ namespace MissionPlanner
         {
             public ICommsSerial MirrorStream { get; set; }
             public bool MirrorStreamWrite { get; set; }
+            public Func<bool> MirrorStreamWriteAllowed { get; set; }
         }
 
         public List<Mirror> Mirrors { get; set; } = new List<Mirror>();
@@ -5485,7 +5486,8 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
                             len = MirrorStream.Read(buf, 0, len);
 
-                            if (Mirror.MirrorStreamWrite)
+                            if (Mirror.MirrorStreamWrite &&
+                                (Mirror.MirrorStreamWriteAllowed == null || Mirror.MirrorStreamWriteAllowed()))
                                 lock (writelock)
                                 {
                                     BaseStream.Write(buf, 0, len);

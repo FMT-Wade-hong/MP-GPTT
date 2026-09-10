@@ -1,6 +1,7 @@
 ﻿using DeviceProgramming.Dfu;
 using Microsoft.Scripting.Utils;
 using MissionPlanner.Comms;
+using MissionPlanner.FMT;
 using MissionPlanner.Utilities;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -22,6 +23,14 @@ namespace MissionPlanner.Controls
         // Thread signal.
         public static ManualResetEvent tcpClientConnected = new ManualResetEvent(false);
         private DataGridViewTextBoxColumn runtimeStatusColumn;
+        private DataGridViewComboBoxColumn relayStationColumn;
+
+        /// <summary>
+        /// Enables station-aware write-back validation when hosted by the FMT
+        /// relay-control page. The standalone Mission Planner forwarding tool
+        /// retains its original generic behavior.
+        /// </summary>
+        public bool RelayControlMode { get; set; }
 
         private sealed class ForwardRuntime
         {
@@ -77,6 +86,18 @@ namespace MissionPlanner.Controls
                 }
             };
             myDataGridView1.Columns.Insert(0, runtimeStatusColumn);
+            relayStationColumn = new DataGridViewComboBoxColumn
+            {
+                Name = "RelayStation",
+                HeaderText = "接力站號",
+                Width = 78,
+                MinimumWidth = 70,
+                FlatStyle = FlatStyle.Flat,
+                DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton,
+                SortMode = DataGridViewColumnSortMode.Automatic
+            };
+            relayStationColumn.Items.AddRange("", "2", "3", "4", "5");
+            myDataGridView1.Columns.Insert(1, relayStationColumn);
             myDataGridView1.RowsAdded += (sender, args) =>
             {
                 for (var index = args.RowIndex; index < args.RowIndex + args.RowCount &&
@@ -259,7 +280,8 @@ namespace MissionPlanner.Controls
                     row.Cells[Port.Name].Value,
                     row.Cells[Extra.Name].Value,
                     row.Cells[Write.Name].Value,
-                    string.Empty
+                    string.Empty,
+                    row.Cells[relayStationColumn.Name].Value
                 }.ToJSON(Formatting.None);
                 ans.Add(line);
             }
@@ -283,6 +305,7 @@ namespace MissionPlanner.Controls
                 if (data.Length > 2) gridRow.Cells[Port.Name].Value = data[2];
                 if (data.Length > 3) gridRow.Cells[Extra.Name].Value = data[3];
                 if (data.Length > 4) gridRow.Cells[Write.Name].Value = data[4];
+                if (data.Length > 6) gridRow.Cells[relayStationColumn.Name].Value = data[6];
                 SetRuntimeStatus(gridRow, false, null);
             }
         }
@@ -328,6 +351,7 @@ namespace MissionPlanner.Controls
                 var port = CellText(row, Port);
                 var extra = CellText(row, Extra);
                 var write = GetWriteValue(row);
+                var relayStationNumber = GetRelayStationNumber(row);
                 if (protocol == "TCP")
                 {
                     if (direction == "Inbound")
@@ -395,6 +419,12 @@ namespace MissionPlanner.Controls
                 }
 
                 MainV2.comPort.Mirrors.Add(mirror);
+                if (RelayControlMode && FmtRelayStationIdentity.StationNumber == 1 && write &&
+                    relayStationNumber >= 2 && relayStationNumber <= 5)
+                {
+                    mirror.MirrorStreamWriteAllowed = () =>
+                        FmtRelayControlService.CanAcceptMavlinkWriteFrom(relayStationNumber);
+                }
                 row.Tag = new ForwardRuntime { Started = true, Mirror = mirror, Listener = rowListener };
                 SetRuntimeStatus(row, true, null);
                 Save();
@@ -425,6 +455,15 @@ namespace MissionPlanner.Controls
                 return false;
             bool parsed;
             return value is bool ? (bool)value : bool.TryParse(value.ToString(), out parsed) && parsed;
+        }
+
+        private int GetRelayStationNumber(DataGridViewRow row)
+        {
+            if (row == null || relayStationColumn == null)
+                return 0;
+            var value = row.Cells[relayStationColumn.Name].Value;
+            int parsed;
+            return value != null && int.TryParse(value.ToString(), out parsed) ? parsed : 0;
         }
 
         private bool TryValidateForwardingRow(DataGridViewRow row, out string error)
@@ -476,6 +515,22 @@ namespace MissionPlanner.Controls
                 if (direction == "Inbound" && IsPortInUse(protocol, portNumber))
                 {
                     error = protocol + " 連接埠 " + portNumber + " 已被其他程式占用。";
+                    return false;
+                }
+            }
+
+            if (RelayControlMode && FmtRelayStationIdentity.StationNumber == 1 &&
+                GetWriteValue(row))
+            {
+                var stationNumber = GetRelayStationNumber(row);
+                if (stationNumber == 0 && direction == "Outbound" &&
+                    FmtRelayControlService.TryResolveStationByAddress(extra, out stationNumber))
+                {
+                    row.Cells[relayStationColumn.Name].Value = stationNumber.ToString();
+                }
+                if (stationNumber < 2 || stationNumber > 5)
+                {
+                    error = "主站允許回寫前，必須指定此轉發列對應的 2～5 號接力站。";
                     return false;
                 }
             }

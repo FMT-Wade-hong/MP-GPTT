@@ -8,10 +8,10 @@
     <OutputType>WinExe</OutputType>
     <StartupObject>MissionPlanner.Program</StartupObject>
     <Authors>FMT飛貓科技; Mission Planner contributors</Authors>
-    <Version>1.1.5</Version>
+    <Version>1.1.6</Version>
     <Company>FMT飛貓科技</Company>
     <Product>FeiMaoTecPlanner</Product>
-    <Description>FeiMaoTecPlanner V1.1.5 stable ground control station for ArduPilot</Description>
+    <Description>FeiMaoTecPlanner V1.1.6 stable ground control station for ArduPilot</Description>
     <Copyright>Mission Planner contributors; FMT飛貓科技 customization</Copyright>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -1207,6 +1207,12 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="plugins\example23-switch.resx" />
+    <EmbeddedResource Include="FMT\FrameParams\H420.param" LogicalName="MissionPlanner.FMT.FrameParams.H420.param" />
+    <EmbeddedResource Include="FMT\Assets\toolbar-flight-data.png" LogicalName="MissionPlanner.FMT.Assets.toolbar-flight-data.png" />
+    <EmbeddedResource Include="FMT\Assets\toolbar-flight-plan.png" LogicalName="MissionPlanner.FMT.Assets.toolbar-flight-plan.png" />
+    <EmbeddedResource Include="FMT\Assets\toolbar-initial-setup.png" LogicalName="MissionPlanner.FMT.Assets.toolbar-initial-setup.png" />
+    <EmbeddedResource Include="FMT\Assets\toolbar-config-tune.png" LogicalName="MissionPlanner.FMT.Assets.toolbar-config-tune.png" />
+    <EmbeddedResource Include="FMT\Assets\toolbar-parameters.png" LogicalName="MissionPlanner.FMT.Assets.toolbar-parameters.png" />
     <EmbeddedResource Include="FMT\Assets\fmt-logo.png" LogicalName="MissionPlanner.FMT.Assets.fmt-logo.png" />
     <EmbeddedResource Include="FMT\Assets\fmt-app-icon-source.png" LogicalName="MissionPlanner.FMT.Assets.fmt-app-icon-source.png" />
     <EmbeddedResource Include="FMT\Assets\fmt-satellite-icon.png" LogicalName="MissionPlanner.FMT.Assets.fmt-satellite-icon.png" />

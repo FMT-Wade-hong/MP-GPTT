@@ -1071,12 +1071,25 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     {
                         subdir = "QuadPlanes/";
                     }
-                    paramfiles = GitHubContent.GetDirContent("ardupilot", "ardupilot", "/Tools/Frame_params/" + subdir, ".param");
+                    try
+                    {
+                        paramfiles = GitHubContent.GetDirContent("ardupilot", "ardupilot", "/Tools/Frame_params/" + subdir, ".param");
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Warn("Unable to load online frame presets; bundled presets remain available", ex);
+                    }
                 }
 
+                var choices = new List<GitHubContent.FileInfo>
+                {
+                    new GitHubContent.FileInfo { name = "H420.param", path = "fmt:H420" }
+                };
+                if (paramfiles != null)
+                    choices.AddRange(paramfiles);
                 BeginInvoke((Action)delegate
                {
-                   CMB_paramfiles.DataSource = paramfiles.ToArray();
+                   CMB_paramfiles.DataSource = choices.ToArray();
                    CMB_paramfiles.DisplayMember = "name";
                    CMB_paramfiles.Enabled = true;
                    BUT_paramfileload.Enabled = true;
@@ -1151,8 +1164,22 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             try
             {
-                var data = GitHubContent.GetFileContent("ArduPilot", "ardupilot",
-                    ((GitHubContent.FileInfo)CMB_paramfiles.SelectedValue).path);
+                var selected = (GitHubContent.FileInfo)CMB_paramfiles.SelectedValue;
+                byte[] data;
+                if (selected.path == "fmt:H420")
+                {
+                    using (var stream = typeof(ConfigRawParams).Assembly.GetManifestResourceStream(
+                        "MissionPlanner.FMT.FrameParams.H420.param"))
+                    using (var buffer = new MemoryStream())
+                    {
+                        if (stream == null)
+                            throw new InvalidOperationException("找不到 H420 基礎參數資源。");
+                        stream.CopyTo(buffer);
+                        data = buffer.ToArray();
+                    }
+                }
+                else
+                    data = GitHubContent.GetFileContent("ArduPilot", "ardupilot", selected.path);
 
                 File.WriteAllBytes(filepath, data);
 

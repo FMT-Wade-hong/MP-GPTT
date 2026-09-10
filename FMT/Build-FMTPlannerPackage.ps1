@@ -59,7 +59,7 @@ $projectXml = [xml](Get-Content -LiteralPath (Join-Path $projectRoot 'MissionPla
 $publicArtwork = @($projectXml.SelectNodes('//EmbeddedResource[@Include]') |
     Where-Object { $_.Include -like 'FMT\Assets\*' } |
     ForEach-Object { [IO.Path]::GetFileName($_.Include) })
-foreach ($guide in 'MQTT-EMBEDDED.md', 'SIK-SETTINGS.md') {
+foreach ($guide in 'MQTT-EMBEDDED.md', 'SIK-SETTINGS.md', 'P400-AT-README.md') {
     $documentationFiles += [PSCustomObject]@{
         Source = Join-Path $documentationAssetRoot $guide
         Entry = "$rootFolder/FMT/$guide"
@@ -87,6 +87,9 @@ $excludedFiles = @()
 $excludedBytes = 0L
 
 function Get-ReleaseExclusionReason([string]$RelativePath) {
+    if ($RelativePath -match '(?i)(frequency-tests-|P400FrequencyPlans|TestReference|FrequencyReference|preview\.png$|\.bak$|\.zip$|\.sha256$)') {
+        return 'local test results and backups'
+    }
     $extension = [IO.Path]::GetExtension($RelativePath)
     if ($RelativePath -match '(?i)(^|[\\/])(private-signing|tmp|logs|gmapcache|mqtt|\.git)([\\/]|$)' -or
         $RelativePath -match '(?i)(^|[\\/])(config\.xml|settings\.json|password\.bin|\.env)$' -or

@@ -512,6 +512,8 @@ namespace MissionPlanner
         /// track last joystick packet sent. used to control rate
         /// </summary>
         DateTime lastjoystick = DateTime.Now;
+        DateTime lastFmtJoystickStatusLogUtc = DateTime.MinValue;
+        DateTime lastFmtJoystickErrorLogUtc = DateTime.MinValue;
 
         /// <summary>
         /// determine if we are running sitl
@@ -604,7 +606,6 @@ namespace MissionPlanner
         private ToolStripButton MenuFmtPreflightCheck;
         private ToolStripButton MenuFmtArmDisarm;
         private ToolStripButton MenuFmtAirspeedZero;
-        private ToolStripButton MenuFmtQnh;
         private ToolStripControlHost MenuFmtControlSource;
         private Button FmtRcControlButton;
         private Button FmtGcsControlButton;
@@ -1244,6 +1245,7 @@ namespace MissionPlanner
             MenuConfigTune.ForeColor = ThemeManager.TextColor;
             MenuConnect.ForeColor = ThemeManager.TextColor;
             MenuHelp.ForeColor = ThemeManager.TextColor;
+            ApplyFmtToolbarArtwork();
         }
 
         void adsb_UpdatePlanePosition(object sender, MissionPlanner.Utilities.adsb.PointLatLngAltHdg adsb)
@@ -1700,6 +1702,19 @@ namespace MissionPlanner
                     }
 
                     return;
+                }
+
+                // Relay stations receive telemetry through the main station. A second full
+                // parameter-list download competes with the main station on the same MAVLink
+                // path and can leave the modal "Getting Params" dialogue waiting indefinitely.
+                // Keep relay connection startup responsive and request only the aircraft-wide
+                // control-source parameter in the background. Station 1 remains responsible
+                // for the authoritative full parameter download.
+                if (getparams && FmtRelayStationIdentity.StationNumber != 1)
+                {
+                    getparams = false;
+                    log.Info("FMT relay station: skipping duplicate full parameter download");
+                    Task.Run(() => PrefetchFmtRelayControlParameters(comPort));
                 }
 
                 //158	MAV_COMP_ID_PERIPHERAL	Generic autopilot peripheral component ID. Meant for devices that do not implement the parameter microservice.
@@ -2357,7 +2372,8 @@ namespace MissionPlanner
                     {
                         //joystick stuff
 
-                        if (joystick != null && joystick.enabled && FmtGroundControlInputEnabled)
+                        if (joystick != null && joystick.enabled && FmtGroundControlInputEnabled &&
+                            FmtRelayControlService.CanLocalStationTransmitControl)
                         {
                             if (!joystick.manual_control)
                             {
@@ -2405,41 +2421,41 @@ namespace MissionPlanner
                                     rc.chan18_raw = (ushort) 0;
 
                                 if (joystick.getJoystickAxis(1) != Joystick.joystickaxis.None)
-                                    rc.chan1_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech1;
+                                    rc.chan1_raw = ReadFmtLiveJoystickPwm(1);
                                 if (joystick.getJoystickAxis(2) != Joystick.joystickaxis.None)
-                                    rc.chan2_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech2;
+                                    rc.chan2_raw = ReadFmtLiveJoystickPwm(2);
                                 if (joystick.getJoystickAxis(3) != Joystick.joystickaxis.None)
-                                    rc.chan3_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech3;
+                                    rc.chan3_raw = ReadFmtLiveJoystickPwm(3);
                                 if (joystick.getJoystickAxis(4) != Joystick.joystickaxis.None)
-                                    rc.chan4_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech4;
+                                    rc.chan4_raw = ReadFmtLiveJoystickPwm(4);
                                 if (joystick.getJoystickAxis(5) != Joystick.joystickaxis.None)
-                                    rc.chan5_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech5;
+                                    rc.chan5_raw = ReadFmtLiveJoystickPwm(5);
                                 if (joystick.getJoystickAxis(6) != Joystick.joystickaxis.None)
-                                    rc.chan6_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech6;
+                                    rc.chan6_raw = ReadFmtLiveJoystickPwm(6);
                                 if (joystick.getJoystickAxis(7) != Joystick.joystickaxis.None)
-                                    rc.chan7_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech7;
+                                    rc.chan7_raw = ReadFmtLiveJoystickPwm(7);
                                 if (joystick.getJoystickAxis(8) != Joystick.joystickaxis.None)
-                                    rc.chan8_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech8;
+                                    rc.chan8_raw = ReadFmtLiveJoystickPwm(8);
                                 if (joystick.getJoystickAxis(9) != Joystick.joystickaxis.None)
-                                    rc.chan9_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech9;
+                                    rc.chan9_raw = ReadFmtLiveJoystickPwm(9);
                                 if (joystick.getJoystickAxis(10) != Joystick.joystickaxis.None)
-                                    rc.chan10_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech10;
+                                    rc.chan10_raw = ReadFmtLiveJoystickPwm(10);
                                 if (joystick.getJoystickAxis(11) != Joystick.joystickaxis.None)
-                                    rc.chan11_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech11;
+                                    rc.chan11_raw = ReadFmtLiveJoystickPwm(11);
                                 if (joystick.getJoystickAxis(12) != Joystick.joystickaxis.None)
-                                    rc.chan12_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech12;
+                                    rc.chan12_raw = ReadFmtLiveJoystickPwm(12);
                                 if (joystick.getJoystickAxis(13) != Joystick.joystickaxis.None)
-                                    rc.chan13_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech13;
+                                    rc.chan13_raw = ReadFmtLiveJoystickPwm(13);
                                 if (joystick.getJoystickAxis(14) != Joystick.joystickaxis.None)
-                                    rc.chan14_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech14;
+                                    rc.chan14_raw = ReadFmtLiveJoystickPwm(14);
                                 if (joystick.getJoystickAxis(15) != Joystick.joystickaxis.None)
-                                    rc.chan15_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech15;
+                                    rc.chan15_raw = ReadFmtLiveJoystickPwm(15);
                                 if (joystick.getJoystickAxis(16) != Joystick.joystickaxis.None)
-                                    rc.chan16_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech16;
+                                    rc.chan16_raw = ReadFmtLiveJoystickPwm(16);
                                 if (joystick.getJoystickAxis(17) != Joystick.joystickaxis.None)
-                                    rc.chan17_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech17;
+                                    rc.chan17_raw = ReadFmtLiveJoystickPwm(17);
                                 if (joystick.getJoystickAxis(18) != Joystick.joystickaxis.None)
-                                    rc.chan18_raw = (ushort) MainV2.comPort.MAV.cs.rcoverridech18;
+                                    rc.chan18_raw = ReadFmtLiveJoystickPwm(18);
 
                                 if (lastjoystick.AddMilliseconds(rate) < DateTime.Now)
                                 {
@@ -2473,10 +2489,7 @@ namespace MissionPlanner
 
                                     //Console.WriteLine("Joystick btw " + comPort.BaseStream.BytesToWrite);
 
-                                    if (!comPort.BaseStream.IsOpen)
-                                        continue;
-
-                                    if (comPort.BaseStream.BytesToWrite < 50)
+                                    if (comPort.BaseStream.IsOpen && comPort.BaseStream.BytesToWrite < 50)
                                     {
                                         if (sitl)
                                         {
@@ -2489,6 +2502,21 @@ namespace MissionPlanner
 
                                         count++;
                                         lastjoystick = DateTime.Now;
+                                        if (DateTime.UtcNow - lastFmtJoystickStatusLogUtc > TimeSpan.FromSeconds(5))
+                                        {
+                                            lastFmtJoystickStatusLogUtc = DateTime.UtcNow;
+                                            log.InfoFormat(
+                                                "FMT RC override transmitting: source GCS {0}, target {1}/{2}, RC1-4 {3}/{4}/{5}/{6}",
+                                                MAVLinkInterface.gcssysid, rc.target_system, rc.target_component,
+                                                rc.chan1_raw, rc.chan2_raw, rc.chan3_raw, rc.chan4_raw);
+                                        }
+                                    }
+                                    else if (comPort.BaseStream.IsOpen &&
+                                             DateTime.UtcNow - lastFmtJoystickErrorLogUtc > TimeSpan.FromSeconds(5))
+                                    {
+                                        lastFmtJoystickErrorLogUtc = DateTime.UtcNow;
+                                        log.WarnFormat("FMT RC override waiting for output buffer; BytesToWrite={0}",
+                                            comPort.BaseStream.BytesToWrite);
                                     }
                                 }
                             }
@@ -2533,12 +2561,31 @@ namespace MissionPlanner
 
                     await Task.Delay(40).ConfigureAwait(false);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    if (DateTime.UtcNow - lastFmtJoystickErrorLogUtc > TimeSpan.FromSeconds(5))
+                    {
+                        lastFmtJoystickErrorLogUtc = DateTime.UtcNow;
+                        log.Error("FMT joystick output loop failed", ex);
+                    }
                 } // cant fall out
             }
 
             joysendThreadExited = true; //so we know this thread exited.
+        }
+
+        private ushort ReadFmtLiveJoystickPwm(int channel)
+        {
+            try
+            {
+                var value = joystick.getValueForChannel(channel);
+                return value >= 800 && value <= 2200 ? (ushort)value : (ushort)0;
+            }
+            catch
+            {
+                // Zero releases this channel instead of transmitting a stale cached value.
+                return 0;
+            }
         }
 
         /// <summary>
@@ -4731,7 +4778,7 @@ namespace MissionPlanner
             foreach (ToolStripItem item in MainMenu.Items)
             {
                 if (item == MenuFmtPreflightCheck || item == MenuFmtArmDisarm ||
-                    item == MenuFmtAirspeedZero || item == MenuFmtQnh)
+                    item == MenuFmtAirspeedZero)
                 {
                     ApplyFmtQuickActionButtonStyle(item);
                     continue;
@@ -4839,8 +4886,81 @@ namespace MissionPlanner
             }
         }
 
+        private bool resizingFmtToolbar;
+
+        private void ResizeFmtToolbarContainer()
+        {
+            if (resizingFmtToolbar) return;
+            resizingFmtToolbar = true;
+            try
+            {
+                // Do not derive the parent height from a menu already clipped by docking.
+                var artworkHeight = Math.Max(64, MenuFlightData.Height);
+                var headerHeight = artworkHeight + (status1.Visible ? status1.Height : 0);
+                panel1.MinimumSize = new Size(0, headerHeight);
+                panel1.Height = headerHeight;
+                MainMenu.MinimumSize = new Size(0, artworkHeight);
+                MainMenu.Height = artworkHeight;
+                status1.Top = artworkHeight;
+            }
+            finally
+            {
+                resizingFmtToolbar = false;
+            }
+        }
+
+        private readonly Dictionary<string, Image> fmtToolbarArtwork = new Dictionary<string, Image>();
+
+        private void ApplyFmtToolbarArtwork()
+        {
+            ApplyFmtToolbarArtwork(MenuFlightData, "toolbar-flight-data.png", "飛行數據");
+            ApplyFmtToolbarArtwork(MenuFlightPlanner, "toolbar-flight-plan.png", "任務規劃");
+            ApplyFmtToolbarArtwork(MenuInitConfig, "toolbar-initial-setup.png", "初始配置");
+            ApplyFmtToolbarArtwork(MenuConfigTune, "toolbar-config-tune.png", "配置／測試");
+            ApplyFmtToolbarArtwork(MenuFmtParameterSettings, "toolbar-parameters.png", "參數設定（需輸入密碼）");
+        }
+
+        private void ApplyFmtToolbarArtwork(ToolStripItem item, string asset, string description)
+        {
+            if (item == null) return;
+            Image artwork;
+            if (!fmtToolbarArtwork.TryGetValue(asset, out artwork))
+            {
+                using (var source = FmtVisualAssets.LoadBitmap("MissionPlanner.FMT.Assets." + asset))
+                {
+                    if (source == null) return;
+                    artwork = new Bitmap(source, new Size(58, 58));
+                }
+                fmtToolbarArtwork.Add(asset, artwork);
+            }
+
+            // Supplied artwork already includes its label; preserve the square aspect ratio.
+            item.Image = artwork;
+            item.ImageScaling = ToolStripItemImageScaling.None;
+            item.DisplayStyle = ToolStripItemDisplayStyle.Image;
+            item.AutoSize = false;
+            item.Size = new Size(76, 64);
+            item.Padding = Padding.Empty;
+            item.ImageAlign = ContentAlignment.MiddleCenter;
+            item.Margin = Padding.Empty;
+            item.ToolTipText = description;
+            item.AccessibleName = description;
+        }
+
         private void ConfigureFmtMainMenu()
         {
+            // Keep the legacy 47px header container in sync with enlarged buttons.
+            panel1.MaximumSize = new Size(panel1.MaximumSize.Width, 0);
+            // Keep the 64px button frame; the 58px artwork is centered inside it.
+            MainMenu.AutoSize = false;
+            MainMenu.Padding = Padding.Empty;
+            MainMenu.MinimumSize = Size.Empty;
+            MainMenu.Height = 64;
+            MainMenu.SizeChanged += (sender, args) => ResizeFmtToolbarContainer();
+            panel1.Layout += (sender, args) => ResizeFmtToolbarContainer();
+            Shown += (sender, args) => ResizeFmtToolbarContainer();
+            status1.VisibleChanged += (sender, args) => ResizeFmtToolbarContainer();
+            ResizeFmtToolbarContainer();
             MainMenu.Items.Remove(MenuSimulation);
             MainMenu.Items.Remove(MenuHelp);
             // FMT owns the product header. Removing the legacy ArduPilot logo also releases
@@ -4868,6 +4988,7 @@ namespace MissionPlanner
 
             var parameterSettingsIndex = MainMenu.Items.IndexOf(MenuConfigTune) + 1;
             MainMenu.Items.Insert(parameterSettingsIndex, MenuFmtParameterSettings);
+            ApplyFmtToolbarArtwork();
 
             MenuFmtPreflightCheck = new FmtQuickActionToolStripButton
             {
@@ -4917,22 +5038,6 @@ namespace MissionPlanner
             };
             MenuFmtAirspeedZero.Click += MenuFmtAirspeedZero_Click;
 
-            MenuFmtQnh = new FmtQuickActionToolStripButton
-            {
-                Name = "MenuFmtQnh",
-                Text = IsFmtTraditionalChineseUi ? "QNH校正" : "QNH",
-                Alignment = ToolStripItemAlignment.Left,
-                DisplayStyle = ToolStripItemDisplayStyle.Text,
-                AutoSize = false,
-                Size = new Size(116, 35),
-                Margin = new Padding(0, 0, 4, 0),
-                Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
-                ToolTipText = IsFmtTraditionalChineseUi
-                    ? "未解鎖時設定海平面氣壓（QNH）"
-                    : "Set sea-level pressure (QNH) while disarmed"
-            };
-            MenuFmtQnh.Click += MenuFmtQnh_Click;
-
             var controlSourcePanel = new Panel
             {
                 Name = "FmtControlSourcePanel",
@@ -4974,12 +5079,10 @@ namespace MissionPlanner
             MainMenu.Items.Insert(quickActionIndex, MenuFmtPreflightCheck);
             MainMenu.Items.Insert(quickActionIndex + 1, MenuFmtArmDisarm);
             MainMenu.Items.Insert(quickActionIndex + 2, MenuFmtAirspeedZero);
-            MainMenu.Items.Insert(quickActionIndex + 3, MenuFmtQnh);
-            MainMenu.Items.Insert(quickActionIndex + 4, MenuFmtControlSource);
+            MainMenu.Items.Insert(quickActionIndex + 3, MenuFmtControlSource);
             ApplyFmtQuickActionButtonStyle(MenuFmtPreflightCheck);
             ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
             ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
-            ApplyFmtQuickActionButtonStyle(MenuFmtQnh);
             UpdateFmtQuickActionButtons();
 
             const string resourceName = "MissionPlanner.FMT.Assets.fmt-app-icon-source.png";
@@ -5368,7 +5471,7 @@ namespace MissionPlanner
         private void UpdateFmtQuickActionButtons()
         {
             if (MenuFmtPreflightCheck == null || MenuFmtArmDisarm == null ||
-                MenuFmtAirspeedZero == null || MenuFmtQnh == null || MenuFmtControlSource == null)
+                MenuFmtAirspeedZero == null || MenuFmtControlSource == null)
                 return;
 
             var connected = comPort?.BaseStream != null && comPort.BaseStream.IsOpen;
@@ -5391,11 +5494,9 @@ namespace MissionPlanner
                     : (armed ? "DISARM" : "ARM");
                 MenuFmtArmDisarm.Enabled = connected && !comPort.ReadOnly;
                 MenuFmtAirspeedZero.Enabled = connected && !armed && !comPort.ReadOnly;
-                MenuFmtQnh.Enabled = connected && !armed && !comPort.ReadOnly;
                 ApplyFmtQuickActionButtonStyle(MenuFmtPreflightCheck);
                 ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
                 ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
-                ApplyFmtQuickActionButtonStyle(MenuFmtQnh);
                 UpdateFmtControlSourceButtons(connected);
                 UpdateFmtGpsStatus(connected, gpsStatus, satCount, hdop, vdop);
                 UpdateFmtRotorRpm(showRotorRpm, rotorRpm);
@@ -5440,7 +5541,12 @@ namespace MissionPlanner
                     if (!FmtControlSourceStartupDefaultApplied && IsFmtHeartbeatFresh())
                     {
                         FmtControlSourceStartupDefaultApplied = true;
-                        if (comPort.ReadOnly)
+                        if (FmtRelayStationIdentity.StationNumber != 1)
+                        {
+                            // RC_OPTIONS is aircraft-wide. Relay stations observe it but must
+                            // never race the main station by applying their own startup value.
+                        }
+                        else if (comPort.ReadOnly)
                         {
                             startupDefaultWarning = "唯讀連線無法套用啟動預設的遙控器控制";
                         }
@@ -5477,11 +5583,16 @@ namespace MissionPlanner
             if (!connected)
                 FmtControlSourceStartupDefaultApplied = false;
 
-            var canChange = connected && parameterAvailable && !comPort.ReadOnly;
+            var isMainRelayStation = FmtRelayStationIdentity.StationNumber == 1;
+            var canChange = connected && parameterAvailable && !comPort.ReadOnly && isMainRelayStation;
             var joystickReady = joystick != null && joystick.enabled;
+            var gcsSystemIdAligned = true;
+            var gcsSystemIdError = string.Empty;
+            if (connected && nextState == 2 && joystickReady)
+                gcsSystemIdAligned = TryAlignFmtGcsSystemId(out gcsSystemIdError);
             FmtRcControlButton.Enabled = canChange;
             FmtGcsControlButton.Enabled = canChange && joystickReady;
-            FmtGroundControlInputEnabled = nextState == 2 && joystickReady;
+            FmtGroundControlInputEnabled = nextState == 2 && joystickReady && gcsSystemIdAligned;
 
             if (nextState != 2 && FmtControlSourceState != nextState && joystick != null && joystick.enabled)
             {
@@ -5512,6 +5623,12 @@ namespace MissionPlanner
                 FmtControlSourceArrow.ForeColor = Color.Gray;
                 MenuFmtControlSource.ToolTipText = "啟動預設為遙控器控制；連線飛控後才能變更";
             }
+            else if (!isMainRelayStation)
+            {
+                FmtControlSourceArrow.Text = "⇄";
+                FmtControlSourceArrow.ForeColor = Color.Goldenrod;
+                MenuFmtControlSource.ToolTipText = "控制來源由 1 號主站統一管理；本站僅依授權輸出搖桿命令";
+            }
             else if (!parameterAvailable)
             {
                 FmtControlSourceArrow.Text = "!";
@@ -5529,6 +5646,12 @@ namespace MissionPlanner
                 FmtControlSourceArrow.Text = "!";
                 FmtControlSourceArrow.ForeColor = Color.OrangeRed;
                 MenuFmtControlSource.ToolTipText = "飛控目前設定為導控控制，但本機搖桿尚未建立並啟用；導控輸出已封鎖";
+            }
+            else if (!gcsSystemIdAligned && nextState == 2)
+            {
+                FmtControlSourceArrow.Text = "!";
+                FmtControlSourceArrow.ForeColor = Color.OrangeRed;
+                MenuFmtControlSource.ToolTipText = gcsSystemIdError;
             }
             else
             {
@@ -5576,9 +5699,68 @@ namespace MissionPlanner
             return 0;
         }
 
+        /// <summary>
+        /// ArduPilot accepts RC_CHANNELS_OVERRIDE only from the GCS system id selected by
+        /// SYSID_MYGCS (MAV_GCS_SYSID on newer firmware). Relay stations therefore have to
+        /// use the aircraft's configured id instead of each installation's local MP default.
+        /// </summary>
+        private bool TryAlignFmtGcsSystemId(out string error)
+        {
+            error = string.Empty;
+            try
+            {
+                var parameters = comPort?.MAV?.param;
+                if (parameters == null)
+                {
+                    error = "尚未取得飛控參數，無法驗證 MAVLink 搖桿來源 ID。";
+                    return false;
+                }
+
+                var parameterName = parameters.ContainsKey("MAV_GCS_SYSID")
+                    ? "MAV_GCS_SYSID"
+                    : parameters.ContainsKey("SYSID_MYGCS") ? "SYSID_MYGCS" : null;
+                if (parameterName == null)
+                {
+                    error = "飛控未提供 SYSID_MYGCS／MAV_GCS_SYSID，無法驗證 RC Override 來源。";
+                    return false;
+                }
+
+                var requiredSystemId = (int)Math.Round(parameters[parameterName].Value);
+                if (requiredSystemId < 1 || requiredSystemId > byte.MaxValue)
+                {
+                    error = parameterName + " 數值無效（" + requiredSystemId + "），導控搖桿輸出已封鎖。";
+                    return false;
+                }
+
+                if (MAVLinkInterface.gcssysid != requiredSystemId)
+                {
+                    var previousSystemId = MAVLinkInterface.gcssysid;
+                    MAVLinkInterface.gcssysid = (byte)requiredSystemId;
+                    Settings.Instance["gcsid"] = requiredSystemId.ToString(CultureInfo.InvariantCulture);
+                    log.WarnFormat(
+                        "FMT aligned MAVLink GCS system id from {0} to {1} using {2} so RC override is accepted",
+                        previousSystemId, requiredSystemId, parameterName);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = "無法對齊 MAVLink 搖桿來源 ID：" + ex.Message;
+                log.Error("Unable to align FMT MAVLink GCS system id", ex);
+                return false;
+            }
+        }
+
         private void SetFmtControlSource(bool groundControl)
         {
             const string title = "FMT 控制來源";
+            if (FmtRelayStationIdentity.StationNumber != 1)
+            {
+                CustomMessageBox.Show("控制來源由 1 號主站統一管理。2～5 號站只能申請接管，不能修改 RC_OPTIONS。",
+                    title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             if (comPort?.BaseStream == null || !comPort.BaseStream.IsOpen)
             {
                 CustomMessageBox.Show("請先連線飛控。", title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -5630,6 +5812,14 @@ namespace MissionPlanner
                     return;
                 }
 
+                string gcsSystemIdError;
+                if (!TryAlignFmtGcsSystemId(out gcsSystemIdError))
+                {
+                    CustomMessageBox.Show(gcsSystemIdError, title,
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
                 try
                 {
                     comPort.requestDatastream(MAVLink.MAV_DATA_STREAM.RC_CHANNELS, 10);
@@ -5643,6 +5833,8 @@ namespace MissionPlanner
                 {
                     if (handover.ShowDialog(this) != DialogResult.OK)
                         return;
+                    if (handover.ForcedSwitch)
+                        log.Warn("FMT control source was force-switched to GCS without PWM alignment");
                     FmtCriticalSwitchSnapshot = handover.CriticalSwitches
                         .Select(item => new FmtCriticalRcSwitch
                         {
@@ -5652,6 +5844,17 @@ namespace MissionPlanner
                             InitialPwm = item.InitialPwm,
                             InitialPosition = item.InitialPosition
                         }).ToList();
+                }
+
+                if (FmtRelayControlService.ActiveStation == 0)
+                {
+                    string authorityError;
+                    if (!FmtRelayControlService.TrySetActiveStation(1, out authorityError))
+                    {
+                        CustomMessageBox.Show("導控輸入已完成對位，但無法啟用 1 號站控制權：" + authorityError,
+                            title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
                 }
             }
 
@@ -5722,6 +5925,22 @@ namespace MissionPlanner
                 CustomMessageBox.Show("控制來源切換失敗：" + ex.Message, title,
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 UpdateFmtQuickActionButtons();
+            }
+        }
+
+        private static void PrefetchFmtRelayControlParameters(MAVLinkInterface port)
+        {
+            if (port == null || port.MAV == null ||
+                port.MAV.compid == (byte)MAVLink.MAV_COMPONENT.MAV_COMP_ID_PERIPHERAL)
+                return;
+            try
+            {
+                port.GetParam(port.MAV.sysid, port.MAV.compid, "RC_OPTIONS");
+                port.GetParam(port.MAV.sysid, port.MAV.compid, "SYSID_MYGCS");
+            }
+            catch (Exception ex)
+            {
+                log.Warn("Unable to prefetch RC_OPTIONS for FMT relay station", ex);
             }
         }
 
@@ -5910,12 +6129,6 @@ namespace MissionPlanner
         private void MenuFmtAirspeedZero_Click(object sender, EventArgs e)
         {
             FlightData?.ExecuteFmtAirspeedZero();
-            UpdateFmtQuickActionButtons();
-        }
-
-        private void MenuFmtQnh_Click(object sender, EventArgs e)
-        {
-            FlightData?.ExecuteFmtQnh();
             UpdateFmtQuickActionButtons();
         }
 
