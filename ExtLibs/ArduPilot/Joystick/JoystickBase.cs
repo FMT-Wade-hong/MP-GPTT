@@ -17,7 +17,8 @@ namespace MissionPlanner.Joystick
     {
         protected static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         protected IMyJoystickState state;
-        public bool enabled = false;
+        public volatile bool enabled = false;
+        public string LastInputError { get; protected set; }
         bool[] buttonpressed = new bool[128];
         public string name;
         public bool elevons = false;
@@ -1049,8 +1050,10 @@ namespace MissionPlanner.Joystick
                 try
                 {
                     System.Threading.Thread.Sleep(50);
+                    if (!enabled) return;
                     //joystick stuff
                     state = GetCurrentState();
+                    if (!enabled) return;
 
                     //Console.WriteLine(state);
 
@@ -1149,6 +1152,8 @@ namespace MissionPlanner.Joystick
                 }
                 catch (SharpDX.SharpDXException ex)
                 {
+                    if (!enabled) return; // An old, intentionally stopped device must not release a new device's output.
+                    LastInputError = "搖桿讀取中斷，請重新選擇裝置並啟用。";
                     log.Error(ex);
                     clearRCOverride();
                     LostAction();
@@ -1157,6 +1162,10 @@ namespace MissionPlanner.Joystick
                 catch (Exception ex)
                 {
                     log.Info("Joystick thread error " + ex.ToString());
+                    if (!enabled) return;
+                    LastInputError = "搖桿讀取失敗，請重新啟用。";
+                    enabled = false;
+                    return;
                 } // so we cant fall out
             }
         }

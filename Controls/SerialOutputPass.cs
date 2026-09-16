@@ -24,6 +24,59 @@ namespace MissionPlanner.Controls
         public static ManualResetEvent tcpClientConnected = new ManualResetEvent(false);
         private DataGridViewTextBoxColumn runtimeStatusColumn;
         private DataGridViewComboBoxColumn relayStationColumn;
+        private Label serverAddressLabel;
+
+        public void ConfigureRelayUdpServer()
+        {
+            if (serverAddressLabel != null) return;
+            var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true };
+            var add = new Button { Text = "新增主站 UDPCl Server", AutoSize = true };
+            var refresh = new Button { Text = "更新本機 IP", AutoSize = true };
+            serverAddressLabel = new Label { AutoSize = true, MaximumSize = new Size(900, 0), Margin = new Padding(6, 8, 6, 4) };
+            toolbar.SizeChanged += (s, e) => serverAddressLabel.MaximumSize = new Size(Math.Max(200, toolbar.ClientSize.Width - 24), 0);
+            refresh.Click += (s, e) => RefreshServerAddresses();
+            add.Click += (s, e) =>
+            {
+                if (FmtRelayStationIdentity.StationNumber != 1)
+                {
+                    CustomMessageBox.Show("請在 1 號主站啟用 Server；分站使用 UDPCl 連至主站 IP。");
+                    return;
+                }
+                var row = myDataGridView1.Rows[myDataGridView1.Rows.Add()];
+                row.Cells[Type.Name].Value = "UDP";
+                row.Cells[Direction.Name].Value = "Inbound";
+                row.Cells[Port.Name].Value = "14550";
+                row.Cells[Write.Name].Value = false;
+                SetRuntimeStatus(row, false, null);
+                Save();
+            };
+            toolbar.Controls.Add(add);
+            toolbar.Controls.Add(refresh);
+            toolbar.Controls.Add(serverAddressLabel);
+            var content = new Panel { Dock = DockStyle.Fill };
+            foreach (Control control in Controls.Cast<Control>().ToArray()) content.Controls.Add(control);
+            // The embedded relay page uses grid rows, not the legacy single-stream controls.
+            CMB_serialport.Hide();
+            CMB_baudrate.Hide();
+            BUT_connect.Hide();
+            chk_write.Hide();
+            myDataGridView1.Top = 12;
+            Controls.Add(content);
+            Controls.Add(toolbar);
+            RefreshServerAddresses();
+        }
+
+        private void RefreshServerAddresses()
+        {
+            var addresses = NetworkInterface.GetAllNetworkInterfaces()
+                .Where(n => n.OperationalStatus == OperationalStatus.Up && n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                .SelectMany(n => n.GetIPProperties().UnicastAddresses
+                    .Where(a => a.Address.AddressFamily == AddressFamily.InterNetwork)
+                    .Select(a => n.Name + ": " + a.Address)).ToArray();
+            serverAddressLabel.Text = "本機網卡 IPv4（不代表 VPN 已連線）：" + (addresses.Length == 0 ? "無可用 IPv4" : string.Join("；", addresses)) +
+                "\r\n使用 VPN 時，請先連線再更新，選用 VPN 網卡 IP；此處不驗證 VPN 或分站連通狀態。" +
+                "\r\nUDPCl Server = UDP / Inbound；預設埠 14550（可修改）。分站填主站可互通的 IP，不填 0.0.0.0。";
+        }
 
         /// <summary>
         /// Enables station-aware write-back validation when hosted by the FMT
@@ -418,13 +471,23 @@ namespace MissionPlanner.Controls
                     mirror.MirrorStreamWrite = write;
                 }
 
-                MainV2.comPort.Mirrors.Add(mirror);
-                if (RelayControlMode && FmtRelayStationIdentity.StationNumber == 1 && write &&
+                if (RelayControlMode && protocol == "UDP" && direction == "Inbound")
+                {
+                    mirror.UdpWriteAllowed = endpoint =>
+                    {
+                        int station;
+                        return FmtRelayStationIdentity.StationNumber == 1 &&
+                            FmtRelayControlService.TryResolveStationByAddress(endpoint.Address.ToString(), out station) &&
+                            FmtRelayControlService.CanAcceptMavlinkWriteFrom(station);
+                    };
+                }
+                else if (RelayControlMode && FmtRelayStationIdentity.StationNumber == 1 && write &&
                     relayStationNumber >= 2 && relayStationNumber <= 5)
                 {
                     mirror.MirrorStreamWriteAllowed = () =>
                         FmtRelayControlService.CanAcceptMavlinkWriteFrom(relayStationNumber);
                 }
+                MainV2.comPort.Mirrors.Add(mirror);
                 row.Tag = new ForwardRuntime { Started = true, Mirror = mirror, Listener = rowListener };
                 SetRuntimeStatus(row, true, null);
                 Save();
@@ -520,7 +583,7 @@ namespace MissionPlanner.Controls
             }
 
             if (RelayControlMode && FmtRelayStationIdentity.StationNumber == 1 &&
-                GetWriteValue(row))
+                GetWriteValue(row) && !(protocol == "UDP" && direction == "Inbound"))
             {
                 var stationNumber = GetRelayStationNumber(row);
                 if (stationNumber == 0 && direction == "Outbound" &&

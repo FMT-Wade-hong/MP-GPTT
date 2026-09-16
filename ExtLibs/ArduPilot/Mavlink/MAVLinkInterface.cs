@@ -170,6 +170,10 @@ namespace MissionPlanner
             public ICommsSerial MirrorStream { get; set; }
             public bool MirrorStreamWrite { get; set; }
             public Func<bool> MirrorStreamWriteAllowed { get; set; }
+            // Shared UDP listeners must authorize each datagram by its own sender.
+            public Func<System.Net.IPEndPoint, bool> UdpWriteAllowed { get; set; }
+            internal readonly Dictionary<System.Net.IPEndPoint, DateTime> UdpPeers =
+                new Dictionary<System.Net.IPEndPoint, DateTime>();
         }
 
         public List<Mirror> Mirrors { get; set; } = new List<Mirror>();
@@ -5476,6 +5480,35 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                     // full rw from mirror stream
                     if (MirrorStream != null && MirrorStream.IsOpen)
                     {
+                        var server = MirrorStream as UdpSerial;
+                        if (server != null && Mirror.UdpWriteAllowed != null)
+                        {
+                            // Keep datagram boundaries: never authorize a mixed-source byte buffer.
+                            for (var count = 0; count < 64 && server.client.Available > 0; count++)
+                            {
+                                var sender = new System.Net.IPEndPoint(System.Net.IPAddress.Any, 0);
+                                var packet = server.client.Receive(ref sender);
+                                if (!Mirror.UdpPeers.ContainsKey(sender) && Mirror.UdpPeers.Count >= 32)
+                                    continue;
+                                Mirror.UdpPeers[sender] = DateTime.UtcNow;
+                                if (Mirror.MirrorStreamWrite && Mirror.UdpWriteAllowed(sender))
+                                    lock (writelock)
+                                    {
+                                        BaseStream.Write(packet, 0, packet.Length);
+                                        if (rawlogfile != null && rawlogfile.CanWrite)
+                                            rawlogfile.Write(packet, 0, packet.Length);
+                                    }
+                            }
+                            foreach (var peer in Mirror.UdpPeers.ToArray())
+                            {
+                                if (DateTime.UtcNow - peer.Value > TimeSpan.FromSeconds(30))
+                                    Mirror.UdpPeers.Remove(peer.Key);
+                                else
+                                    try { server.client.Send(buffer, buffer.Length, peer.Key); }
+                                    catch (System.Net.Sockets.SocketException) { }
+                            }
+                            continue;
+                        }
                         MirrorStream.Write(buffer, 0, buffer.Length);
 
                         while (MirrorStream.BytesToRead > 0)

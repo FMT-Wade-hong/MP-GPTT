@@ -9,6 +9,7 @@ namespace MissionPlanner.Joystick
     public class JoystickWindows: JoystickBase, IDisposable
     {
         private SharpDX.DirectInput.Joystick joystick;
+        private readonly object deviceLock = new object();
 
         public JoystickWindows(Func<MAVLinkInterface> func) : base(func)
         {
@@ -27,6 +28,9 @@ namespace MissionPlanner.Joystick
         /// <param name="disposing"></param>
         virtual protected void Dispose(bool disposing)
         {
+            lock (deviceLock)
+            {
+            enabled = false;
             try
             {
                 //not sure if this is a problem from the finalizer?
@@ -48,10 +52,14 @@ namespace MissionPlanner.Joystick
 
             //tell gc not to call finalize, this object will be GC'd quicker now.
             GC.SuppressFinalize(this);
+            joystick = null;
+            }
         }
 
         public override bool AcquireJoystick(string name)
         {
+            lock (deviceLock)
+            {
             joystick = getJoyStickByNameInternal(name);
 
             if (joystick == null)
@@ -60,8 +68,9 @@ namespace MissionPlanner.Joystick
             joystick.Acquire();
 
             joystick.Poll();
-
+            LastInputError = null;
             return true;
+            }
         }
 
         public override int getNumberPOV()
@@ -76,15 +85,27 @@ namespace MissionPlanner.Joystick
 
         public override IMyJoystickState GetCurrentState()
         {
+            lock (deviceLock)
+            {
+            try
+            {
+            if (joystick == null || joystick.IsDisposed) throw new InvalidOperationException("搖桿裝置已釋放。");
             joystick.Poll();
-            return new WindowsJoystickState(joystick.GetCurrentState());
+            var snapshot = new WindowsJoystickState(joystick.GetCurrentState());
+            return snapshot;
+            }
+            catch { LastInputError = "搖桿讀取中斷，請重新選擇裝置並啟用。"; throw; }
+            }
         }
 
         public override void UnAcquireJoyStick()
         {
+            lock (deviceLock)
+            {
             if (joystick == null)
                 return;
             joystick.Unacquire();
+            }
         }
 
         public override int getNumButtons()

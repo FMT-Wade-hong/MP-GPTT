@@ -14,6 +14,26 @@ namespace MissionPlanner.Joystick
     public partial class JoystickSetup : MyUserControl, IDeactivate
     {
         bool startup = true;
+        bool refreshingDevices;
+        bool inputRecoveryRequired;
+        readonly Label inputStatus = new Label { AutoSize = true, Dock = DockStyle.Bottom, ForeColor = Color.OrangeRed };
+
+        private void ResetInputDevice()
+        {
+            var previous = MainV2.joystick;
+            if (previous != null) previous.enabled = false;
+            MainV2.FmtGroundControlInputEnabled = false;
+            MainV2.joystick = null;
+            previous?.Dispose();
+            BUT_enable.Text = "Enable";
+        }
+
+        private void ReportInputFailure()
+        {
+            inputRecoveryRequired = true;
+            ResetInputDevice();
+            inputStatus.Text = "搖桿讀取中斷；請確認裝置與軸映射，再按 Enable 重新連接。未自動恢復控制。";
+        }
 
         int noButtons = 0;
         private int maxaxis = 16;
@@ -21,6 +41,7 @@ namespace MissionPlanner.Joystick
         public JoystickSetup()
         {
             InitializeComponent();
+            Controls.Add(inputStatus);
 
             MissionPlanner.Utilities.Tracking.AddPage(this.GetType().ToString(), this.Text);
         }
@@ -146,7 +167,7 @@ namespace MissionPlanner.Joystick
                 try
                 {
                     if (MainV2.joystick != null)
-                        MainV2.joystick.UnAcquireJoyStick();
+                        ResetInputDevice();
                 }
                 catch
                 {
@@ -156,9 +177,23 @@ namespace MissionPlanner.Joystick
                 var joy = JoystickBase.Create(() => MainV2.comPort);
 
                 joy.elevons = CHK_elevons.Checked;
+                foreach (var axis in Controls.OfType<JoystickAxis>())
+                {
+                    int expo;
+                    if (int.TryParse(axis.ExpoValue, out expo))
+                        joy.setChannel(axis.ChannelNo, (joystickaxis)Enum.Parse(typeof(joystickaxis), axis.ChannelValue), axis.ReverseValue, expo);
+                }
 
                 //show error message if a joystick is not connected when Enable is clicked
-                if (!joy.start(CMB_joysticks.Text))
+                bool started;
+                try { started = joy.start(CMB_joysticks.Text); }
+                catch
+                {
+                    joy.Dispose();
+                    ReportInputFailure();
+                    return;
+                }
+                if (!started)
                 {
                     CustomMessageBox.Show("Please Connect a Joystick", "No Joystick");
                     joy.Dispose();
@@ -168,7 +203,8 @@ namespace MissionPlanner.Joystick
                 Settings.Instance["joystick_name"] = CMB_joysticks.Text;
 
                 MainV2.joystick = joy;
-                MainV2.joystick.enabled = true;
+                inputRecoveryRequired = false;
+                inputStatus.Text = "搖桿已連接；控制輸出仍受接力授權限制。";
 
                 BUT_enable.Text = "Disable";
 
@@ -180,7 +216,9 @@ namespace MissionPlanner.Joystick
 
                 MainV2.joystick.clearRCOverride();
 
-                MainV2.joystick = null;
+                ResetInputDevice();
+                inputRecoveryRequired = false;
+                inputStatus.Text = "已停用輸出；可預覽軸值。";
 
 
                 //timer1.Stop();
@@ -203,6 +241,12 @@ namespace MissionPlanner.Joystick
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+            if (startup || inputRecoveryRequired) return;
+            if (!string.IsNullOrEmpty(MainV2.joystick?.LastInputError))
+            {
+                ReportInputFailure();
+                return;
+            }
             try
             {
                 if (MainV2.joystick == null || MainV2.joystick.enabled == false)
@@ -221,7 +265,11 @@ namespace MissionPlanner.Joystick
 
                         joy.elevons = CHK_elevons.Checked;
 
-                        joy.AcquireJoystick(CMB_joysticks.Text);
+                        if (!joy.AcquireJoystick(CMB_joysticks.Text))
+                        {
+                            joy.Dispose();
+                            throw new InvalidOperationException("找不到選取的搖桿。");
+                        }
 
                         joy.name = CMB_joysticks.Text;
 
@@ -277,20 +325,10 @@ namespace MissionPlanner.Joystick
                     //Console.WriteLine(DateTime.Now.Millisecond + " end ");
                 }
             }
-            catch (SharpDX.SharpDXException ex)
-            {
-                ex.ToString();
-                if (MainV2.joystick != null && MainV2.joystick.enabled == true)
-                {
-                    BUT_enable_Click(null, null);
-                }
-
-                if (ex.Message.Contains("DIERR_NOTACQUIRED"))
-                    MainV2.joystick = null;
-            }
             catch
             {
-                
+                ReportInputFailure();
+                return;
             }
 
             try
@@ -313,6 +351,10 @@ namespace MissionPlanner.Joystick
 
         private void CMB_joysticks_Click(object sender, EventArgs e)
         {
+            var selected = CMB_joysticks.Text;
+            refreshingDevices = true;
+            try
+            {
             CMB_joysticks.Items.Clear();
 
             var joysticklist = JoystickBase.getDevices();
@@ -322,8 +364,14 @@ namespace MissionPlanner.Joystick
                 CMB_joysticks.Items.Add(device);
             }
 
-            if (CMB_joysticks.Items.Count > 0 && CMB_joysticks.SelectedIndex == -1)
+            if (CMB_joysticks.Items.Contains(selected))
+                CMB_joysticks.SelectedItem = selected;
+            else if (CMB_joysticks.Items.Count > 0)
                 CMB_joysticks.SelectedIndex = 0;
+            }
+            finally { refreshingDevices = false; }
+            if (selected != CMB_joysticks.Text)
+                CMB_joysticks_SelectedIndexChanged(sender, e);
         }
 
         private void cmbbutton_SelectedIndexChanged(object sender, EventArgs e)
@@ -488,14 +536,11 @@ namespace MissionPlanner.Joystick
 
         private void CMB_joysticks_SelectedIndexChanged(object sender, EventArgs e)
         {
-            try
-            {
-                if (MainV2.joystick != null && MainV2.joystick.enabled == false)
-                    MainV2.joystick.UnAcquireJoyStick();
-            }
-            catch
-            {
-            }
+            if (startup || refreshingDevices) return;
+            ResetInputDevice();
+            inputRecoveryRequired = false;
+            inputStatus.Text = "已切換裝置，僅預覽；請確認軸映射後手動啟用。";
+            timer1.Start();
         }
 
        
@@ -505,7 +550,7 @@ namespace MissionPlanner.Joystick
 
             if (MainV2.joystick != null && MainV2.joystick.enabled == false)
             {
-                MainV2.joystick.UnAcquireJoyStick();
+                MainV2.joystick.Dispose();
                 MainV2.joystick = null;
             }
         }
@@ -530,7 +575,7 @@ namespace MissionPlanner.Joystick
 
             if (MainV2.joystick != null && MainV2.joystick.enabled == false)
             {
-                MainV2.joystick.UnAcquireJoyStick();
+                MainV2.joystick.Dispose();
                 MainV2.joystick = null;
             }
         }

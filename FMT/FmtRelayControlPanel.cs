@@ -353,6 +353,7 @@ namespace MissionPlanner.FMT
                 RelayControlMode = true
             };
             forwardingHost.Controls.Add(forwardingSettings);
+            forwardingSettings.ConfigureRelayUdpServer();
             forwardingSettings.Show();
             LocalizeForwardingGrid(forwardingSettings);
             ThemeManager.ApplyThemeTo(forwardingSettings);
@@ -372,13 +373,46 @@ namespace MissionPlanner.FMT
                 SetColumnHeader(grid, "Go", "啟動／停止");
                 SetColumnHeader(grid, "RuntimeStatus", "狀態");
                 SetColumnHeader(grid, "RelayStation", "接力站號");
-                grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+                grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                grid.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
+                grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+                grid.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+                grid.Dock = DockStyle.None;
+                foreach (DataGridViewColumn column in grid.Columns)
+                    column.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
                 if (grid.Columns.Contains("RuntimeStatus"))
                 {
                     grid.Columns["RuntimeStatus"].AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
                     grid.Columns["RuntimeStatus"].Width = 52;
                 }
+                grid.ColumnWidthChanged += (s, e) => FitForwardingGrid(grid);
+                grid.RowsAdded += (s, e) => FitForwardingGrid(grid);
+                grid.RowsRemoved += (s, e) => FitForwardingGrid(grid);
+                grid.RowHeightChanged += (s, e) => FitForwardingGrid(grid);
+                grid.ColumnHeadersHeightChanged += (s, e) => FitForwardingGrid(grid);
+                grid.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+                if (grid.Parent != null)
+                    grid.Parent.SizeChanged += (s, e) => FitForwardingGrid(grid);
+                FitForwardingGrid(grid);
             }
+        }
+
+        private static void FitForwardingGrid(DataGridView grid)
+        {
+            if (grid.IsDisposed || grid.Parent == null) return;
+            var contentWidth = grid.RowHeadersVisible ? grid.RowHeadersWidth : 0;
+            foreach (DataGridViewColumn column in grid.Columns)
+                if (column.Visible) contentWidth += column.Width;
+            contentWidth += SystemInformation.VerticalScrollBarWidth + 4;
+            var availableWidth = Math.Max(100, grid.Parent.ClientSize.Width - grid.Left - 12);
+            grid.Width = Math.Min(contentWidth, availableWidth);
+            var contentHeight = grid.ColumnHeadersVisible ? grid.ColumnHeadersHeight : 0;
+            foreach (DataGridViewRow row in grid.Rows)
+                if (row.Visible) contentHeight += row.Height;
+            contentHeight += 4;
+            if (contentWidth > availableWidth) contentHeight += SystemInformation.HorizontalScrollBarHeight;
+            var availableHeight = Math.Max(60, grid.Parent.ClientSize.Height - grid.Top - 12);
+            grid.Height = Math.Min(contentHeight, availableHeight);
         }
 
         private static void SetColumnHeader(DataGridView grid, string name, string text)
