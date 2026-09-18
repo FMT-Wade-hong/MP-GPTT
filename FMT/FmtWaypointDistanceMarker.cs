@@ -1,6 +1,7 @@
 using GMap.NET;
 using GMap.NET.WindowsForms;
 using System.Drawing;
+using System.Globalization;
 
 namespace MissionPlanner.FMT
 {
@@ -17,14 +18,25 @@ namespace MissionPlanner.FMT
             IsHitTestVisible = false;
         }
 
+        internal static string FormatDistance(double metres)
+        {
+            return "<-" + metres.ToString("0", CultureInfo.InvariantCulture) + "M->";
+        }
+
+        internal static Rectangle LabelBounds(Point midpoint, int width, int height)
+        {
+            // The insertion '+' occupies the segment midpoint; leave a clear gap above it.
+            return new Rectangle(midpoint.X - width / 2, midpoint.Y - height - 16, width, height);
+        }
+
         public override void OnRender(System.IGraphics graphics)
         {
             var size = graphics.MeasureString(text, Font);
             var width = (int)size.Width + 12;
             var height = (int)size.Height + 6;
-            var x = LocalPosition.X - width / 2;
-            var y = LocalPosition.Y - height / 2;
-            var rectangle = new Rectangle(x, y, width, height);
+            var rectangle = LabelBounds(LocalPosition, width, height);
+            var x = rectangle.X;
+            var y = rectangle.Y;
 
             graphics.FillRectangle(Background, rectangle);
             graphics.DrawRectangle(Border, rectangle);

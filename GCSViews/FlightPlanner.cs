@@ -116,7 +116,6 @@ namespace MissionPlanner.GCSViews
         private bool isMouseClickOffMenu;
         private bool isMouseDown;
         private bool isMouseDraging;
-        private int fmtLastWaypointDragRenderTick;
         private bool fmtMouseTerrainBusy;
         private int fmtMouseTerrainVersion;
         public GMapOverlay kmlpolygonsoverlay;
@@ -204,6 +203,7 @@ namespace MissionPlanner.GCSViews
 
             // Official Taiwan CAA airspace. Red is prohibited; yellow is restricted.
             MainMap.Overlays.Add(taiwanCaaOverlay);
+            ConfigureFmtAirspaceDisplay();
 
             geofenceoverlay = new GMapOverlay("geofence");
             MainMap.Overlays.Add(geofenceoverlay);
@@ -7648,7 +7648,10 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
 
             //  Console.WriteLine("MainMap MM " + point);
 
-            currentMarker.Position = point;
+            // Single-waypoint dragging batches all marker invalidations below.
+            if (!(e.Button == MouseButtons.Left && isMouseDown && CurentRectMarker != null &&
+                  CurrentRallyPt == null && groupmarkers.Count == 0))
+                currentMarker.Position = point;
 
             if (!isMouseDown)
             {
@@ -7700,10 +7703,13 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                 }
                 else if (CurentRectMarker != null) // left click pan
                 {
-                    // Throttle the marker AND route together; moving only the marker on skipped
-                    // frames loses the old route coordinate. MouseUp commits the exact endpoint.
-                    if (unchecked((uint)(Environment.TickCount - fmtLastWaypointDragRenderTick)) < 33)
-                        return;
+                    // Do not drop mouse events: 33 ms gating can halve the effective frame rate.
+                    // Position setters update local coordinates themselves. Batch their repaint
+                    // requests and let Windows coalesce the final asynchronous invalidation.
+                    var wasHoldingInvalidation = MainMap.HoldInvalidation;
+                    MainMap.HoldInvalidation = true;
+                    try
+                    {
                     try
                     {
                         // check if this is a grid point
@@ -7712,7 +7718,7 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                             drawnpolygon.Points[
                                     int.Parse(CurentRectMarker.InnerMarker.Tag.ToString().Replace("grid", "")) - 1] =
                                 new PointLatLng(point.Lat, point.Lng);
-                            redrawPolygonSurvey(drawnpolygon.Points.Select(a => new PointLatLngAlt(a)).ToList());
+                            MainMap.UpdatePolygonLocalPosition(drawnpolygon);
                         }
                     }
                     catch (Exception ex)
@@ -7726,7 +7732,6 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                     // Keep the waypoint marker and the visible route attached to the mouse.
                     if (renderWaypointRoute)
                     {
-                        fmtLastWaypointDragRenderTick = Environment.TickCount;
                         try
                         {
                             var oldPosition = CurentRectMarker.Position;
@@ -7783,11 +7788,13 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                         CurentRectMarker.InnerMarker.Position = pnew;
                     }
 
-                    MainMap.UpdateMarkerLocalPosition(CurentRectMarker);
-                    if (CurentRectMarker.InnerMarker != null)
-                        MainMap.UpdateMarkerLocalPosition(CurentRectMarker.InnerMarker);
-                    if (renderWaypointRoute)
-                        MainMap.Invalidate(false);
+                    }
+                    finally
+                    {
+                        MainMap.HoldInvalidation = wasHoldingInvalidation;
+                        if (!wasHoldingInvalidation)
+                            MainMap.Invalidate(false);
+                    }
                 }
                 else if (CurrentPOIMarker != null)
                 {
@@ -8053,8 +8060,7 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                                         int.Parse(CurentRectMarker.InnerMarker.Tag.ToString().Replace("grid", "")) -
                                         1] =
                                     new PointLatLng(MouseDownEnd.Lat, MouseDownEnd.Lng);
-                                MainMap.UpdatePolygonLocalPosition(drawnpolygon);
-                                MainMap.Invalidate();
+                                redrawPolygonSurvey(drawnpolygon.Points.Select(a => new PointLatLngAlt(a)).ToList());
                             }
                             catch (Exception ex)
                             {
@@ -8170,7 +8176,6 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
         private void AddWaypointDistanceLabels(WPOverlay overlay)
         {
             PointLatLngAlt previous = null;
-            var previousNumber = 0;
 
             foreach (var current in overlay.pointlist)
             {
@@ -8180,16 +8185,14 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
 
                 if (previous != null)
                 {
-                    var distance = previous.GetDistance(current) * CurrentState.multiplierdist;
+                    var distance = previous.GetDistance(current);
                     var midpoint = new PointLatLng((previous.Lat + current.Lat) / 2.0,
                         (previous.Lng + current.Lng) / 2.0);
-                    var text = "WP" + previousNumber + "-WP" + currentNumber + "  " +
-                               distance.ToString("0") + " " + CurrentState.DistanceUnit;
+                    var text = FmtWaypointDistanceMarker.FormatDistance(distance);
                     overlay.overlay.Markers.Add(new FmtWaypointDistanceMarker(midpoint, text));
                 }
 
                 previous = current;
-                previousNumber = currentNumber;
             }
         }
 
@@ -8652,19 +8655,42 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
 
         private async Task UpdateTaiwanCaaAirspace(PointLatLng point)
         {
+            PointLatLng home;
+            if (fmtAirspaceVisible == null || !fmtAirspaceVisible.Checked || !TryGetFmtAirspaceHome(out home))
+                return;
+            if (!FMT.FmtAirspaceRadius.ShouldDisplay(fmtAirspaceVisible.Checked, MainMap.Zoom))
+                return;
+            var radius = (double)FMT.FmtAirspaceRadius.KilometresToMetres(fmtAirspaceRadius.Value);
+            var key = home.Lat.ToString("R", CultureInfo.InvariantCulture) + ":" +
+                      home.Lng.ToString("R", CultureInfo.InvariantCulture) + ":" + radius;
+            if (key == fmtAirspaceLoadedKey || key == fmtAirspaceLoadingKey)
+                return;
+            var revision = fmtAirspaceRevision;
+            fmtAirspaceLoadingKey = key;
             try
             {
-                var zones = await TaiwanCaaAirspace.LoadNearbyAsync(point);
+                var zones = await TaiwanCaaAirspace.LoadNearbyAsync(home);
                 if (IsDisposed)
                     return;
 
                 this.BeginInvokeIfRequired((Action)(() =>
                 {
+                    if (IsDisposed || revision != fmtAirspaceRevision || !fmtAirspaceVisible.Checked)
+                        return;
+                    if (!FMT.FmtAirspaceRadius.ShouldDisplay(fmtAirspaceVisible.Checked, MainMap.Zoom))
+                        return;
+                    ClearFmtAirspacePolygons();
+                    var hold = MainMap.HoldInvalidation;
+                    MainMap.HoldInvalidation = true;
+                    try
+                    {
                     foreach (var zone in zones)
                     {
                         for (var index = 0; index < zone.Polygons.Count; index++)
                         {
                             var id = zone.Id + "-" + index;
+                            if (!FMT.FmtAirspaceRadius.Intersects(zone.Polygons[index], home, radius))
+                                continue;
                             if (!taiwanCaaZoneIds.Add(id))
                                 continue;
 
@@ -8673,18 +8699,24 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                                 Tag = zone,
                                 Stroke = new Pen(zone.Color, 2),
                                 Fill = new SolidBrush(Color.FromArgb(48, zone.Color)),
-                                IsHitTestVisible = true
+                                IsHitTestVisible = false
                             };
                             taiwanCaaOverlay.Polygons.Add(polygon);
                         }
                     }
-                    taiwanCaaOverlay.ForceUpdate();
-                    MainMap.Refresh();
+                    fmtAirspaceLoadedKey = key;
+                    }
+                    finally { MainMap.HoldInvalidation = hold; }
+                    MainMap.Invalidate(false);
                 }));
             }
             catch (Exception ex)
             {
                 log.Warn("Unable to update Taiwan CAA airspace", ex);
+            }
+            finally
+            {
+                if (fmtAirspaceLoadingKey == key) fmtAirspaceLoadingKey = null;
             }
         }
 
@@ -8821,6 +8853,7 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
 
         private void MainMap_OnMapZoomChanged()
         {
+            UpdateFmtAirspaceZoomVisibility();
             if (MainMap.Zoom > 0)
             {
                 try

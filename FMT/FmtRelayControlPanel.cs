@@ -125,7 +125,8 @@ namespace MissionPlanner.FMT
             takeLocalControl = MakeButton("收回至 1 號站", 126, Cyan);
             revokeControl = MakeButton("撤銷控制權", 112, Amber);
             stopAll = MakeButton("全部停用", 104, Red);
-            takeLocalControl.Anchor = revokeControl.Anchor = stopAll.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            // Positions are assigned by one layout routine, not mixed with right anchoring.
+            takeLocalControl.Anchor = revokeControl.Anchor = stopAll.Anchor = AnchorStyles.Top | AnchorStyles.Left;
             takeLocalControl.Click += (sender, args) => SetLocalControl();
             revokeControl.Click += (sender, args) => SetActiveStation(0, "已撤銷目前控制權");
             stopAll.Click += (sender, args) => SetActiveStation(0, "已執行全部停用；所有遠端控制封包保持阻擋");
@@ -136,14 +137,9 @@ namespace MissionPlanner.FMT
             commandBar.Controls.Add(takeLocalControl);
             commandBar.Controls.Add(revokeControl);
             commandBar.Controls.Add(stopAll);
-            commandBar.Resize += (sender, args) =>
-            {
-                stopAll.Location = new Point(commandBar.ClientSize.Width - stopAll.Width - 10, 14);
-                revokeControl.Location = new Point(stopAll.Left - revokeControl.Width - 8, 14);
-                takeLocalControl.Location = new Point(
-                    (revokeControl.Visible ? revokeControl.Left : commandBar.ClientSize.Width - 10) -
-                    takeLocalControl.Width - 8, 14);
-            };
+            commandBar.AutoScroll = true;
+            commandBar.Layout += (sender, args) => LayoutControlCommands(commandBar,
+                takeLocalControl, revokeControl, stopAll, FmtRelayStationIdentity.StationNumber == 1);
 
             stationList = new FlowLayoutPanel
             {
@@ -273,9 +269,7 @@ namespace MissionPlanner.FMT
             takeLocalControl.Width = isMainStation ? 126 : 142;
             revokeControl.Visible = isMainStation;
             stopAll.Visible = isMainStation;
-            if (!isMainStation && takeLocalControl.Parent != null)
-                takeLocalControl.Location = new Point(
-                    Math.Max(10, takeLocalControl.Parent.ClientSize.Width - takeLocalControl.Width - 10), 14);
+            takeLocalControl.Parent?.PerformLayout();
             foreach (var station in stations)
                 station.SetLocalStation(station.StationNumber == localStationNumber, isMainStation);
 
@@ -662,6 +656,25 @@ namespace MissionPlanner.FMT
                 ForeColor = color,
                 Font = new Font("Microsoft JhengHei UI", 9F, bold ? FontStyle.Bold : FontStyle.Regular)
             };
+        }
+
+        internal static void LayoutControlCommands(Panel bar, Button take, Button revoke, Button stop, bool mainStation)
+        {
+            const int gap = 8;
+            var totalWidth = take.Width + (mainStation ? revoke.Width + stop.Width + gap * 2 : 0);
+            // Do not inspect Visible: it is false for all children when the tab is hidden.
+            var top = bar.ClientSize.Width >= totalWidth + 530 ? 14 : 58;
+            var height = Math.Max(take.Height, Math.Max(revoke.Height, stop.Height));
+            bar.AutoScrollMinSize = new Size(totalWidth + 20, 0);
+            var right = Math.Max(bar.ClientSize.Width, totalWidth + 20) - 10 + bar.AutoScrollPosition.X;
+            if (mainStation)
+            {
+                stop.Location = new Point(right - stop.Width, top);
+                revoke.Location = new Point(stop.Left - gap - revoke.Width, top);
+                right = revoke.Left - gap;
+            }
+            take.Location = new Point(right - take.Width, top);
+            bar.Height = top + height + 14 + (bar.HorizontalScroll.Visible ? SystemInformation.HorizontalScrollBarHeight : 0);
         }
 
         private static Button MakeButton(string text, int width, Color color)

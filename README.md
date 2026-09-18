@@ -1,6 +1,6 @@
-# FeiMaoTecPlanner V1.1.7
+# FeiMaoTecPlanner V1.1.8
 
-目前版本為 **V1.1.7**；下載套件完整解壓後執行 `FMTPlanner-V1.1.7.exe`。本機建置則執行 `bin/Release117/net461/FMTPlanner.exe`。
+目前版本為 **V1.1.8**；下載套件完整解壓後執行 `FMTPlanner-V1.1.8.exe`。本機建置則執行 `bin/Release118/net461/FMTPlanner.exe`。
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.6/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
@@ -12,14 +12,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.7/FMTPlanner-V1.1.7.zip"><strong>下載 FMTPlanner V1.1.7</strong></a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.8/FMTPlanner-V1.1.8.zip"><strong>下載 FMTPlanner V1.1.8</strong></a>
   ·
   <a href="README-FMT.md">繁體中文圖文操作手冊</a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.7">版本發布頁</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.8">版本發布頁</a>
 </p>
 
-![Version](https://img.shields.io/badge/version-V1.1.7-22a9dc)
+![Version](https://img.shields.io/badge/version-V1.1.8-22a9dc)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
 ![Package](https://img.shields.io/badge/package-portable%20ZIP-35a853)
 ![Language](https://img.shields.io/badge/UI-English%20%7C%20繁體中文-f0ad00)
@@ -28,8 +28,8 @@
 
 | 項目 | 內容 |
 |---|---|
-| 軟體名稱 | **FeiMaoTecPlanner V1.1.7** |
-| 執行檔 | 本機建置 **FMTPlanner.exe**；下載套件 **FMTPlanner-V1.1.7.exe** |
+| 軟體名稱 | **FeiMaoTecPlanner V1.1.8** |
+| 執行檔 | 本機建置 **FMTPlanner.exe**；下載套件 **FMTPlanner-V1.1.8.exe** |
 | 公司／品牌 | **FMT 飛貓科技** |
 | 基礎專案 | ArduPilot Mission Planner |
 | 支援系統 | Windows |
@@ -37,13 +37,20 @@
 | 支援構型 | 多旋翼、定翼機、VTOL／QuadPlane |
 | 介面語言 | 預設英文，可使用繁體中文 |
 
-## V1.1.7 主要更新
+## V1.1.8 主要更新
+
+- 起始位置下新增限禁航區顯示開關與 HOME 半徑：整數公里、預設 5 KM，縮放 10～18 級才顯示；航線安全檢查不受影響。
+- 改善 WP 拖曳重繪，距離標籤改成 `<-10M->` 並上移避開「＋」。
+- 修正接力控制按鈕偶發重疊，切換站號及窄視窗時重新排列。
+- 尚未內建完整離線限禁航區資料包；仍使用既有線上／快取資料來源。
+
+保留前版修正：
 
 - 將飛行畫面資料綁定與通訊處理分離，修正 COM 逾時時介面等待收訊鎖的路徑。
 - 限制畫面更新排隊及地形查詢工作，改善航點拖曳重繪，保留放開滑鼠的精確位置。
 - 內建 H420 預設參數立即顯示，線上清單背景載入，不再因等待 GitHub 而空白。
 - 擴充繁體中文參數表；機譯保留待核對標記，不等同人工校訂。
-- 詳見 [V1.1.7 更新紀錄](FMT/RELEASE-V1.1.7.md)。須於地面未解鎖狀態完成實機驗證。
+- 詳見 [V1.1.8 更新紀錄](FMT/RELEASE-V1.1.8.md)。須於地面未解鎖狀態完成實機驗證。
 
 ## V1.1.6 主要更新
 
@@ -101,9 +108,9 @@
 
 ## 快速開始
 
-1. 下載 [FMTPlanner-V1.1.7.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.7/FMTPlanner-V1.1.7.zip)。
+1. 下載 [FMTPlanner-V1.1.8.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.8/FMTPlanner-V1.1.8.zip)。
 2. 將 ZIP **完整解壓縮**到可寫入的資料夾。
-3. 執行 **FMTPlanner-V1.1.7.exe**，不要直接在壓縮檔內啟動。
+3. 執行 **FMTPlanner-V1.1.8.exe**，不要直接在壓縮檔內啟動。
 4. 登入後選擇正確 COM 埠與傳輸速率，再按 **CONNECT／連線**。
 5. 正式使用前請變更預設密碼，並先完成飛控校正與任務安全檢查。
 
@@ -119,8 +126,8 @@
 
 ## 文件與下載
 
-- [V1.1.7 發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.7)
-- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.7/FMTPlanner-V1.1.7.zip)
+- [V1.1.8 發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.8)
+- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.8/FMTPlanner-V1.1.8.zip)
 - [完整繁體中文圖文操作手冊](README-FMT.md)
 - [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.1.6/CHANGELOG-FMT.md)
 - [FMT 飛貓科技官網](https://www.feimaotec.com)
