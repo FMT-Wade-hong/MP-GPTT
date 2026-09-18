@@ -1,0 +1,238 @@
+{
+  "engine": "Argos en_zh 1.9 / CTranslate2 int8 / OpenCC s2twp",
+  "missing": [],
+  "reviewed": false,
+  "sources": [
+    {
+      "file": "AP_Periph.apm.pdef.xml",
+      "parameters": 3847,
+      "sha256": "d445cadec9bfebaf8fb862c4e7a494c371aad4a1f84318f5b19e6d778df2bd37"
+    },
+    {
+      "file": "AntennaTracker.apm.pdef.xml",
+      "parameters": 3858,
+      "sha256": "40f76d71b2fda9f6ef9083235f8df40c84a0e0f40eec75e5d1f45b3d00320598"
+    },
+    {
+      "file": "ArduCopter.apm.pdef.xml",
+      "parameters": 6008,
+      "sha256": "2eb6ff829c5b9acabd287682f5b8bce9d71170ecbb2a3aa597702221b516e29b"
+    },
+    {
+      "file": "ArduPlane.apm.pdef.xml",
+      "parameters": 6006,
+      "sha256": "a4145ce83ca1d4d9e7e45710502a3034227501549821e41eb16236a597b5db58"
+    },
+    {
+      "file": "ArduSub.apm.pdef.xml",
+      "parameters": 5644,
+      "sha256": "10ae12ed01d23572859c42b2c0d0684183c14ffc63cae2d3d1b89e5c367f22a5"
+    },
+    {
+      "file": "Blimp.apm.pdef.xml",
+      "parameters": 3344,
+      "sha256": "72039eed2d48010eca0287d6cae6be3713bbe2c39bace6d2b687740bfb5d66af"
+    },
+    {
+      "file": "Copter4.3.7.apm.pdef.xml",
+      "parameters": 3202,
+      "sha256": "3eff22b9e4af0c3fb8685eedffb65386f4892ee2d941e57c63f0f77a0fa795db"
+    },
+    {
+      "file": "Copter4.4.1.apm.pdef.xml",
+      "parameters": 3532,
+      "sha256": "74efb5b51e3b654154060e60bf7f71d9a4e87cda11c25a57e8f20a8353303cc3"
+    },
+    {
+      "file": "Copter4.4.4.apm.pdef.xml",
+      "parameters": 3531,
+      "sha256": "6f9903a11474017db7c1967321e6b3988e1a9e6c0e01b73a5bf0affaeda13bb9"
+    },
+    {
+      "file": "Copter4.5.1.apm.pdef.xml",
+      "parameters": 4432,
+      "sha256": "8a08b3b9e730343f90db529cf0b24a27d84a9bac17d40b78449678031fa074bb"
+    },
+    {
+      "file": "Copter4.5.4.apm.pdef.xml",
+      "parameters": 4436,
+      "sha256": "f6e6097d109cdaf83d4b0d50f2bb9a542de0a9e4466d7b92d39c8b51a34a7732"
+    },
+    {
+      "file": "Copter4.5.5.apm.pdef.xml",
+      "parameters": 4502,
+      "sha256": "647e8aec3b3c86141c0e3147c5e5f2ce424064974a5bf02ac8f1788b7afea128"
+    },
+    {
+      "file": "Copter4.5.6.apm.pdef.xml",
+      "parameters": 4502,
+      "sha256": "1a72140786371bb759676b12c80a2ea15aa448d38bc629201b1d7e9fa0081e3d"
+    },
+    {
+      "file": "Copter4.5.7.apm.pdef.xml",
+      "parameters": 4503,
+      "sha256": "61599e773eadeba781d69c124aff3acfbeea884b2a159d9ca6f7891f379513c9"
+    },
+    {
+      "file": "Copter4.6.0.apm.pdef.xml",
+      "parameters": 4820,
+      "sha256": "a1176c87bd2a2e332ac45443b4a78d7581879839931e8fb0f331ca3fb4728dc3"
+    },
+    {
+      "file": "Copter4.7.1.apm.pdef.xml",
+      "parameters": 5955,
+      "sha256": "9e5e674c6029bd9f680540c62119086c26991d3ba586c585f4e98484036c0518"
+    },
+    {
+      "file": "Heli.apm.pdef.xml",
+      "parameters": 2821,
+      "sha256": "5f53d03ff1c7b044b7576c03b21e24be9725997687ec3d79be0660ab98a6d885"
+    },
+    {
+      "file": "Plane4.3.7.apm.pdef.xml",
+      "parameters": 3207,
+      "sha256": "db67b4686b0d439fcb9db24b35d17d9fa823f066aac35955224876bd16fca6e2"
+    },
+    {
+      "file": "Plane4.4.1.apm.pdef.xml",
+      "parameters": 3524,
+      "sha256": "3c820cf38ff91ceff0bf46253a3f27e02f16b3718a9ccafa5783381769213c33"
+    },
+    {
+      "file": "Plane4.4.4.apm.pdef.xml",
+      "parameters": 3523,
+      "sha256": "5f439f1a0ce683f36ce7f0fe9756c007fc632553f16461e1a2998abd6b5b0b39"
+    },
+    {
+      "file": "Plane4.5.1.apm.pdef.xml",
+      "parameters": 4447,
+      "sha256": "58916a8feaabd52d9936247c17ecd901ee9dc1195b42aa7a1ae790b838c87a3d"
+    },
+    {
+      "file": "Plane4.5.4.apm.pdef.xml",
+      "parameters": 4450,
+      "sha256": "05e899324c5e5e378bbd305b774cbfff4d11227b15339aae20afdb89b599af3f"
+    },
+    {
+      "file": "Plane4.5.5.apm.pdef.xml",
+      "parameters": 4516,
+      "sha256": "a23c7eb414eaa644f746682b964909b2ffb73f2eeffd04595737cd4df77b7ebf"
+    },
+    {
+      "file": "Plane4.5.6.apm.pdef.xml",
+      "parameters": 4516,
+      "sha256": "7aeae5ba5025b08aabe5166007438fe276af869c180184fb17a25061168d9e20"
+    },
+    {
+      "file": "Plane4.5.7.apm.pdef.xml",
+      "parameters": 4517,
+      "sha256": "4abf0156f5c68d61fe0efef5f24daefc31754ee1ddf6cd8e70b01aff300bfa83"
+    },
+    {
+      "file": "Plane4.6.0.apm.pdef.xml",
+      "parameters": 4842,
+      "sha256": "a6ec70e181353a9d125a8ee33d589e01a19399a3dea6d54eb9d93b25fa9b30f0"
+    },
+    {
+      "file": "Plane4.7.1.apm.pdef.xml",
+      "parameters": 5944,
+      "sha256": "924fdf56b972719bde381082adb29fd415731aa8cd899ec111eb4a5eda5192d6"
+    },
+    {
+      "file": "Rover.apm.pdef.xml",
+      "parameters": 5709,
+      "sha256": "5ce17232cb4fb7b8a2b3ff939423658201bd9320895007766484144c3f526c7a"
+    },
+    {
+      "file": "Rover4.5.1.apm.pdef.xml",
+      "parameters": 4170,
+      "sha256": "c214ca519b1a2ca0469aa61bb1dc1ade8555b5eedc496459e3bc98ee96fa3827"
+    },
+    {
+      "file": "Rover4.5.4.apm.pdef.xml",
+      "parameters": 4174,
+      "sha256": "c756404e076c30cee815ad16505de4f5360f0a983f712fe3b27e797724d882b6"
+    },
+    {
+      "file": "Rover4.5.5.apm.pdef.xml",
+      "parameters": 4240,
+      "sha256": "ea0230698c560ec661a2b567f31e0b941d663ac30439dc39505c212748874568"
+    },
+    {
+      "file": "Rover4.5.6.apm.pdef.xml",
+      "parameters": 4240,
+      "sha256": "c45eb0d4869a0b2e86ca2fdd032c653319900f058aba8bf77a1bdff3f3d4ba6b"
+    },
+    {
+      "file": "Rover4.5.7.apm.pdef.xml",
+      "parameters": 4241,
+      "sha256": "a3f3ffac3b26183fb167ac93ae58748df1825096f0b9ba3194b2a36e3cd02a90"
+    },
+    {
+      "file": "Rover4.6.0.apm.pdef.xml",
+      "parameters": 4558,
+      "sha256": "f70080aeca7097edd0265d9212e3ca522e2ae0d2ce42f44721404d304e2034dc"
+    },
+    {
+      "file": "Rover4.7.1.apm.pdef.xml",
+      "parameters": 5664,
+      "sha256": "e55c68636190f9628c5b2f80f29758780b36491c6363280304f323c2554a14ad"
+    },
+    {
+      "file": "SITL.apm.pdef.xml",
+      "parameters": 1503,
+      "sha256": "ef510087d7df35bf17936bc291b0d9f415eb488999ae64073b27e4f1fe05cd1c"
+    },
+    {
+      "file": "Sub4.5.1.apm.pdef.xml",
+      "parameters": 3117,
+      "sha256": "9b7e1210d12e8cd07a22155f93c06502d97e7ec7a47bbbd379b67475750a684f"
+    },
+    {
+      "file": "Sub4.7.1.apm.pdef.xml",
+      "parameters": 5591,
+      "sha256": "c543ae155e6c48c98ca6f5fc803c7ce9b6161780fc79aa9e35e8c808891bb5ba"
+    },
+    {
+      "file": "Tracker4.5.1.apm.pdef.xml",
+      "parameters": 2463,
+      "sha256": "52f63b61cfe334c48f8afb5149f355e9490ae823e5bed5bfae34511296626662"
+    },
+    {
+      "file": "Tracker4.5.4.apm.pdef.xml",
+      "parameters": 2463,
+      "sha256": "82d710f5b98ebdf552658299251d96637d977af2eefecca99705be18db1442a9"
+    },
+    {
+      "file": "Tracker4.5.5.apm.pdef.xml",
+      "parameters": 2463,
+      "sha256": "43a726d7a4a33ab202133ac57d729b5cce9fc40fddc3ab6be932987b4ed0fa2b"
+    },
+    {
+      "file": "Tracker4.5.6.apm.pdef.xml",
+      "parameters": 2463,
+      "sha256": "4d2bc0a5303e75da61f497a32543052a44ca4ad96cfdff30a9f26b563d38b542"
+    },
+    {
+      "file": "Tracker4.5.7.apm.pdef.xml",
+      "parameters": 2464,
+      "sha256": "e72cf8ad649651157df06fe76cdb4d5b8feb92285d4801cb47714581d222f3d7"
+    },
+    {
+      "file": "Tracker4.6.0.apm.pdef.xml",
+      "parameters": 2727,
+      "sha256": "5f296f20b2e2a811b4de40daaad5a228c0ee1fba47f668fbd92d65dbe5964141"
+    },
+    {
+      "file": "Tracker4.7.1.apm.pdef.xml",
+      "parameters": 3774,
+      "sha256": "143350e5806885fd34cd9c710cfbe6f9b758bee0260c5e081bfef6eab05e91fc"
+    },
+    {
+      "file": "ParameterMetaDataBackup.xml",
+      "parameters": 11474,
+      "sha256": "cd98e85916b12c70a13674b864fe429b0f15bd72eca123eb26226112e547e068"
+    }
+  ],
+  "strings": 10582
+}

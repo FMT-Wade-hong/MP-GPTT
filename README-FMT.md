@@ -1,6 +1,8 @@
-# FeiMaoTecPlanner V1.1.6（FMTPlanner）使用手冊
+# FeiMaoTecPlanner V1.1.7（FMTPlanner）使用手冊
 
-本手冊對應 V1.1.6；請執行完整解壓資料夾內的 `FMTPlanner-V1.1.6.exe`。
+本手冊對應 V1.1.7；下載套件請完整解壓後執行 `FMTPlanner-V1.1.7.exe`。本機建置請執行 `bin/Release117/net461/FMTPlanner.exe`，並保留同資料夾內的完整相依檔案。
+
+V1.1.7 修正 COM 通訊與畫面更新互相阻塞的路徑、航點拖曳及預設參數選單空白問題。繁體中文參數中未人工核對的機譯會明確標示；請以原文及對應韌體文件確認重要設定。
 
 <p align="center">
   <img src="FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="360">
@@ -72,7 +74,7 @@
 
 1. 到 GitHub 專案右側的 **Releases／發布**下載最新版 `FMTPlanner-VX.X.X.zip`。
 2. 將 ZIP 完整解壓縮到可寫入的資料夾，不要直接在壓縮檔內執行。
-3. 執行解壓縮後的 `FMTPlanner-V1.1.6.exe`。
+3. 本機 V1.1.7 建置執行 `FMTPlanner.exe`；下載的舊版套件請依套件內的版本命名執行檔啟動。
 4. 在登入畫面輸入預設帳號與密碼：
 
    - 帳號：`FMT`

@@ -8,10 +8,10 @@
     <OutputType>WinExe</OutputType>
     <StartupObject>MissionPlanner.Program</StartupObject>
     <Authors>FMT飛貓科技; Mission Planner contributors</Authors>
-    <Version>1.1.6</Version>
+    <Version>1.1.7</Version>
     <Company>FMT飛貓科技</Company>
     <Product>FeiMaoTecPlanner</Product>
-    <Description>FeiMaoTecPlanner V1.1.6 stable ground control station for ArduPilot</Description>
+    <Description>FeiMaoTecPlanner V1.1.7 ground control station for ArduPilot</Description>
     <Copyright>Mission Planner contributors; FMT飛貓科技 customization</Copyright>
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -42,6 +42,9 @@
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<BaseIntermediateOutputPath>obj3\</BaseIntermediateOutputPath>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="FMT\Localization\Parameters.zh-TW.draft.json" LogicalName="FMT.Parameters.zh-TW.draft.json" />
+  </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <OutputPath>bin\Debug\net461\</OutputPath>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>

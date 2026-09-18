@@ -4610,6 +4610,22 @@ namespace MissionPlanner
         }
 
         /// <summary>
+        /// Display the latest state without acquiring the telemetry lock or requesting streams.
+        /// The serial reader remains responsible for UpdateCurrentSettings housekeeping.
+        /// </summary>
+        public void BindCurrentState(Action<CurrentState> binding)
+        {
+            try
+            {
+                binding?.Invoke(this);
+            }
+            catch (Exception ex)
+            {
+                log.Debug("CurrentState display binding failed", ex);
+            }
+        }
+
+        /// <summary>
         ///     Use the default sysid
         /// </summary>
         /// <param name="bs"></param>

@@ -58,6 +58,7 @@ namespace MissionPlanner
 
         private readonly FMT.FmtConnectionCloseGuard fmtConnectionCloseGuard = new FMT.FmtConnectionCloseGuard();
         private bool fmtShutdownStarted;
+        private readonly FmtUiUpdateGate fmtParameterProgressGate = new FmtUiUpdateGate();
 
         public static menuicons displayicons; //do not initialize to allow update of custom icons
         public static string running_directory = Settings.GetRunningDirectory();
@@ -3024,21 +3025,31 @@ namespace MissionPlanner
 
                     if (comPort.MAV.param.TotalReceived < comPort.MAV.param.TotalReported)
                     {
-                        if (comPort.MAV.param.TotalReported > 0 && comPort.BaseStream.IsOpen)
+                        if (comPort.MAV.param.TotalReported > 0 && comPort.BaseStream.IsOpen &&
+                            fmtParameterProgressGate.TryEnter(Environment.TickCount, 250))
                         {
-                            this.BeginInvokeIfRequired(() =>
+                            try
                             {
-                                try
+                                if (IsDisposed || Disposing || !IsHandleCreated)
                                 {
-                                    instance.status1.Percent =
-                                        (comPort.MAV.param.TotalReceived / (double) comPort.MAV.param.TotalReported) *
-                                        100.0;
+                                    fmtParameterProgressGate.Complete();
                                 }
-                                catch (Exception e)
+                                else BeginInvoke((Action)(() =>
                                 {
-                                    log.Error(e);
-                                }
-                            });
+                                    try
+                                    {
+                                        var total = comPort.MAV.param.TotalReported;
+                                        if (!IsDisposed && !Disposing && total > 0)
+                                            status1.Percent = (comPort.MAV.param.TotalReceived / (double)total) * 100.0;
+                                    }
+                                    catch (Exception e) { log.Debug("Parameter progress update failed", e); }
+                                    finally { fmtParameterProgressGate.Complete(); }
+                                }));
+                            }
+                            catch (InvalidOperationException)
+                            {
+                                fmtParameterProgressGate.Complete();
+                            }
                         }
                     }
 

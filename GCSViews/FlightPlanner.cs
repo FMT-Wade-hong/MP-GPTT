@@ -117,6 +117,8 @@ namespace MissionPlanner.GCSViews
         private bool isMouseDown;
         private bool isMouseDraging;
         private int fmtLastWaypointDragRenderTick;
+        private bool fmtMouseTerrainBusy;
+        private int fmtMouseTerrainVersion;
         public GMapOverlay kmlpolygonsoverlay;
         private string startupWPradius = "5.0";
 
@@ -1421,18 +1423,8 @@ namespace MissionPlanner.GCSViews
             mouseposdisplay.Lng = lng;
             mouseposdisplay.Alt = alt;
 
-            Task.Run(() =>
-            {
-                var altdata = srtm.getAltitude(mouseposdisplay.Lat, mouseposdisplay.Lng, MainMap.Zoom);
-                this.BeginInvokeIfRequired(() =>
-                {
-                    coords1.Lat = mouseposdisplay.Lat;
-                    coords1.Lng = mouseposdisplay.Lng;
-                    coords1.Alt = altdata.alt * CurrentState.multiplieralt;
-                    coords1.AltSource = altdata.altsource;
-                    coords1.AltUnit = CurrentState.AltUnit;
-                });
-            });
+            fmtMouseTerrainVersion++;
+            UpdateMouseTerrainAsync();
 
             try
             {
@@ -1467,6 +1459,46 @@ namespace MissionPlanner.GCSViews
             catch (Exception ex)
             {
                 log.Error(ex);
+            }
+        }
+
+        // UI-thread entry point: keep only the latest mouse position, never a task per event.
+        private async void UpdateMouseTerrainAsync()
+        {
+            if (fmtMouseTerrainBusy || IsDisposed || Disposing || !IsHandleCreated)
+                return;
+            fmtMouseTerrainBusy = true;
+            try
+            {
+                while (!IsDisposed && !Disposing && IsHandleCreated)
+                {
+                    await Task.Delay(100);
+                    if (IsDisposed || Disposing || !IsHandleCreated)
+                        return;
+                    var version = fmtMouseTerrainVersion;
+                    var lat = mouseposdisplay.Lat;
+                    var lng = mouseposdisplay.Lng;
+                    var zoom = MainMap.Zoom;
+                    var altdata = await Task.Run(() => srtm.getAltitude(lat, lng, zoom));
+                    if (IsDisposed || Disposing || !IsHandleCreated)
+                        return;
+                    if (version != fmtMouseTerrainVersion)
+                        continue;
+                    coords1.Lat = lat;
+                    coords1.Lng = lng;
+                    coords1.Alt = altdata.alt * CurrentState.multiplieralt;
+                    coords1.AltSource = altdata.altsource;
+                    coords1.AltUnit = CurrentState.AltUnit;
+                    break;
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Debug("Mouse terrain lookup failed", ex);
+            }
+            finally
+            {
+                fmtMouseTerrainBusy = false;
             }
         }
 
@@ -7668,6 +7700,10 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                 }
                 else if (CurentRectMarker != null) // left click pan
                 {
+                    // Throttle the marker AND route together; moving only the marker on skipped
+                    // frames loses the old route coordinate. MouseUp commits the exact endpoint.
+                    if (unchecked((uint)(Environment.TickCount - fmtLastWaypointDragRenderTick)) < 33)
+                        return;
                     try
                     {
                         // check if this is a grid point
@@ -7685,7 +7721,7 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                     }
 
                     PointLatLng pnew = MainMap.FromLocalToLatLng(e.X, e.Y);
-                    var renderWaypointRoute = unchecked(Environment.TickCount - fmtLastWaypointDragRenderTick) >= 24;
+                    var renderWaypointRoute = true;
 
                     // Keep the waypoint marker and the visible route attached to the mouse.
                     if (renderWaypointRoute)
@@ -8027,8 +8063,8 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                         }
                         else
                         {
-                            callMeDrag(CurentRectMarker.InnerMarker.Tag.ToString(), currentMarker.Position.Lat,
-                                currentMarker.Position.Lng, -2);
+                            callMeDrag(CurentRectMarker.InnerMarker.Tag.ToString(), MouseDownEnd.Lat,
+                                MouseDownEnd.Lng, -2);
                         }
 
                         CurentRectMarker = null;

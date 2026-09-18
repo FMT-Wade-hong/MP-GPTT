@@ -87,6 +87,14 @@ $excludedFiles = @()
 $excludedBytes = 0L
 
 function Get-ReleaseExclusionReason([string]$RelativePath) {
+    $entryName = $rootFolder + '/' + $RelativePath.Replace('\', '/')
+    if ($RelativePath -in @('README-FIRST.txt', 'RELEASE-MANIFEST.txt') -or
+        @($documentationFiles | Where-Object { $_.Entry -eq $entryName }).Count -gt 0) {
+        return 'documentation regenerated from release sources'
+    }
+    if ($RelativePath -match '(?i)(H420-source-full|\.bin$)') {
+        return 'raw logs or local binary data'
+    }
     if ($RelativePath -match '(?i)(frequency-tests-|P400FrequencyPlans|TestReference|FrequencyReference|preview\.png$|\.bak$|\.zip$|\.sha256$)') {
         return 'local test results and backups'
     }

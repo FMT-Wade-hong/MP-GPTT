@@ -6483,11 +6483,6 @@ namespace MissionPlanner.GCSViews
                     // this is an attempt to prevent an invoke queue on the binding update on slow machines
                     if (updateBindingSourcecount > 0)
                     {
-                        if (lastscreenupdate < DateTime.UtcNow.AddSeconds(-5))
-                        {
-                            updateBindingSourcecount = 0;
-                        }
-
                         return;
                     }
 
@@ -6541,9 +6536,9 @@ namespace MissionPlanner.GCSViews
                 if (this.Visible && !this.IsDisposed)
                 {
                     //Console.Write("bindingSource1 ");
-                    MainV2.comPort.MAV.cs.UpdateCurrentSettings(bindingSource1.UpdateDataSource(MainV2.comPort.MAV.cs));
+                    MainV2.comPort.MAV.cs.BindCurrentState(bindingSource1.UpdateDataSource(MainV2.comPort.MAV.cs));
                     //Console.Write("bindingSourceHud ");
-                    MainV2.comPort.MAV.cs.UpdateCurrentSettings(
+                    MainV2.comPort.MAV.cs.BindCurrentState(
                         bindingSourceHud.UpdateDataSource(MainV2.comPort.MAV.cs));
                     UpdateFmtFlightModeBar();
                     fmtAutoMissionPanel.UpdateFromVehicle();
@@ -6551,39 +6546,39 @@ namespace MissionPlanner.GCSViews
 
                     if (tabControlactions.SelectedTab == tabStatus)
                     {
-                        MainV2.comPort.MAV.cs.UpdateCurrentSettings(
+                        MainV2.comPort.MAV.cs.BindCurrentState(
                             bindingSourceStatusTab.UpdateDataSource(MainV2.comPort.MAV.cs));
                         this.tabStatus.Invalidate();
                     }
                     else if (tabControlactions.SelectedTab == tabQuick)
                     {
-                        MainV2.comPort.MAV.cs.UpdateCurrentSettings(
+                        MainV2.comPort.MAV.cs.BindCurrentState(
                             bindingSourceQuickTab.UpdateDataSource(MainV2.comPort.MAV.cs));
                     }
                     else if (tabControlactions.SelectedTab == tabGauges)
                     {
-                        MainV2.comPort.MAV.cs.UpdateCurrentSettings(
+                        MainV2.comPort.MAV.cs.BindCurrentState(
                             bindingSourceGaugesTab.UpdateDataSource(MainV2.comPort.MAV.cs));
                     }
                     else if (tabControlactions.SelectedTab == tabPagePreFlight)
                     {
-                        MainV2.comPort.MAV.cs.UpdateCurrentSettings(
+                        MainV2.comPort.MAV.cs.BindCurrentState(
                             bindingSourceGaugesTab.UpdateDataSource(MainV2.comPort.MAV.cs));
                     }
                     else if (tabControlactions.SelectedTab == tabPayload)
                     {
-                        MainV2.comPort.MAV.cs.UpdateCurrentSettings(
+                        MainV2.comPort.MAV.cs.BindCurrentState(
                             bindingSourcePayloadTab.UpdateDataSource(MainV2.comPort.MAV.cs));
                     }
                 }
                 else
                 {
                     //Console.WriteLine("Null Binding");
-                    MainV2.comPort.MAV.cs.UpdateCurrentSettings(
+                    MainV2.comPort.MAV.cs.BindCurrentState(
                         bindingSourceHud.UpdateDataSource(MainV2.comPort.MAV.cs));
                 }
                 //if the tab detached wi have to update it
-                if (tabQuickDetached) MainV2.comPort.MAV.cs.UpdateCurrentSettings(bindingSourceQuickTab.UpdateDataSource(MainV2.comPort.MAV.cs));
+                if (tabQuickDetached) MainV2.comPort.MAV.cs.BindCurrentState(bindingSourceQuickTab.UpdateDataSource(MainV2.comPort.MAV.cs));
 
                 lastscreenupdate = DateTime.UtcNow;
             }

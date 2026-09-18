@@ -19,6 +19,8 @@ namespace MissionPlanner.Controls
 
         [System.ComponentModel.Browsable(true)]
         public string ParamName { get; set; }
+        public Func<string, string> OptionTextTranslator { get; set; }
+        private readonly ToolTip originalOptionTip = new ToolTip();
 
 
         public float Value
@@ -66,6 +68,7 @@ namespace MissionPlanner.Controls
         public MavlinkCheckBoxBitMask()
         {
             InitializeComponent();
+            Disposed += (sender, args) => originalOptionTip.Dispose();
 
             this.Enabled = false;
             this.Width = 700;
@@ -102,7 +105,8 @@ namespace MissionPlanner.Controls
                 {
                     CheckBox chk = new CheckBox();
                     chk.AutoSize = true;
-                    chk.Text = list[a].Value.ToString();
+                    chk.Text = OptionTextTranslator == null ? list[a].Value : OptionTextTranslator(list[a].Value);
+                    if (OptionTextTranslator != null) originalOptionTip.SetToolTip(chk, list[a].Value);
                     chk.Location = new System.Drawing.Point(leftside, top);
 
                     bottom = chk.Bottom;
