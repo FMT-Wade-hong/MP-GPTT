@@ -1050,9 +1050,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             fmtWpRadiusParameter = active ? FindFmtParameter("WP_RADIUS_M", "WPNAV_RADIUS") : null;
             fmtYawBehaviorParameter = active ? FindFmtParameter("WP_YAW_BEHAVIOR") : null;
             fmtRtlSpeedParameter = active ? FindFmtParameter("RTL_SPEED_MS", "RTL_SPEED") : null;
-            fmtClimbSpeedParameter = active ? FindFmtParameter("WPNAV_SPEED_UP") : null;
-            fmtDescentSpeedParameter = active ? FindFmtParameter("WPNAV_SPEED_DN") : null;
-            fmtRtlAltitudeParameter = active ? FindFmtParameter("RTL_ALT") : null;
+            fmtClimbSpeedParameter = active ? FindFmtParameter("WP_SPD_UP", "WPNAV_SPEED_UP") : null;
+            fmtDescentSpeedParameter = active ? FindFmtParameter("WP_SPD_DN", "WPNAV_SPEED_DN") : null;
+            fmtRtlAltitudeParameter = active ? FindFmtParameter("RTL_ALT_M", "RTL_ALT") : null;
 
             LoadFmtSpeed(fmtNavigationSpeed, fmtNavigationSpeedParameter);
             LoadFmtSpeed(fmtGpsSpeed, fmtGpsSpeedParameter);

@@ -70,16 +70,49 @@ function New-LogoBitmap {
     return $canvas
 }
 
-function Convert-BitmapToPngBytes {
+function Convert-BitmapToIconDibBytes {
     param([System.Drawing.Bitmap]$Bitmap)
 
     $stream = New-Object System.IO.MemoryStream
+    $writer = New-Object System.IO.BinaryWriter($stream)
     try {
-        $Bitmap.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
+        # Classic System.Drawing.Icon cannot reliably decode PNG-compressed ICO
+        # frames. Use a 32-bit bottom-up DIB plus the required 1-bit AND mask.
+        $width = $Bitmap.Width
+        $height = $Bitmap.Height
+        $maskStride = [int]([Math]::Ceiling($width / 32.0) * 4)
+        $writer.Write([UInt32]40)
+        $writer.Write([Int32]$width)
+        $writer.Write([Int32]($height * 2))
+        $writer.Write([UInt16]1)
+        $writer.Write([UInt16]32)
+        $writer.Write([UInt32]0)
+        $writer.Write([UInt32]($width * $height * 4 + $maskStride * $height))
+        foreach ($unused in 1..4) { $writer.Write([Int32]0) }
+        for ($y = $height - 1; $y -ge 0; $y--) {
+            for ($x = 0; $x -lt $width; $x++) {
+                $pixel = $Bitmap.GetPixel($x,$y)
+                $writer.Write([byte]$pixel.B)
+                $writer.Write([byte]$pixel.G)
+                $writer.Write([byte]$pixel.R)
+                $writer.Write([byte]$pixel.A)
+            }
+        }
+        for ($y = $height - 1; $y -ge 0; $y--) {
+            $mask = New-Object byte[] $maskStride
+            for ($x = 0; $x -lt $width; $x++) {
+                if ($Bitmap.GetPixel($x,$y).A -eq 0) {
+                    $index = [int][Math]::Floor($x / 8.0)
+                    $mask[$index] = $mask[$index] -bor (128 -shr ($x % 8))
+                }
+            }
+            $writer.Write([byte[]]$mask)
+        }
         # Prevent PowerShell from unrolling the byte array into pipeline items.
         return ,$stream.ToArray()
     }
     finally {
+        $writer.Dispose()
         $stream.Dispose()
     }
 }
@@ -96,7 +129,7 @@ function Write-MultiSizeIcon {
     foreach ($size in $sizes) {
         $bitmap = New-LogoBitmap -Source $Source -Size $size -MarkOnly ($size -le 64)
         try {
-            $frames += ,(Convert-BitmapToPngBytes -Bitmap $bitmap)
+            $frames += ,(Convert-BitmapToIconDibBytes -Bitmap $bitmap)
         }
         finally {
             $bitmap.Dispose()

@@ -286,6 +286,18 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             BUT_Calibrateradio.UseVisualStyleBackColor = false;
 
             CreateFmtThrottleModePanel();
+            var elrsButton = new Button
+            {
+                Name = "fmtElrsSettings", Text = "ELRS 設定：CRSF／MAVLink",
+                Location = new Point(3, fmtThrottleModeGroup.Bottom + 12), Size = new Size(270, 34),
+                BackColor = Color.FromArgb(46, 174, 220), ForeColor = Color.Black,
+                UseVisualStyleBackColor = false
+            };
+            elrsButton.Click += (sender, args) =>
+            {
+                using (var dialog = new FmtElrsSerialForm()) dialog.ShowDialog(this);
+            };
+            Controls.Add(elrsButton);
 
             ResumeLayout(true);
         }

@@ -9,13 +9,16 @@ namespace MissionPlanner.Swarm.WaypointLeader
     public partial class WPControl : Form
     {
         DroneGroup DG = new DroneGroup();
-        bool threadrun;
+        volatile bool threadrun;
+        private System.Threading.Thread worker;
+        internal bool IsRunning => threadrun || (worker != null && worker.IsAlive);
         readonly bool useTraditionalChinese = CultureInfo.CurrentUICulture.Name.StartsWith(
             "zh", StringComparison.OrdinalIgnoreCase);
 
         public WPControl()
         {
             InitializeComponent();
+            Disposed += (s, e) => { threadrun = false; };
             ApplyFmtTraditionalChinese();
             ApplyFmtResponsiveLayout();
 
@@ -333,16 +336,17 @@ namespace MissionPlanner.Swarm.WaypointLeader
 
             //if (SwarmInterface != null)
             {
-                new System.Threading.Thread(mainloop) { IsBackground = true }.Start();
+                if (IsRunning) return;
+                threadrun = true;
+                worker = new System.Threading.Thread(mainloop) { IsBackground = true };
+                worker.Start();
                 but_start.Text = useTraditionalChinese ? "停止" : Strings.Stop;
             }
         }
 
         private void mainloop()
         {
-            threadrun = true;
-
-            while (threadrun)
+            while (threadrun && !IsDisposed)
             {
                 DG.UpdatePositions();
 
@@ -464,7 +468,7 @@ namespace MissionPlanner.Swarm.WaypointLeader
                             }
                             else
                             {
-                                ((Status)ctl).ForeColor = Color.Black;
+                                ((Status)ctl).ForeColor = Color.WhiteSmoke;
                             }
                         }
                     }
@@ -472,6 +476,7 @@ namespace MissionPlanner.Swarm.WaypointLeader
                     if (!exists)
                     {
                         Status newstatus = new Status();
+                        newstatus.ApplyFormationLayout();
                         if (useTraditionalChinese)
                             newstatus.ApplyTraditionalChinese();
                         newstatus.Tag = MAV;

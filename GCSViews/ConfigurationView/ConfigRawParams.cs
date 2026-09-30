@@ -501,7 +501,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 {
                     param2 = ParamFile.loadParamFile(ofd.FileName);
 
-                    Form paramCompareForm = new ParamCompare(Params, MainV2.comPort.MAV.param, param2);
+                    Form paramCompareForm = new ParamCompare(Params, MainV2.comPort.MAV.param, param2)
+                    { StageParameter = StageComparedParameter };
 
                     ThemeManager.ApplyThemeTo(paramCompareForm);
                     paramCompareForm.ShowDialog();
@@ -546,6 +547,29 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         {
             if (e.RowIndex == -1 || e.ColumnIndex == -1 || startup || e.ColumnIndex != Value.Index)
                 return;
+            ValidateParameterEdit(e);
+        }
+
+        internal bool StageComparedParameter(string name, double value)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value)) return false;
+            var row = Params.Rows.Cast<DataGridViewRow>().FirstOrDefault(r => !r.IsNewRow &&
+                string.Equals(Convert.ToString(r.Cells[Command.Index].Value).Trim(), name, StringComparison.Ordinal));
+            if (row == null) return false;
+            Params.EndEdit();
+            cellEditValue = Convert.ToString(row.Cells[Value.Index].Value);
+            Params.CellValueChanged -= Params_CellValueChanged;
+            try { row.Cells[Value.Index].Value = value.ToString("R", CultureInfo.InvariantCulture); }
+            finally { Params.CellValueChanged += Params_CellValueChanged; }
+            // A programmatic compare must validate and queue explicitly, even when startup
+            // suppresses the grid event. Never write to the vehicle from this path.
+            ValidateParameterEdit(new DataGridViewCellEventArgs(Value.Index, row.Index));
+            return _changes.ContainsKey(name) && (double)_changes[name] == value &&
+                row.Cells[Value.Index].Style.BackColor == Color.Green;
+        }
+
+        private void ValidateParameterEdit(DataGridViewCellEventArgs e)
+        {
             try
             {
                 if (Params[Command.Index, e.RowIndex].Value.ToString().EndsWith("_REV") &&
@@ -885,10 +909,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             if (!CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
                 return englishDescription;
 
-            string exact;
-            if (FmtTraditionalChineseParameterDescriptions.TryGetValue(parameterName, out exact))
-                return exact;
+            // IDs can retain their spelling while meaning, units or warnings change.
+            // Only complete source text is a safe translation key across firmware.
+            var reviewed = MissionPlanner.FMT.FmtParameterDrafts.Translate(englishDescription);
+            if (reviewed != englishDescription) return reviewed;
 
+            string exact;
             if (FmtDescriptionTranslations.TryGetValue(englishDescription ?? string.Empty, out exact))
                 return exact;
 
@@ -898,9 +924,20 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private static string LocalizeFmtOption(string label)
         {
             if (!CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase)) return label;
+            // Translate the action, not protocol names. Full source match only; retain
+            // the exact original option so firmware-specific labels remain identifiable.
+            string reviewed;
+            if (FmtReviewedOptionTranslations.TryGetValue((label ?? string.Empty).Trim(), out reviewed))
+                return reviewed + " (" + label + ")";
+            // Technical names remain verbatim, including compound option labels.
+            if (System.Text.RegularExpressions.Regex.IsMatch(label ?? string.Empty,
+                @"\b(Roll|Pitch|YawD?|AutoTune|VFF|PID|EKF\d*|GPS|GNSS|IMU|AHRS|RTL|SmartRTL|Loiter|Stabilize|AltHold|Guided|Acro|Brake|PosHold|Circle|Land|Auto|Manual|CRSF|MAVLink|ESC|RCIN|NMEA|Rate [PID]|Angle P|Max Gain|Tune Check|HDoP|NSats|AGL|KF)\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase) ||
+                System.Text.RegularExpressions.Regex.IsMatch((label ?? string.Empty).Trim(), @"^[A-Z][A-Z0-9_/+.-]+$"))
+                return label;
             string translated;
             return FmtOptionTranslations.TryGetValue((label ?? string.Empty).Trim(), out translated)
-                ? translated : MissionPlanner.FMT.FmtParameterDrafts.Translate(label);
+                ? translated + " (" + label + ")" : label;
         }
 
         private static string LocalizeFmtOptions(string options)
@@ -911,6 +948,25 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 return separator < 0 ? option : option.Substring(0, separator + 1) + LocalizeFmtOption(option.Substring(separator + 1));
             }));
         }
+
+        private static readonly Dictionary<string, string> FmtReviewedOptionTranslations = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            { "Ignore RC Receiver", "忽略 RC 接收機輸入" },
+            { "Ignore MAVLink Overrides", "忽略 MAVLink Overrides 輸入" },
+            { "Ignore Receiver Failsafe bit but allow other RC failsafes if setup", "忽略接收機 Failsafe bit；其他已設定的 RC failsafes 仍有效" },
+            { "FPort Pad", "啟用 FPort padding" },
+            { "Log RC input bytes", "記錄 RC 輸入的原始 bytes" },
+            { "Arming check throttle for 0 input", "解鎖前檢查油門輸入是否為 0" },
+            { "Skip the arming check for neutral Roll/Pitch/Yaw sticks", "略過解鎖前 Roll/Pitch/Yaw 搖桿回中檢查" },
+            { "Allow Switch reverse", "允許反轉開關輸入" },
+            { "Use passthrough for CRSF telemetry", "CRSF telemetry 使用 passthrough" },
+            { "Suppress CRSF mode/rate message for ELRS systems", "ELRS 系統不顯示 CRSF mode/rate 訊息" },
+            { "Enable multiple receiver support", "啟用多接收機支援" },
+            { "Use Link Quality for RSSI with CRSF", "CRSF 以 Link Quality 作為 RSSI" },
+            { "Annotate CRSF flight mode with * on disarm", "上鎖時在 CRSF flight mode 標示 *" },
+            { "Use 420kbaud for ELRS protocol", "ELRS protocol 使用 420kbaud" },
+            { "Clear MAVLink overrides on any stick input", "偵測到任何搖桿輸入時清除 MAVLink overrides" }
+        };
 
         private static readonly Dictionary<string, string> FmtOptionTranslations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -1117,54 +1173,6 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             { "Filter applied to acceleration to reduce noise.  Lower values reduce noise but add delay.", "降低加速度雜訊的濾波設定；較低的數值可減少雜訊，但會增加延遲。" }
         };
 
-        private static readonly Dictionary<string, string> FmtTraditionalChineseParameterDescriptions =
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "ACRO_LOCKING", "放開搖桿時啟用姿態鎖定。設為 2 時使用以四元數為基礎的姿態鎖定；啟用偏航速率控制或四元數鎖定時，可保持任意姿態。" },
-                { "ACRO_BAL_PITCH", "設定特技與運動模式中，俯仰角回正至水平的速度。數值越大，飛行器回正越快；直升機使用此值設定俯仰軸虛擬平衡桿的衰減速率，數值越大，期望姿態與實際姿態間的差異衰減越快。" },
-                { "ACRO_BAL_ROLL", "設定特技與運動模式中，橫滾角回正至水平的速度。數值越大，飛行器回正越快；直升機使用此值設定橫滾軸虛擬平衡桿的衰減速率，數值越大，期望姿態與實際姿態間的差異衰減越快。" },
-                { "ACRO_OPTIONS", "設定特技模式的附加行為。Air-mode 會持續套用 ATC_THR_MIX_MAN（直升機不受影響）；僅速率迴路會停用角度穩定，只使用角速度穩定控制。" },
-                { "ACRO_PITCH_RATE", "設定特技模式下俯仰軸的最大旋轉速率。數值越大，滿舵時的俯仰反應越快。" },
-                { "ACRO_ROLL_RATE", "設定特技模式下橫滾軸的最大旋轉速率。數值越大，滿舵時的橫滾反應越快。" },
-                { "ACRO_RP_EXPO", "設定特技模式橫滾與俯仰的指數曲線，使搖桿接近行程邊緣時可獲得更快的旋轉反應。" },
-                { "ACRO_RP_RATE", "設定特技模式的最大橫滾與俯仰角速度。數值越大，旋轉反應越快。" },
-                { "ACRO_RP_RATE_TC", "設定特技模式橫滾與俯仰角速度控制輸入的時間常數。數值較小時反應較直接銳利；數值較大時反應較柔和。" },
-                { "ACRO_THR_MID", "設定特技模式的油門中點，用於調整搖桿中位所對應的油門輸出。" },
-                { "ACRO_TRAINER", "選擇特技模式使用的輔助訓練功能，包括停用、自動回正，以及自動回正並限制傾角。" },
-                { "ACRO_Y_EXPO", "設定特技模式偏航的指數曲線，使搖桿接近行程邊緣時可獲得更快的旋轉反應。" },
-                { "ACRO_YAW_RATE", "設定特技模式下偏航軸的最大旋轉速率。數值越大，滿舵時的偏航反應越快。" },
-                { "ACRO_Y_RATE", "設定特技模式的最大偏航角速度。數值越大，偏航旋轉反應越快。" },
-                { "ACRO_Y_RATE_TC", "設定特技模式偏航角速度控制輸入的時間常數。數值較小時反應較直接銳利；數值較大時反應較柔和。" },
-                { "ADSB_TYPE", "選擇 ADS-B 硬體或通訊類型；未安裝 ADS-B 裝置時應維持停用。" },
-                { "AFS_ENABLE", "啟用進階失效保護系統。啟用前必須完成相關失效保護參數設定與實際測試。" },
-                { "AHRS_COMP_BETA", "設定 AHRS 使用空速與 GPS 地速交叉修正時的時間常數；數值越大，越偏重 GPS 資料。" },
-                { "AHRS_EKF_TYPE", "選擇飛控用於姿態與位置估算的 EKF 類型。一般情況請使用韌體建議值。" },
-                { "AHRS_GPS_GAIN", "設定 GPS 對 AHRS 姿態修正的影響程度。固定翼通常保留預設值。" },
-                { "AHRS_GPS_MINSATS", "設定允許 GPS 參與速度與姿態修正所需的最低衛星數量。" },
-                { "AHRS_GPS_USE", "設定 AHRS 是否使用 GPS 進行導航與位置修正。正常飛行不建議任意停用。" },
-                { "AHRS_ORIENTATION", "設定飛控安裝方向。若飛控不是箭頭朝前且水平安裝，必須選擇正確旋轉方向。" },
-                { "AIRSPEED_CRUISE", "設定自動油門模式下的目標巡航空速，單位依欄位顯示。" },
-                { "AIRSPEED_MIN", "設定自動飛行允許的最低空速；通常應高於失速速度並保留安全裕度。" },
-                { "AIRSPEED_MAX", "設定自動飛行允許的最高目標空速，不可超過機體與動力系統的安全限制。" }
-            };
-
-        private static readonly Dictionary<string, string> FmtParameterTerms =
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "ACRO", "特技模式" }, { "AHRS", "姿態航向參考系統" }, { "ADSB", "ADS-B 航空監視" },
-                { "AFS", "進階失效保護" }, { "AIRSPEED", "空速" }, { "ALT", "高度" }, { "ARSPD", "空速計" },
-                { "ARMING", "解鎖" }, { "ATT", "姿態" }, { "AUTO", "自動模式" }, { "AVOID", "避障" },
-                { "BARO", "氣壓計" }, { "BATT", "電池" }, { "BAT", "電池" }, { "BRD", "飛控板" },
-                { "CAN", "CAN 匯流排" }, { "COMPASS", "羅盤" }, { "EKF", "擴展卡爾曼濾波" },
-                { "FENCE", "地理圍籬" }, { "FLTMODE", "飛行模式" }, { "FRAME", "機架構型" },
-                { "GPS", "衛星定位" }, { "INS", "慣性導航" }, { "LAND", "降落" }, { "LOIT", "盤旋" },
-                { "MOT", "馬達" }, { "NAV", "導航" }, { "PILOT", "手動操控" }, { "Q", "垂直起降" },
-                { "RC", "遙控器" }, { "RTL", "返航" }, { "SERIAL", "序列埠" }, { "SERVO", "伺服輸出" },
-                { "TECS", "總能量控制" }, { "THR", "油門" }, { "WP", "航點" }, { "WPNAV", "航點導航" },
-                { "ENABLE", "啟用" }, { "TYPE", "類型" }, { "RATE", "速率" }, { "MAX", "最大值" },
-                { "MIN", "最小值" }, { "GAIN", "增益" }, { "USE", "使用" }, { "OPTIONS", "選項" },
-                { "LOCKING", "姿態鎖定" }, { "PITCH", "俯仰" }, { "ROLL", "橫滾" }, { "YAW", "偏航" }
-            };
 
 
         // Based on https://gist.github.com/Nazardo/e42de483a03ec2e1ef9348e23bec4f95
@@ -1424,7 +1432,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
                 var param2 = ParamFile.loadParamFile(filepath);
 
-                Form paramCompareForm = new ParamCompare(Params, MainV2.comPort.MAV.param, param2);
+                Form paramCompareForm = new ParamCompare(Params, MainV2.comPort.MAV.param, param2)
+                { StageParameter = StageComparedParameter };
 
                 ThemeManager.ApplyThemeTo(paramCompareForm);
                 if (paramCompareForm.ShowDialog() == DialogResult.OK)

@@ -5036,6 +5036,7 @@ namespace MissionPlanner
             MenuFmtAirspeedZero = new FmtQuickActionToolStripButton
             {
                 Name = "MenuFmtAirspeedZero",
+                Visible = false,
                 Text = IsFmtTraditionalChineseUi ? "空速計歸零" : "ZERO AIRSPEED",
                 Alignment = ToolStripItemAlignment.Left,
                 DisplayStyle = ToolStripItemDisplayStyle.Text,
@@ -5077,6 +5078,7 @@ namespace MissionPlanner
             MenuFmtControlSource = new ToolStripControlHost(controlSourcePanel)
             {
                 Name = "MenuFmtControlSource",
+                Visible = Settings.Instance.GetBoolean("FMT_ShowControlSourceButtons", false),
                 Alignment = ToolStripItemAlignment.Left,
                 AutoSize = false,
                 Size = new Size(236, 35),
@@ -5479,6 +5481,19 @@ namespace MissionPlanner
             return path;
         }
 
+        internal static bool IsFmtAirspeedZeroAvailable(MAVLinkParamList parameters)
+        {
+            if (parameters == null) return false;
+            var use = parameters["ARSPD_USE"];
+            var enable = parameters["ARSPD_ENABLE"];
+            var type = parameters["ARSPD_TYPE"];
+            // Missing/unread parameters are not evidence of an enabled sensor.
+            // USE=2 (automatic use) is also enabled, when offered by the firmware.
+            return use != null && (float)use > 0 &&
+                (enable == null || (float)enable > 0) &&
+                (type != null ? (float)type > 0 : enable != null && (float)enable > 0);
+        }
+
         private void UpdateFmtQuickActionButtons()
         {
             if (MenuFmtPreflightCheck == null || MenuFmtArmDisarm == null ||
@@ -5487,6 +5502,7 @@ namespace MissionPlanner
 
             var connected = comPort?.BaseStream != null && comPort.BaseStream.IsOpen;
             var armed = connected && comPort.MAV.cs.armed;
+            var showAirspeedZero = connected && IsFmtAirspeedZeroAvailable(comPort.MAV.param);
             var gpsStatus = connected ? comPort.MAV.cs.gpsstatus : 0;
             var satCount = connected ? comPort.MAV.cs.satcount : 0;
             var hdop = connected ? comPort.MAV.cs.gpshdop : 0;
@@ -5504,7 +5520,8 @@ namespace MissionPlanner
                     ? (armed ? "上鎖" : "解鎖")
                     : (armed ? "DISARM" : "ARM");
                 MenuFmtArmDisarm.Enabled = connected && !comPort.ReadOnly;
-                MenuFmtAirspeedZero.Enabled = connected && !armed && !comPort.ReadOnly;
+                MenuFmtAirspeedZero.Visible = showAirspeedZero;
+                MenuFmtAirspeedZero.Enabled = showAirspeedZero && !armed && !comPort.ReadOnly;
                 ApplyFmtQuickActionButtonStyle(MenuFmtPreflightCheck);
                 ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
                 ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
@@ -5536,8 +5553,16 @@ namespace MissionPlanner
             return button;
         }
 
+        internal void UpdateFmtControlSourceVisibility()
+        {
+            if (MenuFmtControlSource != null)
+                MenuFmtControlSource.Visible = Settings.Instance.GetBoolean("FMT_ShowControlSourceButtons", false);
+        }
+
         private void UpdateFmtControlSourceButtons(bool connected)
         {
+            // Visibility is presentation only: keep authority/safety updates running.
+            UpdateFmtControlSourceVisibility();
             var parameterAvailable = false;
             var nextState = connected ? 0 : 1;
             var startupDefaultWarning = string.Empty;

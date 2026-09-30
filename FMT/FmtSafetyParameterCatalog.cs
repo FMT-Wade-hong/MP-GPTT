@@ -53,7 +53,11 @@ namespace MissionPlanner.FMT
                 new FmtSafetyParameterDefinition("電子圍籬動作", "突破電子圍籬限制時要執行的動作。",
                     "FENCE_ACTION"),
                 new FmtSafetyParameterDefinition("失效保護例外選項", "位元遮罩：控制 AUTO、GUIDED、降落中等狀態是否繼續。請依飛控參數說明設定。",
-                    "FS_OPTIONS")
+                    "FS_OPTIONS"),
+                new FmtSafetyParameterDefinition("RTL 返航高度", "返航高度；使用此韌體參數的原始單位（標示於標題），不自動換算。",
+                    "RTL_ALT_M", "RTL_ALT"),
+                new FmtSafetyParameterDefinition("RTL 返航速度", "返航水平速度；使用此韌體參數的原始單位（標示於標題）。零值的行為請依韌體說明。",
+                    "RTL_SPEED_MS", "RTL_SPEED")
             };
 
         internal static string TranslateOption(string text)
@@ -64,6 +68,9 @@ namespace MissionPlanner.FMT
             var translations = new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase)
             {
                 { "Disabled", "停用" },
+                { "Warn only", "僅警告" },
+                { "Report only", "僅回報" },
+                { "Continue in pilot controlled modes on GCS failure", "地面站失聯時繼續人工控制" },
                 { "NoAction", "不執行動作" },
                 { "Enabled", "啟用" },
                 { "Continue with Mission in Auto Mode", "AUTO 模式繼續任務" },

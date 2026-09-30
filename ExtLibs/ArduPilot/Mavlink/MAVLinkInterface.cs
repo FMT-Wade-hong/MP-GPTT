@@ -5393,16 +5393,26 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                             logdata = logdata.Substring(0, ind);
                         log.Info(DateTime.Now + " " + sev + " " + logdata);
 
-                        MAVlist[sysid, compid].cs.messages.Add((DateTime.Now, logdata, sev));
-
-                        // cap list at 1000 element
-                        while (MAVlist[sysid, compid].cs.messages.Count > 1000)
-                            MAVlist[sysid, compid].cs.messages.RemoveAt(0);
+                        var statusMessages = MAVlist[sysid, compid].cs.messages;
+                        lock (statusMessages)
+                        {
+                            statusMessages.Add((DateTime.Now, logdata, sev));
+                            // Keep the snapshot atomic with rolling-buffer removal.
+                            while (statusMessages.Count > 1000)
+                                statusMessages.RemoveAt(0);
+                        }
 
                         // gymbals etc are a child/slave to the main sysid, this displays the children messages under the current displayed vehicle
                         if (sysid == sysidcurrent && compid != compidcurrent)
-                            MAVlist[sysidcurrent, compidcurrent].cs.messages
-                                .Add((DateTime.Now, compid + " : " + logdata, sev));
+                        {
+                            var vehicleMessages = MAVlist[sysidcurrent, compidcurrent].cs.messages;
+                            lock (vehicleMessages)
+                            {
+                                vehicleMessages.Add((DateTime.Now, compid + " : " + logdata, sev));
+                                while (vehicleMessages.Count > 1000)
+                                    vehicleMessages.RemoveAt(0);
+                            }
+                        }
 
                         bool printit = false;
 

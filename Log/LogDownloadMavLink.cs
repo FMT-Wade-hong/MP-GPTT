@@ -165,26 +165,17 @@ namespace MissionPlanner.Log
                     LoadLogList();
                     return;
                 }
+                int[] toDownload = GetAllLogIndices().ToArray();
+                string destination;
+                if (!TryChooseDownloadDirectory(out destination)) return;
                 BUT_DLall.Enabled = false;
                 BUT_DLthese.Enabled = false;
-                int[] toDownload = GetAllLogIndices().ToArray();
-
-                try
-                {
-                    Directory.CreateDirectory(Settings.Instance.LogDir);
-                }
-                catch (Exception ex)
-                {
-                    AppendSerialLog(string.Format(LogStrings.LogDirectoryError, Settings.Instance.LogDir) + "\r\n" + ex.Message);
-                    return;
-                }
-                AppendSerialLog(string.Format(LogStrings.DownloadStarting, Settings.Instance.LogDir));
 
                 System.Threading.Thread t11 =
                     new System.Threading.Thread(
                         delegate ()
                         {
-                            DownloadThread(toDownload);
+                            DownloadThread(toDownload, destination);
                         })
                     {
                         Name = "Log Download All thread"
@@ -193,7 +184,47 @@ namespace MissionPlanner.Log
             }
         }
 
-        async Task<string> GetLog(ushort no, string fileName)
+        private bool TryChooseDownloadDirectory(out string destination)
+        {
+            destination = null;
+            using (var dialog = new FolderBrowserDialog())
+            {
+                dialog.Description = "選擇 LOG 存檔資料夾（所有選中的記錄將存入此資料夾）";
+                dialog.ShowNewFolderButton = true;
+                var previous = Settings.Instance["fmt_log_download_directory"];
+                dialog.SelectedPath = Directory.Exists(previous) ? previous : Settings.Instance.LogDir;
+                if (dialog.ShowDialog(this) != DialogResult.OK) return false;
+                try
+                {
+                    destination = Path.GetFullPath(dialog.SelectedPath);
+                    Directory.CreateDirectory(destination);
+                    // Fail before requesting a log if the destination cannot be written.
+                    using (var probe = new FileStream(Path.Combine(destination, ".fmt-write-" + Guid.NewGuid().ToString("N")),
+                        FileMode.CreateNew, FileAccess.Write, FileShare.None, 1, FileOptions.DeleteOnClose)) { }
+                    Settings.Instance["fmt_log_download_directory"] = destination;
+                    AppendSerialLog(string.Format(LogStrings.DownloadStarting, destination));
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    AppendSerialLog("無法使用存檔資料夾：" + ex.Message);
+                    destination = null;
+                    return false;
+                }
+            }
+        }
+
+        internal static string AvailableDownloadPath(string directory, string filename)
+        {
+            var path = Path.Combine(directory, Path.GetFileName(filename));
+            var stem = Path.GetFileNameWithoutExtension(path);
+            var extension = Path.GetExtension(path);
+            for (var suffix = 1; File.Exists(path); suffix++)
+                path = Path.Combine(directory, stem + " (" + suffix + ")" + extension);
+            return path;
+        }
+
+        async Task<string> GetLog(ushort no, string fileName, string destination)
         {
             log.Info("GetLog " + no);
 
@@ -208,24 +239,14 @@ namespace MissionPlanner.Log
             GC.Collect();
             status = SerialStatus.Done;
 
-            logfile = Settings.Instance.LogDir + Path.DirectorySeparatorChar
-                                               + MainV2.comPort.MAV.aptype.ToString() + Path.DirectorySeparatorChar
-                                               + MainV2.comPort.MAV.sysid + Path.DirectorySeparatorChar + no + " " +
-                                               MakeValidFileName(fileName) + ".bin";
+            logfile = AvailableDownloadPath(destination, no + " " + MakeValidFileName(fileName) + ".bin");
 
             // make log dir
             Directory.CreateDirectory(Path.GetDirectoryName(logfile));
 
             log.Info("about to move " + fn + " to: " + logfile);
-            try
-            {
-                File.Move(fn, logfile);
-            }
-            catch
-            {
-                CustomMessageBox.Show(Strings.ErrorRenameFile + " " + logfile + "\nto " + logfile,
-                    Strings.ERROR);
-            }
+            // Never overwrite or parse an older file if moving the download fails.
+            File.Move(fn, logfile);
 
             // rename file if needed
             log.Info("about to GetFirstGpsTime: " + logfile);
@@ -238,12 +259,8 @@ namespace MissionPlanner.Log
             // rename log fs we have a valid gps time, logtime is after 1990-01-01, since some GPS does not use Unix epoch for invalid time.
             if (logtime.Year >= 1990)
             {
-                string newlogfilename = Settings.Instance.LogDir + Path.DirectorySeparatorChar
-                                                                 + MainV2.comPort.MAV.aptype.ToString() +
-                                                                 Path.DirectorySeparatorChar
-                                                                 + MainV2.comPort.MAV.sysid +
-                                                                 Path.DirectorySeparatorChar +
-                                                                 logtime.ToString("yyyy-MM-dd HH-mm-ss") + ".bin";
+                string newlogfilename = AvailableDownloadPath(destination,
+                    logtime.ToString("yyyy-MM-dd HH-mm-ss") + ".bin");
                 try
                 {
                     File.Move(logfile, newlogfilename);
@@ -321,7 +338,7 @@ namespace MissionPlanner.Log
             status = SerialStatus.Done;
         }
 
-        private async void DownloadThread(int[] selectedLogs)
+        private async void DownloadThread(int[] selectedLogs, string destination)
         {
             try
             {
@@ -344,7 +361,7 @@ namespace MissionPlanner.Log
 
                     AppendSerialLog(string.Format(LogStrings.FetchingLog, fileName));
 
-                    await GetLog(entry.id, fileName).ConfigureAwait(false);
+                    await GetLog(entry.id, fileName, destination).ConfigureAwait(false);
 
                     tallyBytes += receivedbytes;
                     receivedbytes = 0;
@@ -353,12 +370,16 @@ namespace MissionPlanner.Log
 
                 UpdateProgress(0, totalBytes, totalBytes);
 
-                AppendSerialLog("Download complete.");
+                AppendSerialLog("Download complete. " + destination);
                 Console.Beep();
             }
             catch (Exception ex)
             {
                 AppendSerialLog("Error in log " + ex.Message);
+            }
+            finally
+            {
+                MainV2.comPort.Progress -= ComPort_Progress;
             }
 
             RunOnUIThread(() =>
@@ -436,9 +457,11 @@ namespace MissionPlanner.Log
                 }
                 else
                 {
+                    string destination;
+                    if (!TryChooseDownloadDirectory(out destination)) return;
                     BUT_DLall.Enabled = false;
                     BUT_DLthese.Enabled = false;
-                    System.Threading.Thread t11 = new System.Threading.Thread(delegate () { DownloadThread(toDownload); })
+                    System.Threading.Thread t11 = new System.Threading.Thread(delegate () { DownloadThread(toDownload, destination); })
                     {
                         Name = "Log download single thread"
                     };

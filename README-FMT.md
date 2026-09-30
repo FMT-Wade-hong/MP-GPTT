@@ -1,10 +1,10 @@
-# FeiMaoTecPlanner V1.1.8（FMTPlanner）使用手冊
+# FeiMaoTecPlanner V1.1.9（FMTPlanner）使用手冊
 
-本手冊對應 V1.1.8；下載套件請完整解壓後執行 `FMTPlanner-V1.1.8.exe`。本機建置請執行 `bin/Release118/net461/FMTPlanner.exe`，並保留同資料夾內的完整相依檔案。
+本手冊對應 V1.1.9 本機候選版，尚未正式發布 GitHub。請執行 `bin/Release119/net461/FMTPlanner.exe`，並保留同資料夾內的完整相依檔案。變更與限制見 [發布說明](FMT/RELEASE-V1.1.9.md) 與 [稽核紀錄](FMT/RELEASE-AUDIT-V1.1.9.md)。
 
 V1.1.8 新增限禁航區顯示開關與 HOME 半徑（整數公里、預設 5 KM），縮放 10～18 級才顯示；修正 WP 拖曳、距離標籤與接力按鈕重疊。既有半徑會保留並四捨五入。顯示設定不會停用航線安全檢查，完整離線限禁航區資料包尚未內建。
 
-保留前版 COM 通訊介面阻塞及預設參數選單修正。繁體中文參數中未人工核對的機譯會明確標示；請以原文及對應韌體文件確認重要設定。
+保留前版 COM 通訊介面阻塞及預設參數選單修正。V1.1.9 停用未核對機譯；沒有核對譯文的參數保留英文，專有名詞與縮寫保留，不宣稱全表已完成中文化。
 
 <p align="center">
   <img src="FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="360">
@@ -76,7 +76,7 @@ V1.1.8 新增限禁航區顯示開關與 HOME 半徑（整數公里、預設 5 K
 
 1. 到 GitHub 專案右側的 **Releases／發布**下載最新版 `FMTPlanner-VX.X.X.zip`。
 2. 將 ZIP 完整解壓縮到可寫入的資料夾，不要直接在壓縮檔內執行。
-3. 本機 V1.1.8 建置執行 `FMTPlanner.exe`；下載的舊版套件請依套件內的版本命名執行檔啟動。
+3. 本機 V1.1.9 建置執行 `FMTPlanner.exe`；下載的舊版套件請依套件內的版本命名執行檔啟動。
 4. 在登入畫面輸入預設帳號與密碼：
 
    - 帳號：`FMT`

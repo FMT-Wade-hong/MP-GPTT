@@ -3,6 +3,9 @@ using MissionPlanner.Controls;
 using MissionPlanner.Utilities;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -10,21 +13,26 @@ using System.Windows.Forms;
 
 namespace MissionPlanner.GCSViews.ConfigurationView
 {
-    public partial class ConfigArducopter : MyUserControl, IActivate
+    public partial class ConfigArducopter : MyUserControl, IActivate, IDeactivate
     {
         // from http://stackoverflow.com/questions/2512781/winforms-big-paragraph-tooltip/2512895#2512895
         private const int maximumSingleLineTooltipLength = 50;
         private static Hashtable tooltips = new Hashtable();
         private readonly Hashtable changes = new Hashtable();
         internal bool startup = true;
+        private CancellationTokenSource refreshCancellation;
+
+        public void Deactivate() { refreshCancellation?.Cancel(); }
 
         public ConfigArducopter()
         {
             InitializeComponent();
+            Disposed += (s, e) => refreshCancellation?.Cancel();
         }
 
         public void Activate()
         {
+            if (refreshCancellation != null) return;
             if (!MainV2.comPort.BaseStream.IsOpen)
             {
                 Enabled = false;
@@ -449,42 +457,85 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             Activate();
         }
 
-        private void BUT_refreshpart_Click(object sender, EventArgs e)
+        private async void BUT_refreshpart_Click(object sender, EventArgs e)
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
+            if (refreshCancellation != null) return;
+            var link = MainV2.comPort;
+            if (link?.BaseStream == null || !link.BaseStream.IsOpen)
                 return;
+            if (changes.Count > 0 && CustomMessageBox.Show(
+                    "更新將捨棄此頁尚未寫入的修改，是否繼續？", "更新畫面",
+                    MessageBoxButtons.YesNo) != (int)DialogResult.Yes) return;
 
-            ((Control)sender).Enabled = false;
-
-
-            updateparam(this);
-
-            ((Control)sender).Enabled = true;
-
-
-            Activate();
-        }
-
-        private void updateparam(Control parentctl)
-        {
-            foreach (Control ctl in parentctl.Controls)
+            var vehicle = link.MAV;
+            var sysid = vehicle.sysid;
+            var compid = vehicle.compid;
+            var names = GetBoundRefreshParameters(this)
+                .Where(name => vehicle.param.ContainsKey(name)).ToArray();
+            var cancellation = new CancellationTokenSource();
+            refreshCancellation = cancellation;
+            var oldText = BUT_refreshpart.Text;
+            Enabled = false; // Prevent edits/writes while the snapshot is refreshed.
+            BUT_refreshpart.Text = "讀取中…";
+            bool completed = false;
+            try
             {
-                if (typeof(MavlinkNumericUpDown) == ctl.GetType() || typeof(ComboBox) == ctl.GetType())
+                await Task.Run(() =>
                 {
-                    try
+                    var elapsed = System.Diagnostics.Stopwatch.StartNew();
+                    int failures = 0;
+                    int totalFailures = 0;
+                    foreach (var name in names)
                     {
-                        MainV2.comPort.GetParam(ctl.Name);
+                        cancellation.Token.ThrowIfCancellationRequested();
+                        if (MainV2.comPort != link || link.MAV != vehicle || !link.BaseStream.IsOpen)
+                            throw new InvalidOperationException("連線或目前機體已變更，已停止更新。");
+                        if (elapsed.Elapsed > TimeSpan.FromSeconds(30))
+                            throw new TimeoutException("讀取超過 30 秒，已停止後續請求；請確認數傳連線。");
+                        try { link.GetParam(sysid, compid, name); failures = 0; }
+                        catch (Exception ex)
+                        {
+                            totalFailures++;
+                            if (++failures >= 3)
+                                throw new TimeoutException("連續 3 筆參數讀取失敗，已停止更新。", ex);
+                        }
                     }
-                    catch
-                    {
-                    }
-                }
-
-                if (ctl.Controls.Count > 0)
+                    if (totalFailures > 0)
+                        throw new TimeoutException(totalFailures + " 筆參數未讀取成功；保留原畫面，請檢查連線後重試。");
+                });
+                completed = !cancellation.IsCancellationRequested && MainV2.comPort == link &&
+                    link.MAV == vehicle && link.BaseStream.IsOpen;
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                if (!IsDisposed && !cancellation.IsCancellationRequested)
+                    CustomMessageBox.Show("更新未完成：" + ex.Message, "更新畫面");
+            }
+            finally
+            {
+                refreshCancellation = null;
+                cancellation.Dispose();
+                if (!IsDisposed)
                 {
-                    updateparam(ctl);
+                    BUT_refreshpart.Text = oldText;
+                    Enabled = true;
+                    if (completed) Activate();
                 }
             }
+        }
+
+        internal static string[] GetBoundRefreshParameters(Control parentctl)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (Control ctl in parentctl.Controls)
+            {
+                var name = (ctl as MavlinkNumericUpDown)?.ParamName ??
+                    (ctl as MavlinkComboBox)?.ParamName;
+                if (!string.IsNullOrWhiteSpace(name)) names.Add(name);
+                foreach (var nested in GetBoundRefreshParameters(ctl)) names.Add(nested);
+            }
+            return names.ToArray();
         }
 
         private void numeric_ValueUpdated(object sender, EventArgs e)
@@ -497,7 +548,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             if (sender is MavlinkNumericUpDown editor)
                 editor.Select(0, editor.Text.Length);
             // show unit change warning for Copter 4.7 renamed parameters
-            if (VersionDetection.GetVersion(MainV2.comPort.MAV.VersionString) >= new Version(4, 7)
+            if (VersionDetection.TryGetVersion(MainV2.comPort?.MAV?.VersionString, out var version)
+                && version >= new Version(4, 7)
                 && sender is MavlinkNumericUpDown mnud)
             {
                 var warning = ParamChanges47.changedByNewParamWarning(mnud.ParamName);

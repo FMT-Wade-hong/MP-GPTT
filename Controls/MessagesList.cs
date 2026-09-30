@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using MissionPlanner.Utilities;
 using static MAVLink;
@@ -15,7 +16,6 @@ namespace MissionPlanner.Controls
         private ContextMenuStrip contextMenu;
         private List<(DateTime time, string message, byte severity)> messages = new List<(DateTime, string, byte)>();
         private int itemHeight = 26;
-        private int lastMessageCount = 0;
         private bool autoScroll = true;
         private Font displayFont;
         private int selectedIndex = -1;
@@ -189,11 +189,18 @@ namespace MissionPlanner.Controls
             if (newMessages == null)
                 return;
 
-            if (newMessages.Count == lastMessageCount)
+            // The receiver keeps a rolling 1000-row buffer: equal counts do not
+            // mean equal content. Snapshot under the same lock as the receiver.
+            List<(DateTime time, string message, byte severity)> snapshot;
+            lock (newMessages)
+                snapshot = new List<(DateTime, string, byte)>(newMessages);
+
+            if (messages.SequenceEqual(snapshot))
                 return;
 
-            messages = new List<(DateTime, string, byte)>(newMessages);
-            lastMessageCount = messages.Count;
+            messages = snapshot;
+            selectedIndex = -1;
+            hoverIndex = -1;
 
             UpdateScrollBar();
 

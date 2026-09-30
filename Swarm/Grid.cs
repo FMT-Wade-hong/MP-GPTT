@@ -59,6 +59,12 @@ namespace MissionPlanner.Swarm
 
             this.Resize += Grid_Resize;
         }
+        public void ApplyTraditionalChinese()
+        {
+            CHK_vertical.Text = "垂直檢視";
+            CHK_vertical.AutoSize = true;
+            changeAltToolStripMenuItem.Text = "調整高度偏移";
+        }
         private void Grid_Resize(object sender, EventArgs e)
         {
             setScale(getScale());
@@ -373,7 +379,7 @@ namespace MissionPlanner.Swarm
             var mouseoverlocal = mouseover;
 
             string output = mouseover.z.ToString();
-            if (DialogResult.OK == InputBox.Show("Alt", "Enter New Alt", ref output))
+            if (DialogResult.OK == InputBox.Show("高度偏移", "輸入新的高度偏移（公尺）", ref output))
             {
                 mouseoverlocal.z = float.Parse(output);
 

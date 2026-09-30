@@ -12,6 +12,24 @@ namespace MissionPlanner.Utilities
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+        // UI hints must not fail while AUTOPILOT_VERSION/status text is still
+        // pending, or when a vendor firmware supplies an unrecognised name.
+        public static bool TryGetVersion(string input, out Version version)
+        {
+            version = null;
+            if (string.IsNullOrWhiteSpace(input)) return false;
+            try
+            {
+                version = GetVersion(input);
+                return true;
+            }
+            catch (Exception ex) when (ex is ArgumentException || ex is FormatException ||
+                ex is OverflowException || ex is IndexOutOfRangeException || ex.Message == "Bad Version")
+            {
+                return false;
+            }
+        }
+
         public static Version GetVersion(string input)
         {
             Regex versionregex = new Regex(@"([0-9]+)\.([0-9]+)(\.([0-9]+)|-rc([0-9]+)|([a-z]{2,20})|([a-z]))*");

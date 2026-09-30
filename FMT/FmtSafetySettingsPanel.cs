@@ -193,6 +193,7 @@ namespace MissionPlanner.FMT
             private readonly Button bitmaskButton;
             private readonly ContextMenuStrip bitmaskMenu;
             private readonly Label current;
+            private int unknownBitmaskBits;
 
             internal SafetyParameterCard(FmtSafetyParameterDefinition definition, string parameterName, bool canWrite,
                 string writeBlockedReason)
@@ -223,6 +224,16 @@ namespace MissionPlanner.FMT
                 };
 
                 var firmware = MainV2.comPort.MAV.cs.firmware.ToString();
+                var units = ParameterMetaDataRepository.GetParameterMetaData(parameterName, ParameterMetaDataConstants.Units, firmware);
+                // Older metadata caches may not contain the renamed SI-unit parameters.
+                if (string.IsNullOrWhiteSpace(units))
+                {
+                    if (parameterName == "RTL_ALT_M") units = "m";
+                    else if (parameterName == "RTL_SPEED_MS") units = "m/s";
+                    else if (parameterName == "RTL_ALT") units = "cm";
+                    else if (parameterName == "RTL_SPEED") units = "cm/s";
+                }
+                if (!string.IsNullOrWhiteSpace(units)) title.Text += " (" + units + ")";
                 var options = ParameterMetaDataRepository.GetParameterOptionsInt(parameterName, firmware);
                 if (parameterName == "FS_OPTIONS")
                 {
@@ -231,7 +242,7 @@ namespace MissionPlanner.FMT
                         ShowImageMargin = false,
                         ShowCheckMargin = true,
                         AutoSize = true,
-                        MaximumSize = new Size(320, 0),
+                        Renderer = new ToolStripProfessionalRenderer(new SafetyMenuColors()),
                         BackColor = PanelColor,
                         ForeColor = Color.White,
                         Font = new Font("Microsoft JhengHei UI", 9F)
@@ -244,8 +255,8 @@ namespace MissionPlanner.FMT
                             Text = "位元 " + bit.Key + "｜" + FmtSafetyParameterCatalog.TranslateOption(bit.Value),
                             Tag = bit.Key,
                             CheckOnClick = true,
-                            AutoSize = false,
-                            Size = new Size(300, 28),
+                            AutoSize = true,
+                            ToolTipText = bit.Value,
                             BackColor = PanelColor,
                             ForeColor = Color.White
                         };
@@ -298,7 +309,9 @@ namespace MissionPlanner.FMT
                         DisplayMember = "Text",
                         ValueMember = "Value"
                     };
-                    choices.DataSource = translatedOptions.ToArray();
+                    // Bound lists can reset to their first item when a hidden card acquires
+                    // its parent's BindingContext. Explicit items keep the actual readback selected.
+                    choices.Items.AddRange(translatedOptions.Cast<object>().ToArray());
                     Controls.Add(choices);
                 }
                 else
@@ -385,10 +398,19 @@ namespace MissionPlanner.FMT
             {
                 current.Text = "目前：" + value.ToString("0.###", CultureInfo.InvariantCulture);
                 if (choices != null)
-                    choices.SelectedValue = Convert.ToInt32(value);
+                {
+                    var selected = Convert.ToInt32(value);
+                    var index = choices.Items.Cast<SafetyOption>().ToList().FindIndex(item => item.Value == selected);
+                    if (index < 0)
+                        index = choices.Items.Add(new SafetyOption { Value = selected, Text = selected + "－目前值（中繼資料未列出）" });
+                    choices.SelectedIndex = index;
+                }
                 else if (bitmaskButton != null)
                 {
                     var mask = Convert.ToInt32(value);
+                    var knownBits = bitmaskMenu.Items.OfType<ToolStripMenuItem>()
+                        .Where(item => item.Tag is int).Aggregate(0, (bits, item) => bits | (1 << (int)item.Tag));
+                    unknownBitmaskBits = mask & ~knownBits;
                     foreach (ToolStripItem rawItem in bitmaskMenu.Items)
                     {
                         var item = rawItem as ToolStripMenuItem;
@@ -403,7 +425,7 @@ namespace MissionPlanner.FMT
 
             private float GetBitmaskValue()
             {
-                var value = 0;
+                var value = unknownBitmaskBits;
                 foreach (ToolStripItem rawItem in bitmaskMenu.Items)
                 {
                     var item = rawItem as ToolStripMenuItem;
@@ -419,7 +441,7 @@ namespace MissionPlanner.FMT
                     return;
                 var selected = bitmaskMenu.Items.OfType<ToolStripMenuItem>()
                     .Count(item => item.Tag is int && item.Checked);
-                bitmaskButton.Text = selected == 0
+                bitmaskButton.Text = selected == 0 && unknownBitmaskBits == 0
                     ? "未選擇例外（0） ▼"
                     : "已選 " + selected + " 項（" + GetBitmaskValue().ToString("0") + "） ▼";
             }
@@ -442,6 +464,18 @@ namespace MissionPlanner.FMT
         {
             public int Value { get; set; }
             public string Text { get; set; }
+        }
+
+        private sealed class SafetyMenuColors : ProfessionalColorTable
+        {
+            public override Color ToolStripDropDownBackground => PanelColor;
+            public override Color ImageMarginGradientBegin => PanelColor;
+            public override Color ImageMarginGradientMiddle => PanelColor;
+            public override Color ImageMarginGradientEnd => PanelColor;
+            public override Color CheckBackground => Cyan;
+            public override Color CheckSelectedBackground => Cyan;
+            public override Color MenuItemSelected => Color.FromArgb(42, 75, 90);
+            public override Color MenuBorder => Cyan;
         }
     }
 }

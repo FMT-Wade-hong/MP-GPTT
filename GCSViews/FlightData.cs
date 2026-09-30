@@ -172,7 +172,6 @@ namespace MissionPlanner.GCSViews
         double LogPlayBackSpeed = 1.0;
         GMapMarker marker;
 
-        int messagecount;
 
         //whether or not the output console has already started
         bool outputwindowstarted;
@@ -1393,6 +1392,9 @@ namespace MissionPlanner.GCSViews
 
         internal void ExecuteFmtAirspeedZero()
         {
+            if (!MainV2.IsFmtAirspeedZeroAvailable(MainV2.comPort?.MAV?.param))
+                return;
+
             if (MainV2.comPort?.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
             {
                 CustomMessageBox.Show(IsFmtTraditionalChineseUi
@@ -5431,19 +5433,15 @@ namespace MissionPlanner.GCSViews
 
         private void Messagetabtimer_Tick(object sender, EventArgs e)
         {
-            var messagetime = MainV2.comPort.MAV.cs.messages.LastOrDefault().time;
-            if (messagecount != messagetime.toUnixTime())
+            try
             {
-                try
-                {
-                    messagesList1.UpdateMessages(MainV2.comPort.MAV.cs.messages);
-
-                    messagecount = messagetime.toUnixTime();
-                }
-                catch (Exception ex)
-                {
-                    log.Error(ex);
-                }
+                // Let the control compare snapshots. A seconds-only timestamp
+                // misses bursts, cleared buffers and vehicle switches.
+                messagesList1.UpdateMessages(MainV2.comPort.MAV.cs.messages);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
             }
 
             coords1.AltUnit = CurrentState.AltUnit;

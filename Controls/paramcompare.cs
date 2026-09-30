@@ -10,6 +10,8 @@ namespace MissionPlanner.Controls
         public delegate void dtlvcallbackHandler(string param, double value);
 
         public event dtlvcallbackHandler dtlvcallback;
+        // Optional owner callback stages edits through the parameter page's validation.
+        public Func<string, double, bool> StageParameter { get; set; }
 
         DataGridView dgv;
         Dictionary<string, double> param = new Dictionary<string, double>();
@@ -64,6 +66,30 @@ namespace MissionPlanner.Controls
 
         private void BUT_save_Click(object sender, EventArgs e)
         {
+            Params.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            Params.EndEdit();
+            if (StageParameter != null)
+            {
+                int applied = 0;
+                var rejected = new List<string>();
+                foreach (DataGridViewRow row in Params.Rows)
+                {
+                    if (!Equals(row.Cells[Use.Index].Value, true)) continue;
+                    var name = Convert.ToString(row.Cells[Command.Index].Value).Trim();
+                    double value;
+                    if (!double.TryParse(Convert.ToString(row.Cells[newvalue.Index].Value), out value) ||
+                        double.IsNaN(value) || double.IsInfinity(value) || !StageParameter(name, value))
+                        rejected.Add(name);
+                    else
+                        applied++;
+                }
+                CustomMessageBox.Show("已套用至待寫入清單：" + applied + " 項。\r\n" +
+                    (rejected.Count > 0 ? "未套用：" + string.Join("、", rejected) + "\r\n" : "") +
+                    "尚未寫入飛控，請回參數表確認後按「寫入參數」。", "比對參數");
+                DialogResult = DialogResult.OK;
+                Close();
+                return;
+            }
             if (dgv == null)
             {
                 try

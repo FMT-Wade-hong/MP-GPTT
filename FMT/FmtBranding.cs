@@ -7,33 +7,40 @@ namespace MissionPlanner.FMT
 {
     internal static class FmtBranding
     {
-        private const string FmtApplicationId = "FMT.FeiMaoTecPlanner";
+        // Keep native icon handles alive for the lifetime of the process.
+        private static readonly Lazy<Icon> WindowIcon = new Lazy<Icon>(() =>
+            (Icon)MissionPlanner.Properties.Resources.mpdesktop.Clone());
+        private static readonly Lazy<Icon> SmallWindowIcon = new Lazy<Icon>(() =>
+            new Icon(WindowIcon.Value, SystemInformation.SmallIconSize));
+        private static readonly Lazy<Icon> LargeWindowIcon = new Lazy<Icon>(() =>
+            new Icon(WindowIcon.Value, SystemInformation.IconSize));
 
-        [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-        private static extern int SetCurrentProcessExplicitAppUserModelID(string appID);
-
-        internal static void ApplyTaskbarIdentity()
-        {
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
-                return;
-
-            try
-            {
-                SetCurrentProcessExplicitAppUserModelID(FmtApplicationId);
-            }
-            catch
-            {
-                // Older Windows/compatibility environments do not expose this API.
-                // The embedded FMT application icon remains the fallback.
-            }
-        }
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SendMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
 
         internal static void ApplyApplicationIcon(Form form)
         {
             if (form == null || MissionPlanner.Properties.Resources.mpdesktop == null)
                 return;
 
-            form.Icon = (Icon)MissionPlanner.Properties.Resources.mpdesktop.Clone();
+            form.ShowIcon = true;
+            form.Icon = WindowIcon.Value;
+            form.HandleCreated -= RefreshWindowIcon;
+            form.HandleCreated += RefreshWindowIcon;
+            RefreshWindowIcon(form, EventArgs.Empty);
+        }
+
+        private static void RefreshWindowIcon(object sender, EventArgs e)
+        {
+            var form = sender as Form;
+            if (form == null || form.IsDisposed || !form.IsHandleCreated ||
+                Environment.OSVersion.Platform != PlatformID.Win32NT) return;
+
+            // Explicitly set both icons used by Windows: title bar and taskbar /
+            // Alt-Tab. Reapply after WinForms recreates a window handle.
+            const int WM_SETICON = 0x0080;
+            SendMessage(form.Handle, WM_SETICON, IntPtr.Zero, SmallWindowIcon.Value.Handle);
+            SendMessage(form.Handle, WM_SETICON, new IntPtr(1), LargeWindowIcon.Value.Handle);
         }
     }
 }

@@ -157,7 +157,9 @@ namespace MissionPlanner
             Thread = Thread.CurrentThread;
 
             System.Windows.Forms.Application.EnableVisualStyles();
-            FMT.FmtBranding.ApplyTaskbarIdentity();
+            // Portable builds use Windows' executable-based taskbar identity.
+            // A fixed explicit AppUserModelID without a matching installed shortcut
+            // can associate new builds with stale/missing shell icon metadata.
             XmlConfigurator.Configure(LogManager.GetRepository(Assembly.GetCallingAssembly()));
             if (Environment.OSVersion.Platform == PlatformID.Unix)
             {

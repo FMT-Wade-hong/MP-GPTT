@@ -53,7 +53,22 @@ namespace MissionPlanner.FMT
             ForeColor = Color.White;
             Font = new Font("Microsoft JhengHei UI", 9F);
 
-            var header = new Panel { Dock = DockStyle.Top, Height = 56, BackColor = CardBackground };
+            var header = new Panel { Dock = DockStyle.Top, Height = 84, BackColor = CardBackground };
+            var showControlSource = new CheckBox
+            {
+                Name = "fmtShowControlSourceButtons",
+                Text = "顯示頂部控制權切換按鈕（遙控器／導控）",
+                AutoSize = true,
+                Location = new Point(14, 57),
+                ForeColor = Color.White,
+                Checked = Settings.Instance.GetBoolean("FMT_ShowControlSourceButtons", false)
+            };
+            showControlSource.CheckedChanged += (sender, args) =>
+            {
+                Settings.Instance["FMT_ShowControlSourceButtons"] = showControlSource.Checked.ToString();
+                MainV2.instance?.UpdateFmtControlSourceVisibility();
+            };
+            header.Controls.Add(showControlSource);
             var title = new Label
             {
                 Text = "接力控制  Relay Control",

@@ -53,15 +53,31 @@ Test-FmtCondition 'Legacy VTOL WP radius converts to raw' ([Math]::Abs([double]$
 Test-FmtCondition 'Plane WP radius remains meters' ([Math]::Abs([double]$distanceToRaw.Invoke($null, @('WP_RADIUS', 25.0)) - 25.0) -lt 0.001) 'Plane WP radius uses meters directly'
 
 $yawMapping = $type.GetMethod('FmtYawSelectionsToBehavior', $binding)
+foreach ($pair in @(@('WP_SPD_UP', 'WPNAV_SPEED_UP'), @('WP_SPD_DN', 'WPNAV_SPEED_DN'))) {
+    foreach ($index in @(0, 1)) {
+        $raw = if ($index -eq 0) { 2.5 } else { 250.0 }
+        $name = $pair[$index]
+        Test-FmtCondition "$name read units" ([Math]::Abs([double]$fromRaw.Invoke($null, @($name, $raw)) - 2.5) -lt 0.001) 'vertical speed displays as m/s'
+        Test-FmtCondition "$name write units" ([Math]::Abs([double]$toRaw.Invoke($null, @($name, 2.5)) - $raw) -lt 0.001) 'vertical speed round trips in native units'
+    }
+}
+foreach ($name in @('RTL_ALT_M', 'RTL_ALT')) {
+    $raw = if ($name -eq 'RTL_ALT_M') { 30.0 } else { 3000.0 }
+    Test-FmtCondition "$name read units" ([Math]::Abs([double]$distanceFromRaw.Invoke($null, @($name, $raw)) - 30.0) -lt 0.001) 'RTL height displays as meters'
+    Test-FmtCondition "$name write units" ([Math]::Abs([double]$distanceToRaw.Invoke($null, @($name, 30.0)) - $raw) -lt 0.001) 'RTL height round trips in native units'
+}
 Test-FmtCondition 'WP and RTL face targets mapping' ([int]$yawMapping.Invoke($null, @(1, 1)) -eq 1) 'WP next waypoint plus RTL home maps to behavior 1'
 Test-FmtCondition 'WP face target and RTL hold mapping' ([int]$yawMapping.Invoke($null, @(1, 0)) -eq 2) 'WP next waypoint plus RTL hold maps to behavior 2'
 Test-FmtCondition 'GPS course yaw mapping' ([int]$yawMapping.Invoke($null, @(3, 3)) -eq 3) 'WP and RTL GPS course maps to behavior 3'
 Test-FmtCondition 'Unsupported independent yaw rejected' ([int]$yawMapping.Invoke($null, @(0, 1)) -eq -1) 'unsupported pair cannot be written to shared parameter'
 
 $source = Get-Content -LiteralPath (Join-Path $projectRoot 'GCSViews\ConfigurationView\ConfigFlightModes.cs') -Raw -Encoding UTF8
+foreach ($aliases in @('"WP_SPD_UP", "WPNAV_SPEED_UP"', '"WP_SPD_DN", "WPNAV_SPEED_DN"', '"RTL_ALT_M", "RTL_ALT"')) {
+    Test-FmtCondition "Common setting aliases $aliases" ($source.Contains("FindFmtParameter($aliases)")) 'modern names are preferred with legacy fallback'
+}
 Test-FmtCondition 'Panels are below flight modes' ($source.Contains('Location = new Point(0, fmtVehicleNotice.Bottom + 4)')) 'vehicle panels follow the existing controls'
 Test-FmtCondition 'Three vehicle panels exist' ($source.Contains('Name = "FmtCommonSettings"') -and $source.Contains('Name = "FmtFixedWingSettings"') -and $source.Contains('Name = "FmtVtolSettings"')) 'multirotor, fixed-wing and VTOL each have a frame'
-Test-FmtCondition 'Connected vehicle panel selection' ($source.Contains('LoadFmtMultirotorSettings(isCopter, canWrite);') -and $source.Contains('LoadFmtFixedWingSettings(isFixedWing, canWrite);') -and $source.Contains('LoadFmtVtolSettings(isVtol, canWrite);')) 'only the detected vehicle type is writable'
+Test-FmtCondition 'Connected vehicle panel selection' ($source.Contains('LoadFmtMultirotorSettings(isMultirotor, canWrite);') -and $source.Contains('LoadFmtFixedWingSettings(isFixedWing, canWrite);') -and $source.Contains('LoadFmtVtolSettings(isVtol, canWrite);')) 'only the detected vehicle type is writable'
 Test-FmtCondition 'Navigation aliases supported' ($source.Contains('FindFmtParameter("WP_SPD", "WPNAV_SPEED")')) 'new and legacy navigation parameters are supported'
 Test-FmtCondition 'GPS speed aliases supported' ($source.Contains('FindFmtParameter("LOIT_SPEED_MS", "WPNAV_LOIT_SPEED", "LOIT_SPEED")')) 'new and legacy position-control speed parameters are supported'
 Test-FmtCondition 'RTL speed aliases supported' ($source.Contains('FindFmtParameter("RTL_SPEED_MS", "RTL_SPEED")')) 'new and legacy RTL parameters are supported'

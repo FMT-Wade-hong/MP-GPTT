@@ -144,6 +144,8 @@ namespace MissionPlanner.GCSViews
             try
             {
                 BackstageViewPage start = null;
+                // Independent top-level entry, including when disconnected or loading parameters.
+                AddBackstageViewPage(typeof(ConfigFmtSwarm), "群飛管理");
 
                 if (gotAllParams)
                 {

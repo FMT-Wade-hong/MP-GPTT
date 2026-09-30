@@ -3,6 +3,8 @@ using MissionPlanner.Controls;
 using MissionPlanner.Utilities;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -21,6 +23,82 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         public ConfigArdurover()
         {
             InitializeComponent();
+            ApplyChineseLabels();
+            foreach (var combo in new[] { CH7_OPTION, CH8_OPTION, CH9_OPTION, CH10_OPTION, ATC_BRAKE, MOT_PWM_TYPE })
+            {
+                combo.FormattingEnabled = true;
+                combo.Format += FormatChineseOption;
+                combo.DropDownWidth = Math.Max(combo.Width, 340);
+            }
+        }
+
+        private static bool UseChinese => CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+        private void ApplyChineseLabels()
+        {
+            if (!UseChinese) return;
+            var labels = new Dictionary<string, string>
+            {
+                { "groupBox5", "轉向角速度控制" }, { "groupBox14", "速度／油門控制" },
+                { "groupBox4", "導航設定" }, { "groupBox2", "轉向設定" },
+                { "groupBox3", "油門與馬達" }, { "groupBox1", "避障設定" },
+                { "label17", "比例 P" }, { "label16", "積分 I" }, { "label15", "微分 D" },
+                { "label14", "積分上限 IMAX" }, { "label24", "前饋 FF" },
+                { "label76", "比例 P" }, { "label75", "積分 I" }, { "label74", "微分 D" },
+                { "label73", "積分上限 IMAX" }, { "label20", "最大加速度 (m/s²)" },
+                { "label23", "煞車" }, { "label12", "巡航速度 (m/s)" },
+                { "label8", "巡航油門 (%)" }, { "label22", "馬達輸出類型" },
+                { "label7", "最小油門 (%)" }, { "label6", "最大油門 (%)" },
+                { "label5", "航點速度 (m/s)" }, { "label9", "航點半徑 (m)" },
+                { "label19", "航點超越距離 (m)" }, { "label10", "轉彎加速上限 (g)" },
+                { "label18", "橫向控制週期 (s)" }, { "label13", "橫向控制阻尼" },
+                { "label11", "轉彎半徑 (m)" }, { "label4", "觸發確認次數" },
+                { "label1", "避障轉向時間 (s)" }, { "label2", "避障轉向角度 (°)" },
+                { "label3", "觸發距離 (cm)" },
+                { "label21", "RC7 功能" }, { "label25", "RC8 功能" },
+                { "label26", "RC9 功能" }, { "label27", "RC10 功能" },
+                { "BUT_writePIDS", "寫入參數" }, { "BUT_rerequestparams", "重新讀取參數" },
+                { "BUT_refreshpart", "更新本頁參數" }
+            };
+            foreach (var entry in labels)
+                foreach (var control in Controls.Find(entry.Key, true))
+                {
+                    control.Text = entry.Value;
+                    // Preserve the designer's input columns; Chinese labels stay within them.
+                    if (control is Label label)
+                    {
+                        label.AutoSize = false;
+                        var input = label.Parent.Controls.Cast<Control>()
+                            .Where(c => (c is NumericUpDown || c is ComboBox) && c.Left > label.Left &&
+                                Math.Abs(c.Top - label.Top) < 12)
+                            .OrderBy(c => c.Left).FirstOrDefault();
+                        if (input != null) label.Width = input.Left - label.Left - 4;
+                        label.Height = Math.Max(label.Height, label.Font.Height + 4);
+                        label.AutoEllipsis = true;
+                    }
+                    toolTip1.SetToolTip(control, entry.Value);
+                }
+        }
+
+        internal static string TranslateRoverOption(string text)
+        {
+            switch (text?.Trim())
+            {
+                case "Do Nothing": return "不執行動作";
+                case "Normal": return "一般 PWM";
+                case "Enable": case "Enabled": return "啟用";
+                case "Disable": case "Disabled": return "停用";
+                case "OneShot": return "OneShot 輸出";
+                case "OneShot125": return "OneShot125 輸出";
+                case "Brushed": return "有刷馬達";
+                default: return MissionPlanner.FMT.FmtParameterDrafts.Translate(text);
+            }
+        }
+
+        private static void FormatChineseOption(object sender, ListControlConvertEventArgs e)
+        {
+            if (UseChinese && e.ListItem is KeyValuePair<int, string> option)
+                e.Value = TranslateRoverOption(option.Value);
         }
 
         public void Activate()
@@ -97,20 +175,26 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     {
                         var ParamName = ((MavlinkNumericUpDown)control2).ParamName;
                         toolTip1.SetToolTip(control2,
-                            ParameterMetaDataRepository.GetParameterMetaData(ParamName,
-                                ParameterMetaDataConstants.Description, MainV2.comPort.MAV.cs.firmware.ToString()));
+                            RoverTooltip(ParamName));
                     }
                     if (control2 is MavlinkComboBox)
                     {
                         var ParamName = ((MavlinkComboBox)control2).ParamName;
                         toolTip1.SetToolTip(control2,
-                            ParameterMetaDataRepository.GetParameterMetaData(ParamName,
-                                ParameterMetaDataConstants.Description, MainV2.comPort.MAV.cs.firmware.ToString()));
+                            RoverTooltip(ParamName));
                     }
                 }
             }
 
             startup = false;
+        }
+
+        private static string RoverTooltip(string parameterName)
+        {
+            var description = ParameterMetaDataRepository.GetParameterMetaData(parameterName,
+                ParameterMetaDataConstants.Description, MainV2.comPort.MAV.cs.firmware.ToString());
+            return parameterName + "\r\n" + (UseChinese
+                ? MissionPlanner.FMT.FmtParameterDrafts.Translate(description) : description);
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -162,13 +246,13 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 {
                     if ((float)changes[value] > (float)MainV2.comPort.MAV.param[value] * 2.0f)
                         if (
-                            CustomMessageBox.Show(value + " has more than doubled the last input. Are you sure?",
-                                "Large Value", MessageBoxButtons.YesNo) == (int)DialogResult.No)
+                            CustomMessageBox.Show(value + (UseChinese ? " 的新值超過目前值兩倍，確定要寫入嗎？" : " has more than doubled the last input. Are you sure?"),
+                                UseChinese ? "數值變動過大" : "Large Value", MessageBoxButtons.YesNo) == (int)DialogResult.No)
                             return;
 
                     if (MainV2.comPort.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
                     {
-                        CustomMessageBox.Show("Your are not connected", Strings.ERROR);
+                        CustomMessageBox.Show(UseChinese ? "尚未連線至飛控。" : "You are not connected", Strings.ERROR);
                         return;
                     }
 

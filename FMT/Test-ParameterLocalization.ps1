@@ -40,32 +40,32 @@ try {
     foreach ($node in $ek3) {
         $sourceDescription = [string]$node.Description
         $text = $display.Invoke($null, @([string]$node.Name, $sourceDescription))
-        if ($text -eq $sourceDescription -or $text.Contains($sourceDescription) -or $text -notmatch '[\u4e00-\u9fff]') { throw "Untranslated or duplicated English: $($node.Name)" }
+        if ($text.Contains('機譯')) { throw "Unreviewed draft displayed: $($node.Name)" }
         foreach ($list in @([string]$node.Values, [string]$node.Bitmask)) {
             foreach ($entry in $list.Split(',')) {
                 $colon = $entry.IndexOf(':')
                 if ($colon -lt 0) { continue }
                 $label = $entry.Substring($colon + 1).Trim()
                 $local = $option.Invoke($null, @($label))
-                if ($local -eq $label) { throw "Untranslated EK3 option: $label" }
+                if ($local.Contains('機譯')) { throw "Unreviewed option displayed: $label" }
             }
         }
     }
-    "PASS: all $($ek3.Count) bundled EK3 descriptions, enum labels and bitmask labels translated; table excludes English source"
+    "PASS: $($ek3.Count) bundled EK3 entries exclude machine drafts; technical labels and unreviewed prose may remain English"
     if ($cached) {
         $cachedEk3 = $cached.SelectNodes('//param[starts-with(@name,"EK3_")]')
         foreach ($node in $cachedEk3) {
             $sourceDescription = [string]$node.documentation
-            if ($display.Invoke($null, @([string]$node.name, $sourceDescription)) -eq $sourceDescription) { throw "Untranslated cached parameter: $($node.name)" }
+            if ($display.Invoke($null, @([string]$node.name, $sourceDescription)).Contains('機譯')) { throw "Unreviewed cached parameter: $($node.name)" }
             $labels = @($node.values.value | ForEach-Object { $_.InnerText })
             foreach ($field in @($node.field | Where-Object name -eq 'Bitmask')) {
                 $labels += @($field.InnerText.Split(',') | ForEach-Object { $_.Substring($_.IndexOf(':') + 1).Trim() })
             }
             foreach ($label in $labels) {
-                if ($label -and $option.Invoke($null, @([string]$label)) -eq $label) { throw "Untranslated cached option: $label" }
+                if ($label -and $option.Invoke($null, @([string]$label)).Contains('機譯')) { throw "Unreviewed cached option: $label" }
             }
         }
-        "PASS: all $($cachedEk3.Count) cached EK3 descriptions and option labels translated"
+        "PASS: $($cachedEk3.Count) cached EK3 entries use dictionary text or original English, not machine drafts"
         $allParameters = $cached.SelectNodes('//param')
         $draftCount = 0
         $humanCount = 0
@@ -73,10 +73,10 @@ try {
             $sourceDescription = [string]$node.documentation
             if ([string]::IsNullOrWhiteSpace($sourceDescription)) { continue }
             $local = $display.Invoke($null, @([string]$node.name, $sourceDescription))
-            if ($local -eq $sourceDescription) { throw "Missing full-table translation: $($node.name)" }
-            if ($local.StartsWith([string][char]0x3014)) { $draftCount++ } else { $humanCount++ }
+            if ($local.Contains('機譯')) { throw "Unreviewed full-table translation: $($node.name)" }
+            if ($local -eq $sourceDescription) { $draftCount++ } else { $humanCount++ }
         }
-        "PASS: full table has $humanCount human-dictionary and $draftCount explicitly marked draft descriptions"
+        "PASS: full table has $humanCount dictionary descriptions and $draftCount original-English fallbacks (not a semantic-completeness claim)"
     }
     $draftType = $assembly.GetType('MissionPlanner.FMT.FmtParameterDrafts')
     $draftTranslate = $draftType.GetMethod('Translate', $flags)

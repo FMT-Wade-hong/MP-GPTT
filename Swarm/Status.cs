@@ -53,5 +53,26 @@ namespace MissionPlanner.Swarm
             label6.Text = "位置";
             label8.Text = "速度";
         }
+
+        public void ApplyFormationLayout()
+        {
+            ApplyTraditionalChinese();
+            BackColor = System.Drawing.Color.FromArgb(30, 48, 58);
+            ForeColor = System.Drawing.Color.WhiteSmoke;
+            Size = new System.Drawing.Size(258, 235);
+            Margin = new Padding(3, 3, 3, 8);
+            BorderStyle = BorderStyle.FixedSingle;
+            lbl_mav.SetBounds(8, 8, 240, 24);
+            lbl_mav.AutoSize = false;
+            var captions = new[] { label2, label3, label1, label4, label6, label8 };
+            var values = new[] { lbl_armed, lbl_mode, lbl_gps, lbl_guided, lbl_loc, lbl_spd };
+            for (int i = 0; i < captions.Length; i++)
+            {
+                captions[i].AutoSize = values[i].AutoSize = false;
+                captions[i].SetBounds(8, 36 + i * 32, 62, 30);
+                values[i].SetBounds(72, 36 + i * 32, 178, 30);
+                values[i].AutoEllipsis = true;
+            }
+        }
     }
 }
