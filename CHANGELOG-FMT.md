@@ -1,6 +1,6 @@
 # FMTPlanner release history
 
-## FMTPlanner v1.1.9 — 2026-10-01（本機候選版，尚未發布）
+## FMTPlanner v1.1.9 — 2026-10-01（正式發布）
 
 - 完整參數頁針對 4.5.x／4.6.x／4.7.x 使用確切韌體版本說明檔，避免新版通用 metadata 缺少舊 WPNAV／PSC 名稱；同版本套用單位、範圍及安全屬性。缺少對應版本／參數時顯示提示，不以其他版本資料補值。尚依賴本機對應 pdef（既有連線流程負責下載），未內建所有 patch 版本。
 - 納入全表參數說明對照：reviewed 字典 3,836 條，跨本機 58 份公開 metadata 的 3,934 種說明，英文回退為 0；包含未啟用功能的參數。增加大量選項中文解釋並保留完整原文、專有名詞、版本差異及 bit 索引；原文已知筆誤另加註記，不改飛控值。來源集合覆蓋不等於所有韌體實機驗證，詳見 FMT/Localization/README.md。
@@ -12,7 +12,7 @@
 - 使用者確認 ELRS 無 RC 輸入最後由 SYSID 對應修正解決；程式不擅自改寫機體／接收機 ID。
 - 配置頁整合實驗性群飛管理、相對位置及航點編隊；接力控制頂部按鈕可選擇顯示、預設隱藏。
 - 空速計未啟用時隱藏歸零按鈕，修正工作列圖示相容性。
-- 最新翻譯更新整合到 `bin/Release119TranslationUpdate/net461`，版本 1.1.9.0；本機更新包標示 Candidate。尚有發布阻擋項與未完成實機驗證，詳見 FMT/RELEASE-AUDIT-V1.1.9.md；未建立正式 tag 或 GitHub Release。
+- 最新翻譯更新整合到 `bin/Release119TranslationUpdate/net461`，版本 1.1.9.0；正式更新包為 `FMTPlanner-V1.1.9.zip`。尚有發布阻擋項與未完成實機驗證，詳見 FMT/RELEASE-AUDIT-V1.1.9.md；依使用者要求發布正式 V1.1.9；發布標記不代表已知問題已修復。
 
 ## FMTPlanner v1.1.8 — 2026-09-18
 

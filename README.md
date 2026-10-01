@@ -1,8 +1,8 @@
-# FeiMaoTecPlanner V1.1.9-rc.1
+# FeiMaoTecPlanner V1.1.9
 
-最新更新為 **V1.1.9-rc.1（預發布候選版）**；下載套件完整解壓後執行 `FMTPlanner-V1.1.9.exe`。本機候選建置位於 `bin/Release119TranslationUpdate/net461/FMTPlanner.exe`。
+最新更新為 **FeiMaoTecPlanner V1.1.9**；下載套件完整解壓後執行 `FMTPlanner-V1.1.9.exe`。本機建置位於 `bin/Release119TranslationUpdate/net461/FMTPlanner.exe`。
 
-> 最新正式版仍為 [V1.1.8](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.8)。1.1.9 尚有發布待辦及未完成實機驗證，不應直接用於正式飛行；詳見 [候選版說明](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.9-rc.1)。
+> 正式發布名稱為 **FeiMaoTecPlanner V1.1.9**。已知問題與未完成實機驗證仍保留，不應未經地面驗證直接用於正式飛行；詳見 [發布說明](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.9)。
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.6/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
@@ -14,14 +14,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.9-rc.1/FMTPlanner-V1.1.9-TranslationUpdate-Candidate.zip"><strong>下載 FMTPlanner V1.1.9-rc.1（預發布版）</strong></a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.9/FMTPlanner-V1.1.9.zip"><strong>下載 FMTPlanner V1.1.9</strong></a>
   ·
   <a href="README-FMT.md">繁體中文圖文操作手冊</a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.9-rc.1">版本發布頁</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.9">版本發布頁</a>
 </p>
 
-![Version](https://img.shields.io/badge/version-V1.1.9--rc.1-orange)
+![Version](https://img.shields.io/badge/version-V1.1.9-22a9dc)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
 ![Package](https://img.shields.io/badge/package-portable%20ZIP-35a853)
 ![Language](https://img.shields.io/badge/UI-English%20%7C%20繁體中文-f0ad00)
@@ -30,7 +30,7 @@
 
 | 項目 | 內容 |
 |---|---|
-| 軟體名稱 | **FeiMaoTecPlanner V1.1.9-rc.1（預發布）** |
+| 軟體名稱 | **FeiMaoTecPlanner V1.1.9** |
 | 執行檔 | 本機建置 **FMTPlanner.exe**；下載套件 **FMTPlanner-V1.1.9.exe** |
 | 公司／品牌 | **FMT 飛貓科技** |
 | 基礎專案 | ArduPilot Mission Planner |
@@ -39,7 +39,7 @@
 | 支援構型 | 多旋翼、定翼機、VTOL／QuadPlane |
 | 介面語言 | 預設英文，可使用繁體中文 |
 
-## V1.1.9-rc.1 主要更新
+## V1.1.9 主要更新
 
 - 納入全表參數翻譯：58 份公開 metadata、3,934 種功能說明的英文回退為 0，1,571 種雙語選項；保留專有名詞、原始選項與 bit 索引。
 - 針對 4.5／4.6／4.7 使用確切版本 metadata，修正 WPNAV／PSC 等來源匹配；需具備對應版本說明檔，未內建所有 patch 版本。

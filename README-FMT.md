@@ -1,6 +1,6 @@
 # FeiMaoTecPlanner V1.1.9（FMTPlanner）使用手冊
 
-本手冊對應已在 GitHub 發布的 [V1.1.9-rc.1 預發布候選版](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.9-rc.1)，不是正式穩定版。下載 ZIP 完整解壓後執行 `FMTPlanner-V1.1.9.exe`，並保留同資料夾內的完整相依檔案。本機候選位於 `bin/Release119TranslationUpdate/net461/FMTPlanner.exe`。變更與限制見發布頁與 [稽核紀錄](FMT/RELEASE-AUDIT-V1.1.9.md)。
+本手冊對應正式發布的 [FeiMaoTecPlanner V1.1.9](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.9)。下載 ZIP 完整解壓後執行 `FMTPlanner-V1.1.9.exe`，並保留同資料夾內的完整相依檔案。本機建置位於 `bin/Release119TranslationUpdate/net461/FMTPlanner.exe`。變更與限制見發布頁與 [稽核紀錄](FMT/RELEASE-AUDIT-V1.1.9.md)。
 
 V1.1.8 新增限禁航區顯示開關與 HOME 半徑（整數公里、預設 5 KM），縮放 10～18 級才顯示；修正 WP 拖曳、距離標籤與接力按鈕重疊。既有半徑會保留並四捨五入。顯示設定不會停用航線安全檢查，完整離線限禁航區資料包尚未內建。
 

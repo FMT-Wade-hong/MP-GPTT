@@ -1,7 +1,8 @@
 param(
     [string]$Package = 'bin/Package/FMTPlanner-V1.1.9-TranslationUpdate-Candidate.zip',
     [string]$Directory = 'bin/Release119TranslationUpdate/net461',
-    [string]$Version = '1.1.9'
+    [string]$Version = '1.1.9',
+    [switch]$Formal
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -28,8 +29,12 @@ try {
         $checked++
     }
     $reader = [IO.StreamReader]::new($zip.GetEntry($root + 'README-FIRST.txt').Open())
-    try { if (!$reader.ReadToEnd().Contains('LOCAL CANDIDATE')) { throw 'Candidate label missing' } }
+    try {
+        $hasCandidate = $reader.ReadToEnd().Contains('LOCAL CANDIDATE')
+        if ($Formal -and $hasCandidate) { throw 'Formal package still marked candidate' }
+        if (!$Formal -and !$hasCandidate) { throw 'Candidate label missing' }
+    }
     finally { $reader.Dispose() }
-    "PASS: candidate ZIP, required runtime files, no duplicates/private artifacts, $checked EXE/DLL hashes match build"
+    "PASS: ZIP release label, required runtime files, no duplicates/private artifacts, $checked EXE/DLL hashes match build"
 }
 finally { $zip.Dispose() }
