@@ -48,6 +48,7 @@ namespace MissionPlanner.FMT
         private static int listenerGeneration;
         private static int listenerStation;
         private static bool initialized;
+        private static bool stopping;
         private static bool localFlightLinkConnected;
         private static bool localJoystickReady;
         private static int activeStation;
@@ -274,10 +275,33 @@ namespace MissionPlanner.FMT
             return true;
         }
 
+        // Terminal for this process: late UI callbacks must not reopen the listener.
+        internal static void Shutdown()
+        {
+            lock (Sync)
+            {
+                if (stopping) return;
+                stopping = true;
+                listenerGeneration++;
+                heartbeatTimer?.Dispose();
+                heartbeatTimer = null;
+                try { client?.Close(); } catch { }
+                client = null;
+                Peers.Clear();
+                LearnedEndpoints.Clear();
+                activeStation = pendingRequestStation = 0;
+                lastMainAuthorityUtc = DateTime.MinValue;
+                trustedMainInstance = null;
+                localFlightLinkConnected = localJoystickReady = false;
+                FmtGroundStationPositionStore.SetActiveController(0);
+            }
+        }
+
         private static void EnsureStarted()
         {
             lock (Sync)
             {
+                if (stopping) return;
                 if (!initialized)
                 {
                     initialized = true;
@@ -299,6 +323,7 @@ namespace MissionPlanner.FMT
 
         private static void StartListener(int stationNumber)
         {
+            if (stopping) return;
             listenerGeneration++;
             try { client?.Close(); } catch { }
             client = null;
@@ -397,6 +422,7 @@ namespace MissionPlanner.FMT
 
             lock (Sync)
             {
+                if (stopping) return;
                 Peers[packet.StationNumber] = new FmtRelayPeerState
                 {
                     StationNumber = packet.StationNumber,
@@ -445,6 +471,7 @@ namespace MissionPlanner.FMT
             int stationNumber;
             lock (Sync)
             {
+                if (stopping) return;
                 sender = client;
                 stationNumber = listenerStation;
             }

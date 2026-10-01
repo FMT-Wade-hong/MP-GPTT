@@ -3,6 +3,18 @@
 更新日期：2026-10-01（Asia/Taipei）。結論：**本機 V1.1.9 候選版已建置；仍暫不具備正式發布條件**。
 範圍：GitHub 狀態、目前本機修改、現有測試版離線回歸、最近本機日誌抽查。未操作飛控、未推送、未發布。
 
+## 2026-10-01 最新本機更新（翻譯校正整合）
+
+- 本機更新 ZIP：`bin/Package/FMTPlanner-V1.1.9-TranslationUpdate-Candidate.zip`（144,385,358 bytes），SHA256 `231cac46fd3bb39dc9545c6b4fec093a184baeff408610c381272423005bda7f`。包內 1,211 個檔案、排除 86 個；Test-CandidatePackage 驗證必要 DLL／繁中資源、Candidate 標記、無重複項目與指定私人／測試檔案、310 個 EXE／DLL 雜湊符合建置輸出。ZIP 未上傳，未解除正式發布阻擋項。
+- 本次 1.1.9 更新整合目錄：`bin/Release119TranslationUpdate/net461`，FileVersion `1.1.9.0`、ProductVersion `V1.1.9`。獨立建置 0 errors／1,389 warnings；六組 AllParameterTranslation、ReviewedParameterTranslation、TranslationSemantics、VersionedParameterMetadata、SafetyReadback、ShutdownCleanup 均通過。全表 0 英文說明回退、1,571 雙語選項、1,764 原文選項（包含技術名稱）。包裝器新增 Candidate 標記並排除翻譯稽核 JSON、測試圖及 .log；不表示既有發布門檻已解除，未推送或操作飛控。
+- 後續翻譯候選改為 `bin/Translation119FullAudit2/net461/FMTPlanner.exe`。reviewed 3,836 條；58 份本機公開 metadata、3,934 種說明的英文回退為 0。3,335 種選項的原始文字與 bit 索引驗證通過；原文技術名稱繼續保留。語意回歸 26 項、AutoTune 八項與 Copter 4.5.7／4.6.3／4.7.1 精確來源測試通過。增量編譯 0 errors、57 warnings。原文歧義與未驗證實機範圍詳見 Localization/README.md，既有非翻譯發布阻擋項未因此解除。
+- 以下 `Release119Updated` 與 1,041 條計數為較早階段紀錄，不能當成目前翻譯覆蓋率。
+- 最新候選：`bin/Release119Updated/net461/FMTPlanner.exe`，讀回 FileVersion `1.1.9.0`、ProductVersion `V1.1.9`。下方舊候選與遠端資訊保留為歷史稽核，不代表最新遠端狀態。
+- 使用 `-m:1` Release 建置，0 errors、1,389 warnings；警告尚未清除。
+- reviewed 字典 1,041 條完整原文對照；仍有 2,795 條不同說明保留英文，包含需保留的技術短語。納入 14 條既有譯文語意校正，未宣稱全表翻譯完成。
+- TranslationSemantics、ReviewedParameterTranslation、SafetyReadback、ShutdownCleanup 通過。關閉清理為離線 socket／反射及程式碼檢查，未連接飛控或啟動完整實機工作流程。
+- 更新 CHANGELOG-FMT；未提交／推送／建立 tag、ZIP 或 GitHub Release，未納入私人 `H420-source-full.param`。既有發布待辦仍保留，未重新檢查遠端 CI。
+
 ## GitHub
 
 以下遠端資料是 2026-09-30 的稽核快照，本次版本整理未重新查詢 GitHub，亦未推送或發布。

@@ -16,9 +16,18 @@ foreach ($id in @('AHRS_GPS_USE','ACRO_OPTIONS','AIRSPEED_MIN','AUTOTUNE_AXES'))
     $unknown = 'Future firmware meaning: never use this value for normal flight.'
     if ($display.Invoke($null,@($id,$unknown)) -cne $unknown) { throw "Version warning overwritten: $id" }
 }
-$catalog = Get-Content "$PSScriptRoot/Localization/Parameters.zh-TW.reviewed.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+$catalogText = Get-Content "$PSScriptRoot/Localization/Parameters.zh-TW.reviewed.json" -Raw -Encoding UTF8
+$catalogKeys = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::Ordinal)
+foreach ($match in [regex]::Matches($catalogText, '(?m)^  ("(?:[^"\\]|\\.)*")\s*:')) {
+    if (!$catalogKeys.Add($match.Groups[1].Value)) { throw "Duplicate reviewed source: $($match.Groups[1].Value)" }
+}
+# PowerShell 5.1 rejects distinct keys differing only in case, unlike the runtime's ordinal dictionary.
+$catalogEntries = @([Newtonsoft.Json.Linq.JObject]::Parse($catalogText).Properties() | ForEach-Object {
+    [pscustomobject]@{ Name = $_.Name; Value = [string]$_.Value }
+})
 $sources = New-Object 'System.Collections.Generic.HashSet[string]'
 $pending = New-Object 'System.Collections.Generic.HashSet[string]'
+$pendingReferences = @{}
 $labels = New-Object 'System.Collections.Generic.HashSet[string]'
 $reports = @()
 $files = @(Get-ChildItem -LiteralPath $MetadataDirectory -Filter '*.apm.pdef.xml')
@@ -35,7 +44,17 @@ foreach ($file in $files) {
         if ($result.Contains('機譯') -or $result.Contains('分類參考')) { throw "Draft text displayed: $($node.name)" }
         if ($translator.Invoke($null,@($source)) -cne $source) { $reviewed++ }
         elseif ($result -cne $source) { $legacy++ }
-        else { $english++; [void]$pending.Add($key) }
+        else {
+            $english++; [void]$pending.Add($key)
+            if (!$pendingReferences.ContainsKey($key)) {
+                $pendingReferences[$key] = @{
+                    Parameters = New-Object 'System.Collections.Generic.HashSet[string]'
+                    Files = New-Object 'System.Collections.Generic.HashSet[string]'
+                }
+            }
+            [void]$pendingReferences[$key].Parameters.Add([string]$node.name)
+            [void]$pendingReferences[$key].Files.Add($file.Name)
+        }
         foreach ($value in $node.SelectNodes('values/value')) { [void]$labels.Add($value.InnerText) }
         foreach ($mask in $node.SelectNodes('field[@name="Bitmask"]')) {
             $localized = $localizeOptions.Invoke($null,@($mask.InnerText))
@@ -50,29 +69,48 @@ foreach ($file in $files) {
     }
     $reports += [pscustomobject]@{File=$file.Name; SHA256=(Get-FileHash $file.FullName -Algorithm SHA256).Hash; ReviewedDescriptions=$reviewed; LegacyDictionaryDescriptions=$legacy; OriginalEnglishDescriptions=$english; EmptyDescriptions=$empty}
 }
-foreach ($entry in $catalog.psobject.Properties) {
+foreach ($entry in $catalogEntries) {
     if (!$sources.Contains($entry.Name)) { throw "No official source found: $($entry.Name)" }
     if ($translator.Invoke($null,@($entry.Name)) -cne $entry.Value) { throw "Reviewed catalog not used: $($entry.Name)" }
     foreach ($reference in [regex]::Matches($entry.Name,'\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b')) {
         if (!$entry.Value.Contains($reference.Value)) { throw "Parameter reference lost: $($reference.Value)" }
     }
 }
+$unchangedOptions = @()
+$localizedOptionCount = 0
 foreach ($label in $labels) {
     $translated = $option.Invoke($null,@($label))
     if (!$translated.Contains($label)) { throw "Original option/technical name lost: $label => $translated" }
+    if ($translated -ceq $label) { $unchangedOptions += $label }
+    else { $localizedOptionCount++ }
 }
 $report = [ordered]@{
     Scope='All local public ArduPilot pdef metadata, not connected vehicle values'
+    VisibilityIndependent=$true
+    VisibilityNote='Scans every metadata param without checking vehicle connection, enable flags or UI visibility; metadata presence does not prove firmware support.'
     CompleteSemanticReview=$false
-    ReviewedCatalogEntries=@($catalog.psobject.Properties).Count
+    DescriptionCoverageComplete=($pending.Count -eq 0)
+    ReviewedCatalogEntries=$catalogEntries.Count
     UniqueDescriptions=$sources.Count
     UntranslatedUniqueDescriptions=$pending.Count
     OptionLabelsChecked=$labels.Count
+    LocalizedOptionLabels=$localizedOptionCount
+    OriginalOptionLabels=@($unchangedOptions | Sort-Object)
+    OptionCoverageNote='Original options include intentionally preserved model/protocol/mode/axis names; unchanged text is not automatically a missing translation.'
     Sources=$reports
     PendingDescriptions=@($pending | Sort-Object)
+    PendingItems=@($pending | Sort-Object | ForEach-Object {
+        [pscustomobject]@{
+            Source=$_
+            ParameterIds=@($pendingReferences[$_].Parameters | Sort-Object)
+            SourceFiles=@($pendingReferences[$_].Files | Sort-Object)
+            ReviewStatus='Pending; original English retained'
+        }
+    })
 }
 $reportPath = Join-Path (Resolve-Path $Directory) 'parameter-translation-audit.json'
 $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $reportPath -Encoding UTF8
 $reports | Where-Object File -in @('ArduCopter.apm.pdef.xml','ArduPlane.apm.pdef.xml','Rover.apm.pdef.xml','ArduSub.apm.pdef.xml') | Format-Table -AutoSize
 "PASS: $($files.Count) metadata files, $($labels.Count) option labels retain original, bit indices unchanged, source/version checks passed"
-"REVIEW INCOMPLETE: $($pending.Count) unique descriptions still original English. Audit: $reportPath"
+"DESCRIPTION COVERAGE: $($pending.Count) unique descriptions still original English. Audit: $reportPath"
+"OPTION COVERAGE: $localizedOptionCount bilingual labels; $($unchangedOptions.Count) original labels (includes technical names). Semantic review is tracked separately."

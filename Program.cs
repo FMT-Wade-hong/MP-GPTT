@@ -476,14 +476,16 @@ namespace MissionPlanner
                 Splash?.Show();
                 Console.WriteLine("Application.Run(new MainV2())");
                 Application.Run(new MainV2());
+                // Main-window close has completed (including config/log cleanup).
+                // Do not let foreground threads in drivers/plugins retain a headless GCS.
+                FMT.FmtRelayControlService.Shutdown();
             }
             catch (Exception ex)
             {
                 log.Fatal("Fatal app exception", ex);
                 Console.WriteLine(ex.ToString());
 
-                Console.WriteLine("\nPress any key to exit!");
-                Console.ReadLine();
+                // A GUI process must not remain headless waiting for console input.
             }
 
             try
@@ -503,6 +505,10 @@ namespace MissionPlanner
             catch
             {
             }
+            FMT.FmtRelayControlService.Shutdown();
+            // The UI loop and normal cleanup have ended. Terminate this process
+            // even if an external driver/plugin left a foreground thread alive.
+            Environment.Exit(Environment.ExitCode);
         }
 
         private static string SerialPort_GetDeviceName(string port)

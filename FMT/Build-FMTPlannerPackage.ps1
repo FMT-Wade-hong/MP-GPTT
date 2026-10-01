@@ -1,7 +1,8 @@
 param(
     [string]$SourceDirectory = (Join-Path (Split-Path $PSScriptRoot -Parent) 'bin\Release\net461'),
     [string]$ReleaseVersion = '',
-    [string]$OutputPath = ''
+    [string]$OutputPath = '',
+    [switch]$Candidate
 )
 
 $ErrorActionPreference = 'Stop'
@@ -95,13 +96,13 @@ function Get-ReleaseExclusionReason([string]$RelativePath) {
     if ($RelativePath -match '(?i)(H420-source-full|\.bin$)') {
         return 'raw logs or local binary data'
     }
-    if ($RelativePath -match '(?i)(frequency-tests-|P400FrequencyPlans|TestReference|FrequencyReference|preview\.png$|\.bak$|\.zip$|\.sha256$)') {
+    if ($RelativePath -match '(?i)(frequency-tests-|P400FrequencyPlans|TestReference|FrequencyReference|preview\.png$|swarm-tab-.*\.png$|(?:resource|source)-icon\.png$|parameter-translation-audit\.json$|\.bak$|\.zip$|\.sha256$)') {
         return 'local test results and backups'
     }
     $extension = [IO.Path]::GetExtension($RelativePath)
     if ($RelativePath -match '(?i)(^|[\\/])(private-signing|tmp|logs|gmapcache|mqtt|\.git)([\\/]|$)' -or
         $RelativePath -match '(?i)(^|[\\/])(config\.xml|settings\.json|password\.bin|\.env)$' -or
-        $extension -match '(?i)^\.(pfx|p12|key|tlog|rlog|dmp)$') {
+        $extension -match '(?i)^\.(pfx|p12|key|tlog|rlog|dmp|log)$') {
         return 'private configuration, credentials, logs or test artifacts'
     }
     if ($staleMissionPlannerOutputs -contains $RelativePath) {
@@ -140,19 +141,19 @@ try {
             $stream, [IO.Compression.ZipArchiveMode]::Create, $false)
         try {
             $files = @()
-            foreach ($candidate in Get-ChildItem -LiteralPath $sourcePath -Recurse -File) {
-                $relative = $candidate.FullName.Substring($sourcePath.Length).TrimStart('\', '/')
+            foreach ($runtimeFile in Get-ChildItem -LiteralPath $sourcePath -Recurse -File) {
+                $relative = $runtimeFile.FullName.Substring($sourcePath.Length).TrimStart('\', '/')
                 $reason = Get-ReleaseExclusionReason $relative
                 if ($null -ne $reason) {
                     $excludedFiles += [PSCustomObject]@{
                         Path = $relative
                         Reason = $reason
-                        Bytes = $candidate.Length
+                        Bytes = $runtimeFile.Length
                     }
-                    $excludedBytes += $candidate.Length
+                    $excludedBytes += $runtimeFile.Length
                     continue
                 }
-                $files += $candidate
+                $files += $runtimeFile
             }
 
             foreach ($file in $files) {
@@ -183,6 +184,7 @@ try {
             $writer = [IO.StreamWriter]::new($readmeEntry.Open(), [Text.UTF8Encoding]::new($true))
             try {
                 $writer.WriteLine('FMTPlanner V' + $ReleaseVersion)
+                if ($Candidate) { $writer.WriteLine('LOCAL CANDIDATE: not a validated stable release; outstanding release checks remain.') }
                 $writer.WriteLine('')
                 $writer.WriteLine('1. Extract this ZIP to a normal local folder.')
                 $writer.WriteLine('2. Run ' + $versionedExecutableName + '.')
@@ -203,7 +205,8 @@ try {
                 [IO.Compression.CompressionLevel]::Optimal)
             $manifestWriter = [IO.StreamWriter]::new($manifestEntry.Open(), [Text.UTF8Encoding]::new($true))
             try {
-                $manifestWriter.WriteLine('FMTPlanner Windows stable package manifest')
+                if ($Candidate) { $manifestWriter.WriteLine('FMTPlanner Windows local candidate package manifest') }
+                else { $manifestWriter.WriteLine('FMTPlanner Windows stable package manifest') }
                 $manifestWriter.WriteLine('Version: ' + $ReleaseVersion)
                 $manifestWriter.WriteLine('Runtime files: ' + $files.Count)
                 $manifestWriter.WriteLine('Excluded non-runtime/developer files: ' + $excludedFiles.Count)

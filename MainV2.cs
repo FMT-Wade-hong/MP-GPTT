@@ -2073,6 +2073,12 @@ namespace MissionPlanner
                 return;
             }
             fmtShutdownStarted = true;
+            // Stop station presence before disposing pages that can pump UI messages.
+            FMT.FmtRelayControlService.Shutdown();
+            serialThread = false;
+            adsbThread = false;
+            joystickthreadrun = false;
+            pluginthreadrun = false;
 
             log.Info("MainV2_FormClosing");
 
@@ -2119,7 +2125,7 @@ namespace MissionPlanner
 
             log.Info("close ports");
             // close all connections
-            foreach (var port in Comports)
+            foreach (var port in Comports.ToArray())
             {
                 try
                 {
@@ -2135,6 +2141,10 @@ namespace MissionPlanner
                 }
                 catch
                 {
+                }
+                finally
+                {
+                    try { port.Close(); } catch { }
                 }
             }
 
@@ -2165,13 +2175,16 @@ namespace MissionPlanner
             {
                 try
                 {
-                    while (!PluginThreadrunner.WaitOne(100)) Application.DoEvents();
+                    var pluginDeadline = DateTime.UtcNow.AddSeconds(3);
+                    while (!PluginThreadrunner.WaitOne(100) && DateTime.UtcNow < pluginDeadline)
+                        Application.DoEvents();
                 }
                 catch
                 {
                 }
 
-                pluginthread.Join();
+                if (!pluginthread.Join(1000))
+                    log.Warn("Plugin thread did not stop before shutdown deadline");
             }
 
             log.Info("closing serialthread");
@@ -2293,7 +2306,8 @@ namespace MissionPlanner
 
             if (joystick != null)
             {
-                while (!joysendThreadExited)
+                var joystickDeadline = DateTime.UtcNow.AddSeconds(2);
+                while (!joysendThreadExited && DateTime.UtcNow < joystickDeadline)
                     Thread.Sleep(10);
 
                 joystick.Dispose(); //proper clean up of joystick.

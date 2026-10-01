@@ -217,7 +217,20 @@ namespace MissionPlanner.Utilities
             {
                 try
                 {
-                    var vechileKey = vechileType + ":" + nodeKey;
+                    var prefix = vechileType;
+                    var snapshot = System.Text.RegularExpressions.Regex.Match(vechileType, @"^(Copter|Plane|Rover|Sub|Tracker)\d+\.\d+\.\d+$");
+                    if (snapshot.Success)
+                    {
+                        switch (snapshot.Groups[1].Value)
+                        {
+                            case "Copter": prefix = "ArduCopter"; break;
+                            case "Plane": prefix = "ArduPlane"; break;
+                            case "Sub": prefix = "ArduSub"; break;
+                            case "Tracker": prefix = "AntennaTracker"; break;
+                            default: prefix = "Rover"; break;
+                        }
+                    }
+                    var vechileKey = prefix + ":" + nodeKey;
                     foreach (var paramfile in _parameterMetaDataXML[vechileType].Element("paramfile").Elements())
                     {
                         foreach (var parameters in paramfile.Elements())
