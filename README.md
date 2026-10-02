@@ -1,8 +1,8 @@
-# FeiMaoTecPlanner V1.1.9
+# FeiMaoTecPlanner V1.2.0
 
-最新更新為 **FeiMaoTecPlanner V1.1.9**；下載套件完整解壓後執行 `FMTPlanner-V1.1.9.exe`。本機建置位於 `bin/Release119TranslationUpdate/net461/FMTPlanner.exe`。
+最新更新為 **FeiMaoTecPlanner V1.2.0**；下載套件完整解壓後執行 `FMTPlanner-V1.2.0.exe`。本機建置位於 `bin/Release120/net461/FMTPlanner.exe`。
 
-> 正式發布名稱為 **FeiMaoTecPlanner V1.1.9**。已知問題與未完成實機驗證仍保留，不應未經地面驗證直接用於正式飛行；詳見 [發布說明](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.9)。
+> 正式發布名稱為 **FeiMaoTecPlanner V1.2.0**。已知問題與未完成實機驗證仍保留，不應未經地面驗證直接用於正式飛行；詳見 [發布說明](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.0)。
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.6/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
@@ -14,14 +14,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.1.9/FMTPlanner-V1.1.9.zip"><strong>下載 FMTPlanner V1.1.9</strong></a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.0/FMTPlanner-V1.2.0.zip"><strong>下載 FMTPlanner V1.2.0</strong></a>
   ·
   <a href="README-FMT.md">繁體中文圖文操作手冊</a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.1.9">版本發布頁</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.0">版本發布頁</a>
 </p>
 
-![Version](https://img.shields.io/badge/version-V1.1.9-22a9dc)
+![Version](https://img.shields.io/badge/version-V1.2.0-22a9dc)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
 ![Package](https://img.shields.io/badge/package-portable%20ZIP-35a853)
 ![Language](https://img.shields.io/badge/UI-English%20%7C%20繁體中文-f0ad00)
@@ -30,8 +30,8 @@
 
 | 項目 | 內容 |
 |---|---|
-| 軟體名稱 | **FeiMaoTecPlanner V1.1.9** |
-| 執行檔 | 本機建置 **FMTPlanner.exe**；下載套件 **FMTPlanner-V1.1.9.exe** |
+| 軟體名稱 | **FeiMaoTecPlanner V1.2.0** |
+| 執行檔 | 本機建置 **FMTPlanner.exe**；下載套件 **FMTPlanner-V1.2.0.exe** |
 | 公司／品牌 | **FMT 飛貓科技** |
 | 基礎專案 | ArduPilot Mission Planner |
 | 支援系統 | Windows |
@@ -39,12 +39,15 @@
 | 支援構型 | 多旋翼、定翼機、VTOL／QuadPlane |
 | 介面語言 | 預設英文，可使用繁體中文 |
 
-## V1.1.9 主要更新
+## V1.2.0 主要更新
 
+- 復原電源模組 1／2 選單，保留連線、參數讀取與顯示設定條件。
+- 頁籤選單使用中文標題並保留設定鍵；地圖相關文字採繁體中文。
+- 補強起降、RTL、精準降落、電池保護、解鎖前檢查與電源校正的語意說明。
 - 納入全表參數翻譯：58 份公開 metadata、3,934 種功能說明的英文回退為 0，1,571 種雙語選項；保留專有名詞、原始選項與 bit 索引。
 - 針對 4.5／4.6／4.7 使用確切版本 metadata，修正 WPNAV／PSC 等來源匹配；需具備對應版本說明檔，未內建所有 patch 版本。
 - 整合接力控制關閉清理與先前 ELRS、LOG 下載、參數比對及介面修正。
-- 六組離線回歸與 ZIP 檢查通過；不等同實機、所有語意或群飛驗證。已知限制見 [發布稽核](FMT/RELEASE-AUDIT-V1.1.9.md)。
+- 中文覆蓋不等同全表逐條語意複核完成，也不等同實機或群飛驗證；本次測試與限制見 [發布稽核](FMT/RELEASE-AUDIT-V1.2.0.md)。
 
 ## V1.1.8 主要更新（前版）
 

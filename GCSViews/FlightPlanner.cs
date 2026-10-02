@@ -63,6 +63,13 @@ namespace MissionPlanner.GCSViews
         public FlightPlanner()
         {
             InitializeComponent();
+            if (CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
+            {
+                chk_grid.Text = "網格";
+                lnk_kml.Text = "檢視 KML";
+                BUT_InjectCustomMap.Text = "匯入自訂地圖";
+                lbl_status.Text = "狀態：等待載入地圖";
+            }
             Init();
             FmtTraditionalChineseContextMenus.Apply(contextMenuStrip1, contextMenuStripPoly, contextMenuStripZoom);
         }
@@ -9006,13 +9013,20 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
             }
         }
 
+        private static string GetFmtMapTileStatus(bool loading)
+        {
+            if (CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
+                return loading ? "狀態：載入地圖中…" : "狀態：地圖已載入";
+            return loading ? "Status: loading tiles..." : "Status: loaded tiles";
+        }
+
         private void MainMap_OnTileLoadComplete(long ElapsedMilliseconds)
         {
             //MainMap.ElapsedMilliseconds = ElapsedMilliseconds;
 
             MethodInvoker m = delegate
             {
-                lbl_status.Text = "Status: loaded tiles";
+                lbl_status.Text = GetFmtMapTileStatus(false);
 
                 //panelMenu.Text = "Menu, last load in " + MainMap.ElapsedMilliseconds + "ms";
 
@@ -9030,7 +9044,7 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
 
         private void MainMap_OnTileLoadStart()
         {
-            MethodInvoker m = delegate { lbl_status.Text = "Status: loading tiles..."; };
+            MethodInvoker m = delegate { lbl_status.Text = GetFmtMapTileStatus(true); };
             try
             {
                 if (IsHandleCreated) BeginInvoke(m);

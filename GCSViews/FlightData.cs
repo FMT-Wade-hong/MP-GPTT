@@ -375,6 +375,8 @@ namespace MissionPlanner.GCSViews
                 label5.Text = "目標航向";
                 label6.Text = "GPS 航跡（黑色）";
                 tabActions.Text = "動作";
+                tabActionsSimple.Text = "簡易動作";
+                tabScripts.Text = "腳本";
                 tabPagemessages.Text = "訊息";
                 tabPagePreFlight.Text = "起飛前檢查";
                 tabStatus.Text = "狀態";
@@ -3179,9 +3181,12 @@ namespace MissionPlanner.GCSViews
         {
             using (Form customForm = new Form())
             {
+                customForm.Text = IsFmtTraditionalChineseUi ? "顯示頁籤設定" : "Visible Tabs";
                 CheckedListBox left = new CheckedListBox();
                 left.Dock = DockStyle.Fill;
                 left.CheckOnClick = true;
+                // Show the localized caption, but persist the stable control name.
+                left.DisplayMember = nameof(TabPage.Text);
 
                 customForm.Controls.Add(left);
 
@@ -3201,9 +3206,9 @@ namespace MissionPlanner.GCSViews
                     if((TabListDisplay.ContainsKey(tabPage.Name) && TabListDisplay[tabPage.Name] == true) || !TabListDisplay.ContainsKey(tabPage.Name))
                     {
                         if (tabarray.Contains(tabPage.Name))
-                            left.Items.Add(tabPage.Name, true);
+                            left.Items.Add(tabPage, true);
                         else
-                            left.Items.Add(tabPage.Name, false);
+                            left.Items.Add(tabPage, false);
                     }
                 }
 
@@ -3212,9 +3217,9 @@ namespace MissionPlanner.GCSViews
                 customForm.ShowDialog();
 
                 string answer = "";
-                foreach (var tabPage in left.CheckedItems)
+                foreach (TabPage tabPage in left.CheckedItems)
                 {
-                    answer += tabPage + ";";
+                    answer += tabPage.Name + ";";
                 }
 
                 Settings.Instance["tabcontrolactions"] = answer;

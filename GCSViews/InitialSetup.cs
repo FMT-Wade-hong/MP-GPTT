@@ -263,11 +263,21 @@ namespace MissionPlanner.GCSViews
             AddBackstageViewPage(typeof(ConfigSiKRadio), "SIK 數傳設定", true, mand);
             AddBackstageViewPage(typeof(ConfigP400), "P400 數傳設定", true, mand);
 
+            // Battery setup remains available without exposing unrelated optional pages.
+            var opt = (ShowFmtOptionalHardware || MainV2.DisplayConfiguration.displayBattMonitor)
+                ? AddBackstageViewPage(typeof(ConfigOptional), rm.GetString("backstageViewPageopt.Text"))
+                : null;
+            if (MainV2.DisplayConfiguration.displayBattMonitor)
+            {
+                var chinese = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+                AddBackstageViewPage(typeof(ConfigBatteryMonitoring), chinese ? "電源模組" : "Battery Monitor", isConnected && gotAllParams, opt);
+                AddBackstageViewPage(typeof(ConfigBatteryMonitoring2), chinese ? "電源模組 2" : "Battery Monitor 2", isConnected && gotAllParams, opt);
+            }
+
             // FMTPlanner intentionally hides the remaining Optional Hardware pages.
             // The underlying drivers remain compiled because other flight functions still depend on them.
             if (ShowFmtOptionalHardware)
             {
-            var opt = AddBackstageViewPage(typeof(ConfigOptional), rm.GetString("backstageViewPageopt.Text"));
             AddBackstageViewPage(typeof(ConfigCubeID), "CubeID Update",
     isConnected, opt);
 
@@ -282,11 +292,6 @@ namespace MissionPlanner.GCSViews
             if (MainV2.DisplayConfiguration.displayGPSOrder)
                 AddBackstageViewPage(typeof(ConfigGPSOrder), "CAN GPS Order", isConnected && gotAllParams, opt);
 
-            if (MainV2.DisplayConfiguration.displayBattMonitor)
-            {
-                AddBackstageViewPage(typeof(ConfigBatteryMonitoring), rm.GetString("backstageViewPagebatmon.Text"), isConnected && gotAllParams, opt);
-                AddBackstageViewPage(typeof(ConfigBatteryMonitoring2), rm.GetString("backstageViewPageBatt2.Text"), isConnected && gotAllParams, opt);
-            }
             if (MainV2.DisplayConfiguration.displayCAN)
             {
                 //AddBackstageViewPage(typeof(ConfigHWCAN), "CAN", isConnected, opt);

@@ -298,7 +298,7 @@
     <value>P1</value>
   </data>
   <data name="chk_grid.Text" xml:space="preserve">
-    <value>网格</value>
+    <value>網格</value>
   </data>
   <data name="Delete.ToolTipText" xml:space="preserve">
     <value>删除行</value>
@@ -421,7 +421,7 @@
     <value>清除任务</value>
   </data>
   <data name="BUT_Add.ToolTip" xml:space="preserve">
-    <value>添加一行到网格下</value>
+    <value>在表格下方新增一列</value>
   </data>
   <data name="clearRallyPointsToolStripMenuItem.Text" xml:space="preserve">
     <value>清除集结点</value>

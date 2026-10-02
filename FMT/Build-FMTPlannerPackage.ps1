@@ -60,7 +60,7 @@ $projectXml = [xml](Get-Content -LiteralPath (Join-Path $projectRoot 'MissionPla
 $publicArtwork = @($projectXml.SelectNodes('//EmbeddedResource[@Include]') |
     Where-Object { $_.Include -like 'FMT\Assets\*' } |
     ForEach-Object { [IO.Path]::GetFileName($_.Include) })
-foreach ($guide in 'MQTT-EMBEDDED.md', 'SIK-SETTINGS.md', 'P400-AT-README.md') {
+foreach ($guide in 'MQTT-EMBEDDED.md', 'SIK-SETTINGS.md', 'P400-AT-README.md', "RELEASE-AUDIT-V$ReleaseVersion.md") {
     $documentationFiles += [PSCustomObject]@{
         Source = Join-Path $documentationAssetRoot $guide
         Entry = "$rootFolder/FMT/$guide"
