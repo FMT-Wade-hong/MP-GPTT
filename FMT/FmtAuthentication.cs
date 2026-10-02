@@ -7,8 +7,9 @@ namespace MissionPlanner.FMT
     internal static class FmtAuthentication
     {
         internal const string ProductName = "FeiMaoTecPlanner";
-        internal const string ProductVersion = "1.1.9";
-        internal const string ProductTitle = ProductName + " V" + ProductVersion;
+        // Use the application assembly, not a second hard-coded UI version.
+        internal static readonly string ProductVersion = typeof(FmtAuthentication).Assembly.GetName().Version.ToString(3);
+        internal static readonly string ProductTitle = ProductName + " V" + ProductVersion;
         internal const string CompanyName = "FMT飛貓科技";
         internal const string ThemeName = "FMT-SkyBlue.mpsystheme";
         internal const string DefaultUserName = "FMT";

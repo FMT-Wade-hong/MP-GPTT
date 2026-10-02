@@ -2,8 +2,16 @@ param([string]$Directory = 'bin/ComPortResponsivenessFix/net461')
 $ErrorActionPreference = 'Stop'
 $path = (Resolve-Path "$Directory/MissionPlanner.ArduPilot.dll").Path
 [Reflection.Assembly]::LoadFrom($path) | Out-Null
-$facade = (Resolve-Path "$Directory/netstandard.dll").Path
-Add-Type -ReferencedAssemblies @($path, $facade) -TypeDefinition @'
+$facade = Join-Path (Resolve-Path $Directory) 'netstandard.dll'
+if (!(Test-Path -LiteralPath $facade)) {
+    # Reference-only facade is supplied by the targeting pack, not necessarily copied to output.
+    $referenceRoot = Join-Path ${env:ProgramFiles(x86)} 'Reference Assemblies/Microsoft/Framework/.NETFramework'
+    $facade = Get-ChildItem -LiteralPath $referenceRoot -Filter netstandard.dll -Recurse -File |
+        Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+    if (!$facade) { throw 'Install the .NET Framework targeting pack with a netstandard facade to run this test.' }
+}
+$runtimeDirectory = [Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory()
+Add-Type -ReferencedAssemblies @($path, $facade, (Join-Path $runtimeDirectory 'mscorlib.dll'), (Join-Path $runtimeDirectory 'System.dll'), (Join-Path $runtimeDirectory 'System.Core.dll')) -TypeDefinition @'
 using System;
 using System.Threading;
 using System.Threading.Tasks;
