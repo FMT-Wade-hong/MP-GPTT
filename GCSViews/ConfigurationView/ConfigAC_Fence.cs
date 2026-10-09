@@ -130,7 +130,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         public void Activate()
         {
-            mavlinkCheckBox1.setup(1, 0, "FENCE_ENABLE", MainV2.comPort.MAV.param, null, () => { if (mavlinkCheckBox1.Checked) MainV2.comPort.getParamList(); });
+            mavlinkCheckBox1.setup(1, 0, "FENCE_ENABLE", MainV2.comPort.MAV.param);
 
             mavlinkComboBox1.setup(GetFenceTypeOptions(), "FENCE_TYPE", MainV2.comPort.MAV.param);
             // The fence type is a bit mask and its combined Chinese descriptions

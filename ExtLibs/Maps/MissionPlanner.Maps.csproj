@@ -50,6 +50,7 @@
       <CustomToolNamespace>MissionPlanner.Maps</CustomToolNamespace>
     </EmbeddedResource>
     <EmbeddedResource Include="..\..\Resources\FMTMapFixedWing.png" LogicalName="MissionPlanner.Maps.FMTMapFixedWing.png" />
+    <EmbeddedResource Include="..\..\Resources\FMTMapBoat.png" LogicalName="MissionPlanner.Maps.FMTMapBoat.png" />
     <EmbeddedResource Include="..\..\Resources\FMTMapFixedWingGlow.png" LogicalName="MissionPlanner.Maps.FMTMapFixedWingGlow.png" />
     <EmbeddedResource Include="..\..\Resources\FMTMapMultirotor.png" LogicalName="MissionPlanner.Maps.FMTMapMultirotor.png" />
     <EmbeddedResource Include="..\..\Resources\FMTMapMultirotorGlow.png" LogicalName="MissionPlanner.Maps.FMTMapMultirotorGlow.png" />

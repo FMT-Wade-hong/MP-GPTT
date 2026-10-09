@@ -67,11 +67,15 @@ namespace MissionPlanner.Controls
             Name = ParamName;
             // set min and max of both are equal
             double mint = Min, maxt = Max;
-            if (ParameterMetaDataRepository.GetParameterRange(ParamName, ref mint, ref maxt,
-                MainV2.comPort.MAV.cs.firmware.ToString()))
+            if (float.IsNaN(Scale) || float.IsInfinity(Scale) || Scale <= 0)
+                throw new ArgumentOutOfRangeException(nameof(Scale));
+            bool metadataRange = ParameterMetaDataRepository.GetParameterRange(ParamName, ref mint, ref maxt,
+                MainV2.comPort.MAV.cs.firmware.ToString());
+            if (metadataRange)
             {
-                Min = (float) mint;
-                Max = (float) maxt;
+                // Metadata uses wire units; caller-supplied fallback bounds use display units.
+                Min = (float)(mint / Scale);
+                Max = (float)(maxt / Scale);
             }
 
             if (Min == Max)
@@ -80,12 +84,18 @@ namespace MissionPlanner.Controls
             double Inc = 0;
             if (ParameterMetaDataRepository.GetParameterIncrement(ParamName, ref Inc,
                 MainV2.comPort.MAV.cs.firmware.ToString()))
-                if (Inc > this.DecimalPlaces)
-                    Increment = (float) Inc;
+                if (Inc > 0)
+                    Increment = (float)(Inc / Scale);
 
             _scale = Scale;
-            this.Minimum = (decimal)(Min);
-            this.Maximum = (decimal)(Max);
+            bool validRange = !float.IsNaN(Min) && !float.IsInfinity(Min) &&
+                !float.IsNaN(Max) && !float.IsInfinity(Max) && Min < Max;
+            // An absent range is not a zero-width range. In particular, never make the
+            // current value the maximum simply because metadata was unavailable.
+            this.Minimum = validRange ? (decimal)Min : decimal.MinValue;
+            this.Maximum = validRange ? (decimal)Max : decimal.MaxValue;
+            this.AccessibleDescription = validRange ? "" : "參數範圍資料未提供；介面未設範圍限制，不代表所有數值皆適合飛控。";
+            if (float.IsNaN(Increment) || float.IsInfinity(Increment) || Increment <= 0) Increment = 0.001f;
             this.Increment = (decimal)(Increment);
             this.DecimalPlaces = BitConverter.GetBytes(decimal.GetBits((decimal)Increment)[3])[2];
 

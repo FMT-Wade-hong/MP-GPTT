@@ -17,11 +17,14 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private static readonly Hashtable tooltips = new Hashtable();
         private readonly Hashtable changes = new Hashtable();
         private GroupBox fmtTuningGuide;
+        private readonly MavlinkNumericUpDown PTCH2SRV_RLL = new MavlinkNumericUpDown();
         internal bool startup = true;
 
         public ConfigArduplane()
         {
             InitializeComponent();
+            BUT_rerequestparams.Text = "更新當頁參數";
+            AddRollPitchCompensation();
             ApplyFmtTraditionalChineseText();
             ApplyFmtTraditionalChineseTooltips();
             CreateFmtTuningGuide();
@@ -92,7 +95,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             label73.Text = "積分上限";
 
             BUT_writePIDS.Text = "寫入參數";
-            BUT_rerequestparams.Text = "重新讀取參數";
+            BUT_rerequestparams.Text = "更新當頁參數";
             BUT_refreshpart.Text = "更新畫面";
 
             foreach (var label in FmtParameterLabels())
@@ -111,6 +114,33 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 label.Visible = true;
                 label.BringToFront();
             }
+        }
+
+        private void AddRollPitchCompensation()
+        {
+            var oldBottom = groupBox16.Bottom;
+            var rowHeight = Math.Max(26, KFF_RDDRMIX.Height + 6);
+            PTCH2SRV_RLL.Name = "PTCH2SRV_RLL";
+            PTCH2SRV_RLL.SetBounds(KFF_RDDRMIX.Left, KFF_RDDRMIX.Top + rowHeight,
+                KFF_RDDRMIX.Width, KFF_RDDRMIX.Height);
+            PTCH2SRV_RLL.DecimalPlaces = 2;
+            PTCH2SRV_RLL.Minimum = 0.7m;
+            PTCH2SRV_RLL.Maximum = 1.5m;
+            PTCH2SRV_RLL.Increment = 0.05m;
+            PTCH2SRV_RLL.ValueUpdated += numeric_ValueUpdated;
+            var caption = new Label { Text = "轉彎俯仰補償", AutoSize = false,
+                Location = new Point(label78.Left, PTCH2SRV_RLL.Top),
+                Size = new Size(100, Math.Max(20, PTCH2SRV_RLL.Height)),
+                TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
+            groupBox16.Controls.Add(caption);
+            groupBox16.Controls.Add(PTCH2SRV_RLL);
+            groupBox16.Height = Math.Max(groupBox16.Height, PTCH2SRV_RLL.Bottom + 8);
+            var extra = groupBox16.Bottom - oldBottom;
+            foreach (Control control in Controls)
+                if (control != groupBox16 && control.Top >= oldBottom &&
+                    control.Left < groupBox16.Right && control.Right > groupBox16.Left)
+                    control.Top += extra;
+            SetFmtTooltip(PTCH2SRV_RLL, "PTCH2SRV_RLL：轉彎時加入俯仰補償，減少高度變化。官方參數範圍 0.7–1.5，步進 0.05；請先確認俯仰調校與空速校準，再依飛行紀錄小幅調整。不是橫滾舵面至升降舵的固定比例混控。修改後按「寫入參數」才送出。");
         }
 
         private Label[] FmtParameterLabels()
@@ -165,7 +195,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             SetFmtTooltip(KFF_PTCH2THR, "俯仰／油門前饋混控：依韌體實際參數名稱補償俯仰與油門的耦合。");
 
             SetFmtTooltip(BUT_writePIDS, "將本頁已修改的數值寫入飛控。寫入前請確認參數與機型相符。");
-            SetFmtTooltip(BUT_rerequestparams, "重新向飛控下載完整參數列表。");
+            SetFmtTooltip(BUT_rerequestparams, "僅逐筆讀取本頁綁定的參數，不下載完整參數表；讀取期間可離開頁面停止後續請求。");
             SetFmtTooltip(BUT_refreshpart, "重新讀取並更新本頁顯示的參數。");
         }
 
@@ -275,6 +305,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             KFF_PTCH2THR.setup(0, 0, 1, 0, new string[] { "KFF_THR2PTCH","KFF_PTCH2THR"}, MainV2.comPort.MAV.param);
             KFF_RDDRMIX.setup(0, 0, 1, 0, "KFF_RDDRMIX", MainV2.comPort.MAV.param);
+            PTCH2SRV_RLL.setup(0.7f, 1.5f, 1, 0.05f, "PTCH2SRV_RLL", MainV2.comPort.MAV.param);
 
             ENRGY2THR_IMAX.setup(0, 0, 100, 0, "ENRGY2THR_IMAX", MainV2.comPort.MAV.param);
             ENRGY2THR_D.setup(0, 0, 1, 0, "ENRGY2THR_D", MainV2.comPort.MAV.param);
@@ -424,6 +455,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void BUT_writePIDS_Click(object sender, EventArgs e)
         {
+            ValidateChildren();
             var temp = (Hashtable)changes.Clone();
 
             foreach (string value in temp.Keys)
@@ -458,7 +490,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                         return;
                     }
 
-                    MainV2.comPort.setParam(value, (float)changes[value]);
+                    if (!MainV2.comPort.setParam(value, (float)temp[value]))
+                    {
+                        CustomMessageBox.Show(string.Format(Strings.ErrorSetValueFailed, value), Strings.ERROR);
+                        continue;
+                    }
 
                     changes.Remove(value);
 
@@ -487,65 +523,18 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
-        protected void BUT_rerequestparams_Click(object sender, EventArgs e)
+        protected async void BUT_rerequestparams_Click(object sender, EventArgs e)
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
-                return;
-
-            ((Control)sender).Enabled = false;
-
-            try
-            {
-                MainV2.comPort.getParamList();
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.Show("Error: getting param list " + ex, Strings.ERROR);
-            }
-
-
-            ((Control)sender).Enabled = true;
-
-            Activate();
+            await FmtPageParameterRefresh.RefreshAsync(this, sender as Control,
+                FmtPageParameterRefresh.BoundNames(this, true), () => { changes.Clear(); Activate(); }, changes.Count > 0);
         }
 
-        private void BUT_refreshpart_Click(object sender, EventArgs e)
+        private async void BUT_refreshpart_Click(object sender, EventArgs e)
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
-                return;
-
-            ((Control)sender).Enabled = false;
-
-
-            updateparam(this);
-
-            ((Control)sender).Enabled = true;
-
-
-            Activate();
+            await FmtPageParameterRefresh.RefreshAsync(this, sender as Control,
+                FmtPageParameterRefresh.BoundNames(this, true), () => { changes.Clear(); Activate(); }, changes.Count > 0);
         }
 
-        private void updateparam(Control parentctl)
-        {
-            foreach (Control ctl in parentctl.Controls)
-            {
-                if (typeof(NumericUpDown) == ctl.GetType() || typeof(ComboBox) == ctl.GetType())
-                {
-                    try
-                    {
-                        MainV2.comPort.GetParam(ctl.Name);
-                    }
-                    catch
-                    {
-                    }
-                }
-
-                if (ctl.Controls.Count > 0)
-                {
-                    updateparam(ctl);
-                }
-            }
-        }
 
         private void numeric_ValueUpdated(object sender, EventArgs e)
         {

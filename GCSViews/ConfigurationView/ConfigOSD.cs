@@ -64,10 +64,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         }
 
         private IList<OSDSetting> osdSettings;
+        private bool refreshInProgress;
 
         public ConfigOSD()
         {
             InitializeComponent();
+            btnRefreshParameters.Text = "更新目前分頁";
 
             btnWrite.Click += (s, e) => WriteParameters(silent: false);
             btnDiscardChanges.Click += (s, e) => DiscardChanges();
@@ -232,6 +234,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         public void Deactivate()
         {
+            // Leaving during a read must not start a competing auto-write transaction.
+            if (refreshInProgress) return;
             if (cbAutoWriteOnLeave.Checked)
                 WriteParameters(silent: true);
         }
@@ -299,32 +303,16 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             }
         }
 
-        private void RefreshParameters()
+        private async void RefreshParameters()
         {
-            if (osdSettings.Any(o => o.Changed)
-                && (int)DialogResult.No == CustomMessageBox.Show("This will reset your changes. Continue?", MessageBoxButtons: MessageBoxButtons.YesNo))
-                return;
-
-            if (!MainV2.comPort.BaseStream.IsOpen)
-                return;
-
-            if (!MainV2.comPort.MAV.cs.armed || (DialogResult.OK ==  Common.MessageShowAgain("Refresh Params", Strings.WarningUpdateParamList, true)))
+            if (refreshInProgress) return;
+            refreshInProgress = true;
+            try
             {
-                this.Enabled = false;
-
-                try
-                {
-                    MainV2.comPort.getParamList();
-                }
-                catch (Exception)
-                {
-                    CustomMessageBox.Show(Strings.ErrorReceivingParams, Strings.ERROR);
-                }
-
-                Activate();
-
-                this.Enabled = true;
+                await FmtPageParameterRefresh.RefreshAsync(this, btnRefreshParameters,
+                    osdUserControl.CurrentParameterNames, Activate, osdSettings.Any(o => o.Changed));
             }
+            finally { refreshInProgress = false; }
         }
     }
 

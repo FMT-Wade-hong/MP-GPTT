@@ -515,7 +515,7 @@ namespace MissionPlanner.GCSViews
                                          "gmapcache" + Path.DirectorySeparatorChar;
             gMapControl1.MinZoom = 0;
             gMapControl1.MaxZoom = 24;
-            gMapControl1.Zoom = 3;
+            gMapControl1.Zoom = 8;
 
             gMapControl1.OnMapZoomChanged += gMapControl1_OnMapZoomChanged;
 
@@ -1392,8 +1392,11 @@ namespace MissionPlanner.GCSViews
             }
         }
 
-        internal void ExecuteFmtAirspeedZero()
+        internal bool IsFmtAirspeedZeroRunning { get; private set; }
+
+        internal async void ExecuteFmtAirspeedZero()
         {
+            if (IsFmtAirspeedZeroRunning) return;
             if (!MainV2.IsFmtAirspeedZeroAvailable(MainV2.comPort?.MAV?.param))
                 return;
 
@@ -1422,11 +1425,39 @@ namespace MissionPlanner.GCSViews
                     MessageBoxIcon.Warning) != (int)DialogResult.Yes)
                 return;
 
+            var link = MainV2.comPort;
+            var sysid = (byte)link.sysidcurrent;
+            var compid = (byte)link.compidcurrent;
+            if (link.BaseStream == null || !link.BaseStream.IsOpen || link.ReadOnly ||
+                link.MAV.cs.armed || link.giveComport || link.IsParameterListLoading || link.IsLogDownloadActive)
+            {
+                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                        ? "目前無法校正：請確認已連線、未解鎖、非唯讀，且參數／日誌下載或其他通訊作業已結束。"
+                        : "Calibration unavailable: connect a writable, disarmed vehicle and wait for other communication operations to finish.",
+                    "FMT Airspeed Zero", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            IsFmtAirspeedZeroRunning = true;
             try
             {
                 // MAV_CMD_PREFLIGHT_CALIBRATION param6=2 requests airspeed-only calibration.
-                var accepted = MainV2.comPort.doCommand(MAVLink.MAV_CMD.PREFLIGHT_CALIBRATION,
-                    0, 0, 0, 0, 0, 2, 0);
+                // The transport may wait 25 seconds and retry. Never block the UI thread.
+                var accepted = await Task.Run(async () =>
+                {
+                    if (!ReferenceEquals(link, MainV2.comPort) || link.sysidcurrent != sysid ||
+                        link.compidcurrent != compid || link.BaseStream == null || !link.BaseStream.IsOpen ||
+                        link.ReadOnly || link.MAV.cs.armed || link.giveComport ||
+                        link.IsParameterListLoading || link.IsLogDownloadActive)
+                        throw new InvalidOperationException("Connection or vehicle state changed; calibration was not sent.");
+                    try
+                    {
+                        return await link.doCommandAsync(sysid, compid, MAVLink.MAV_CMD.PREFLIGHT_CALIBRATION,
+                            0, 0, 0, 0, 0, 2, 0).ConfigureAwait(false);
+                    }
+                    finally { link.giveComport = false; }
+                });
+                if (IsDisposed || Disposing || !ReferenceEquals(link, MainV2.comPort) ||
+                    link.sysidcurrent != sysid || link.compidcurrent != compid) return;
                 CustomMessageBox.Show(accepted
                         ? (IsFmtTraditionalChineseUi
                             ? "飛控已接受空速計歸零命令，請等待校正完成訊息。"
@@ -1440,11 +1471,18 @@ namespace MissionPlanner.GCSViews
             catch (Exception ex)
             {
                 log.Error("FMT airspeed zero failed", ex);
-                CustomMessageBox.Show(IsFmtTraditionalChineseUi
+                if (IsDisposed || Disposing) return;
+                var timeout = ex is TimeoutException;
+                CustomMessageBox.Show(timeout
+                    ? (IsFmtTraditionalChineseUi
+                        ? "等待空速計歸零回覆逾時；命令可能已執行，請先查看飛控校正訊息，不要連續重按。"
+                        : "Airspeed calibration reply timed out. The command may have run; check vehicle calibration messages before retrying.")
+                    : IsFmtTraditionalChineseUi
                         ? "空速計歸零失敗：" + ex.Message
                         : "Airspeed zeroing failed: " + ex.Message,
                     "FMT Airspeed Zero", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            finally { IsFmtAirspeedZeroRunning = false; }
         }
 
         internal void ExecuteFmtQnh()
@@ -5301,11 +5339,6 @@ namespace MissionPlanner.GCSViews
                                     routes);
                             }
 
-                            if (route.Points.Count == 1 && gMapControl1.Zoom == 3) // 3 is the default load zoom
-                            {
-                                updateMapPosition(currentloc);
-                                updateMapZoom(17);
-                            }
                         }
 
                         // Auto-pan follows the live aircraft even while disarmed. FMT
@@ -6538,6 +6571,7 @@ namespace MissionPlanner.GCSViews
             {
                 if (this.Visible && !this.IsDisposed)
                 {
+                    UpdateFmtInitialMapZoom();
                     //Console.Write("bindingSource1 ");
                     MainV2.comPort.MAV.cs.BindCurrentState(bindingSource1.UpdateDataSource(MainV2.comPort.MAV.cs));
                     //Console.Write("bindingSourceHud ");
@@ -6672,6 +6706,52 @@ namespace MissionPlanner.GCSViews
                 {
                 }
             });
+        }
+
+        internal sealed class FmtInitialMapZoom
+        {
+            private object target;
+            private bool connected, initialized, fixedOnce;
+
+            internal int? Next(object currentTarget, bool isConnected, bool hasFix)
+            {
+                if (!initialized || connected != isConnected ||
+                    (isConnected && !ReferenceEquals(target, currentTarget)))
+                {
+                    initialized = true;
+                    connected = isConnected;
+                    target = currentTarget;
+                    fixedOnce = isConnected && hasFix;
+                    return fixedOnce ? 16 : 8;
+                }
+                if (isConnected && hasFix && !fixedOnce)
+                {
+                    fixedOnce = true;
+                    return 16;
+                }
+                // GPS loss/recovery and manual map operations never reset this latch.
+                return null;
+            }
+        }
+
+        private readonly FmtInitialMapZoom fmtInitialMapZoom = new FmtInitialMapZoom();
+
+        private void UpdateFmtInitialMapZoom()
+        {
+            var port = MainV2.comPort;
+            if (port == null || port.logreadmode) return;
+            var connected = port.BaseStream != null && port.BaseStream.IsOpen;
+            var mav = port.MAV;
+            var gps = mav.getPacketLast((uint)MAVLink.MAVLINK_MSG_ID.GPS_RAW_INT);
+            var age = gps == null ? double.PositiveInfinity : (DateTime.UtcNow - gps.rxtime).TotalSeconds;
+            var hasFix = connected && age >= 0 && age <= 3 &&
+                gps.ToStructure<MAVLink.mavlink_gps_raw_int_t>().fix_type >= 3 &&
+                !double.IsNaN(mav.cs.lat) && !double.IsNaN(mav.cs.lng) &&
+                Math.Abs(mav.cs.lat) <= 90 && Math.Abs(mav.cs.lng) <= 180 &&
+                (mav.cs.lat != 0 || mav.cs.lng != 0);
+            var zoom = fmtInitialMapZoom.Next(mav, connected, hasFix);
+            // Already on the UI thread: do not queue a delayed zoom over a user gesture.
+            if (zoom.HasValue) gMapControl1.Zoom = zoom.Value;
         }
 
         private void updateMapZoom(int zoom)

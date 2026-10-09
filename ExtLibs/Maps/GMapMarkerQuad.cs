@@ -177,6 +177,8 @@ namespace MissionPlanner.Maps
             //g.DrawImageUnscaled(icon, icon.Width / -2 + 2, icon.Height / -2);
 
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            if (!DrawCustomIcon(g, "Copter"))
+            {
             g.RotateTransform(framerotation);
             if (IsActive)
             {
@@ -197,6 +199,7 @@ namespace MissionPlanner.Maps
                     Icon.Width, Icon.Height);
             }
             g.RotateTransform(-framerotation);
+            }
 
             g.Transform = temp;
 

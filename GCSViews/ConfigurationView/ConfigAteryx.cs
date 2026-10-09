@@ -27,6 +27,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         public ConfigAteryx()
         {
             InitializeComponent();
+            BUT_rerequestparams.Text = "更新當頁參數";
         }
 
         public void Activate()
@@ -216,13 +217,18 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void BUT_writePIDS_Click(object sender, EventArgs e)
         {
+            ValidateChildren();
             var temp = (Hashtable)changes.Clone();
 
             foreach (string value in temp.Keys)
             {
                 try
                 {
-                    MainV2.comPort.setParam(value, (float)changes[value]);
+                    if (!MainV2.comPort.setParam(value, (float)temp[value]))
+                    {
+                        CustomMessageBox.Show(string.Format(Strings.ErrorSetValueFailed, value), Strings.ERROR);
+                        continue;
+                    }
 
                     try
                     {
@@ -249,26 +255,10 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
-        protected void BUT_rerequestparams_Click(object sender, EventArgs e)
+        protected async void BUT_rerequestparams_Click(object sender, EventArgs e)
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
-                return;
-
-            ((Control)sender).Enabled = false;
-
-            try
-            {
-                MainV2.comPort.getParamList();
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.Show(Strings.ErrorReceivingParams + ex, Strings.ERROR);
-            }
-
-
-            ((Control)sender).Enabled = true;
-
-            Activate();
+            await FmtPageParameterRefresh.RefreshAsync(this, sender as Control,
+                FmtPageParameterRefresh.BoundNames(this, true), () => { changes.Clear(); Activate(); }, changes.Count > 0);
         }
 
         private void groupBox7_Enter(object sender, EventArgs e)

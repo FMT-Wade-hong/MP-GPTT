@@ -262,6 +262,9 @@ namespace MissionPlanner.GCSViews
 
             AddBackstageViewPage(typeof(ConfigSiKRadio), "SIK 數傳設定", true, mand);
             AddBackstageViewPage(typeof(ConfigP400), "P400 數傳設定", true, mand);
+            AddBackstageViewPage(typeof(ConfigIceEngine), "引擎控制 ICE", true, mand);
+            AddBackstageViewPage(typeof(ConfigTakeoff), "起飛設定 TAKEOFF", true, mand);
+            AddBackstageViewPage(typeof(ConfigLanding), "降落設定 LAND", true, mand);
 
             // Battery setup remains available without exposing unrelated optional pages.
             var opt = (ShowFmtOptionalHardware || MainV2.DisplayConfiguration.displayBattMonitor)

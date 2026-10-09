@@ -8,14 +8,17 @@ $ctor = $paramType.GetConstructors() | Where-Object { $_.GetParameters().Count -
 $wireType = [Enum]::ToObject($ctor.GetParameters()[2].ParameterType,9)
 $cases = @(
     @{Values=@{}; Expected=$false},
-    @{Values=@{ARSPD_USE=0;ARSPD_TYPE=1}; Expected=$false},
+    @{Values=@{ARSPD_USE=0;ARSPD_TYPE=1}; Expected=$true},
     @{Values=@{ARSPD_USE=1;ARSPD_TYPE=0}; Expected=$false},
     @{Values=@{ARSPD_USE=1;ARSPD_TYPE=1}; Expected=$true},
     @{Values=@{ARSPD_USE=2;ARSPD_TYPE=1}; Expected=$true},
     @{Values=@{ARSPD_USE=1;ARSPD_ENABLE=0}; Expected=$false},
     @{Values=@{ARSPD_USE=1;ARSPD_ENABLE=1}; Expected=$true},
     @{Values=@{ARSPD_USE=1;ARSPD_ENABLE=0;ARSPD_TYPE=1}; Expected=$false},
-    @{Values=@{ARSPD_TYPE=1}; Expected=$false}
+    @{Values=@{ARSPD_TYPE=1}; Expected=$true},
+    @{Values=@{ARSPD_TYPE=0;ARSPD2_TYPE=1;ARSPD2_USE=0}; Expected=$true},
+    @{Values=@{ARSPD_ENABLE=0;ARSPD2_TYPE=1}; Expected=$false},
+    @{Values=@{ARSPD_TYPE=0;ARSPD2_TYPE=0}; Expected=$false}
 )
 foreach ($case in $cases) {
     $parameters = [Activator]::CreateInstance($listType)

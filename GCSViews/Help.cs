@@ -16,6 +16,7 @@ namespace MissionPlanner.GCSViews
 
         public void Activate()
         {
+            BUT_betaupdate.Visible = false;
             try
             {
                 CHK_showconsole.Checked = Settings.Instance.GetBoolean("showconsole");
@@ -39,7 +40,7 @@ namespace MissionPlanner.GCSViews
                 {
                     return;
                 }
-                Utilities.Update.CheckForUpdate(true);
+                MainV2.instance.CheckFmtUpdateManually();
             }
             catch (Exception ex)
             {
@@ -67,14 +68,7 @@ namespace MissionPlanner.GCSViews
         {
             try
             {
-                Utilities.Update.dobeta = true;
-                if (Control.ModifierKeys == Keys.Control)
-                {
-                    Utilities.Update.domaster = true;
-                    CustomMessageBox.Show("This will update to MASTER release");
-                }
-
-                Utilities.Update.DoUpdate();
+                MainV2.instance.CheckFmtUpdateManually();
             }
             catch (Exception ex)
             {

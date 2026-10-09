@@ -30,7 +30,7 @@ namespace MissionPlanner.FMT
             });
             Controls.Add(new Label
             {
-                Text = "請輸入參數設定密碼後進入。",
+                Text = "請輸入共用的調參／參數設定密碼。",
                 AutoSize = true,
                 Location = new Point(27, 61)
             });
@@ -88,6 +88,7 @@ namespace MissionPlanner.FMT
         private readonly TextBox current = new TextBox { UseSystemPasswordChar = true };
         private readonly TextBox first = new TextBox { UseSystemPasswordChar = true };
         private readonly TextBox second = new TextBox { UseSystemPasswordChar = true };
+        private readonly CheckBox protection = new CheckBox { Text = "啟用調參／參數設定密碼保護", AutoSize = true };
         private readonly Label error = new Label { AutoSize = true, ForeColor = Color.Firebrick };
 
         internal FmtChangeParameterPasswordForm()
@@ -96,7 +97,7 @@ namespace MissionPlanner.FMT
             Text = "設定參數密碼";
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
-            ClientSize = new Size(420, 240);
+            ClientSize = new Size(420, 300);
             MaximizeBox = false;
             MinimizeBox = false;
 
@@ -105,11 +106,15 @@ namespace MissionPlanner.FMT
             AddField("確認新密碼", second, 121);
             error.Location = new Point(140, 163);
             Controls.Add(error);
+            protection.Location = new Point(22, 194);
+            protection.Checked = FmtAuthentication.ParameterProtectionEnabled;
+            Controls.Add(protection);
+            Controls.Add(new Label { Text = "新密碼留空：保留原密碼，只變更保護開關。", AutoSize = true, Location = new Point(22, 224) });
             var save = new Button
             {
                 Text = "儲存",
                 Width = 90,
-                Location = new Point(300, 196),
+                Location = new Point(300, 254),
                 BackColor = SkyBlue,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat
@@ -146,7 +151,9 @@ namespace MissionPlanner.FMT
 
             try
             {
-                FmtAuthentication.ChangeParameterPassword(first.Text);
+                if (first.Text.Length != 0)
+                    FmtAuthentication.ChangeParameterPassword(first.Text);
+                FmtAuthentication.SetParameterProtection(protection.Checked);
                 DialogResult = DialogResult.OK;
                 Close();
             }

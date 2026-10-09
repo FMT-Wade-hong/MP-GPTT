@@ -64,6 +64,8 @@ namespace MissionPlanner.Maps
             {
             }
 
+            if (!DrawCustomIcon(g, "Heli"))
+            {
 #if NET472_OR_GREATER
             var ia = new System.Drawing.Imaging.ImageAttributes();
             if (IsTransparent)
@@ -76,6 +78,7 @@ namespace MissionPlanner.Maps
 #else
             g.DrawImageUnscaled(icon, icon.Width / -2 + 2, icon.Height / -2);
 #endif
+            }
 
             g.Transform = temp;
         }

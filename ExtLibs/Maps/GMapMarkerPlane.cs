@@ -180,6 +180,8 @@ namespace MissionPlanner.Maps
             }
 
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            if (!DrawCustomIcon(g, IsVtol ? "VTOL" : "Plane"))
+            {
             var aircraftIcon = IsVtol ? VtolIcon : FixedWingIcon;
             if (IsActive)
             {
@@ -198,8 +200,20 @@ namespace MissionPlanner.Maps
                 g.DrawImage(aircraftIcon, -aircraftSize / 2, -aircraftSize / 2,
                     aircraftSize, aircraftSize);
             }
+            }
 
             g.Transform = temp;
+        }
+
+        public static Bitmap CreateDefaultPreview(bool isVtol)
+        {
+            var result = new Bitmap(78, 78);
+            using (var graphics = Graphics.FromImage(result))
+            {
+                graphics.DrawImage(isVtol ? VtolGlowIcon : FixedWingGlowIcon, 0, 0, 78, 78);
+                graphics.DrawImage(isVtol ? VtolIcon : FixedWingIcon, 9, 9, 60, 60);
+            }
+            return result;
         }
 
         private static Bitmap LoadFmtIcon(string fileName)

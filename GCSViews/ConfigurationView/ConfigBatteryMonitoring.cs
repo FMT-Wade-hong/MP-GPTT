@@ -250,7 +250,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                         selection != 0)
                     {
                         MainV2.comPort.setParam((byte)MainV2.comPort.sysidcurrent, (byte)MainV2.comPort.compidcurrent, "BATT_MONITOR", selection);
-                        MainV2.comPort.getParamList();
+                        // Enabling a monitor must not start an implicit full parameter download.
                         this.Activate();
                     }
                     else

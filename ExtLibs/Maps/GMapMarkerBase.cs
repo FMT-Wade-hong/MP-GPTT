@@ -9,6 +9,19 @@ namespace MissionPlanner.Maps
     [Serializable]
     public class GMapMarkerBase: GMapMarker
     {
+        // Supplied by the desktop UI. Null leaves all existing marker rendering unchanged.
+        public static Func<string, bool, System.Drawing.Bitmap> CustomIconProvider;
+        public static readonly object CustomIconLock = new object();
+        protected bool DrawCustomIcon(IGraphics graphics, string vehicle)
+        {
+            lock (CustomIconLock)
+            {
+                var icon = CustomIconProvider?.Invoke(vehicle, IsActive);
+                if (icon == null) return false;
+                graphics.DrawImage(icon, -icon.Width / 2, -icon.Height / 2, icon.Width, icon.Height);
+                return true;
+            }
+        }
         public static bool DisplayCOGSetting = true;
         public static bool DisplayHeadingSetting = true;
         public static bool DisplayNavBearingSetting = true;

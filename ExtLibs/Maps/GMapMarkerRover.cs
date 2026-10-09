@@ -78,6 +78,8 @@ namespace MissionPlanner.Maps
             catch
             {
             }
+            if (!DrawCustomIcon(g, "Rover"))
+            {
 #if NET472_OR_GREATER
             var img = Resources.rover;
             var ia = new System.Drawing.Imaging.ImageAttributes();
@@ -93,6 +95,7 @@ namespace MissionPlanner.Maps
                 Size.Width / -2,
                 Size.Height / -2);
 #endif
+            }
 
             g.Transform = temp;
         }

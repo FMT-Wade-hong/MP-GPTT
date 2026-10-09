@@ -71,7 +71,7 @@ namespace MissionPlanner.FMT
             };
             var description = new Label
             {
-                Text = "此頁密碼只保護「參數設定」入口，不會鎖住下方參數表。",
+                Text = "與軟體設定共用密碼保護開關；可在「設定參數密碼」關閉。",
                 AutoSize = true,
                 Location = new Point(16, 39)
             };
@@ -110,7 +110,7 @@ namespace MissionPlanner.FMT
                 if (dialog.ShowDialog(FindForm()) == DialogResult.OK)
                 {
                     passwordStatus.ForeColor = Color.LimeGreen;
-                    passwordStatus.Text = "參數設定密碼已更新。";
+                    passwordStatus.Text = FmtAuthentication.ParameterProtectionEnabled ? "密碼保護已啟用。" : "密碼保護已關閉。";
                 }
             }
         }

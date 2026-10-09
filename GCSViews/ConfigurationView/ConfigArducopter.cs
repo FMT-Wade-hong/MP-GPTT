@@ -21,13 +21,74 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private readonly Hashtable changes = new Hashtable();
         internal bool startup = true;
         private CancellationTokenSource refreshCancellation;
+        private readonly MavlinkNumericUpDown THR_HOVER = new MavlinkNumericUpDown();
 
         public void Deactivate() { refreshCancellation?.Cancel(); }
 
         public ConfigArducopter()
         {
             InitializeComponent();
+            AddHoverControl();
+            groupBox4.Text = "WPNav (m/s；半徑 m)";
+            label16.Text = "速度 m/s";
+            label15.Text = "半徑 m";
+            label27.Text = "上升 m/s";
+            label13.Text = "下降 m/s";
+            label9.Text = "Loiter m/s";
+            BUT_rerequestparams.Text = "更新當頁參數";
             Disposed += (s, e) => refreshCancellation?.Cancel();
+        }
+
+        private void AddHoverControl()
+        {
+            var oldBottom = groupBox2.Bottom;
+            var rowHeight = Math.Max(24, THR_ACCEL_IMAX.Height + 4);
+            THR_HOVER.Name = "THR_HOVER";
+            THR_HOVER.SetBounds(THR_ACCEL_IMAX.Left, THR_ACCEL_IMAX.Top + rowHeight,
+                THR_ACCEL_IMAX.Width, THR_ACCEL_IMAX.Height);
+            THR_HOVER.DecimalPlaces = 4;
+            THR_HOVER.Increment = 0.001m;
+            THR_HOVER.Minimum = 0.125m;
+            THR_HOVER.Maximum = 0.6875m;
+            THR_HOVER.TabIndex = THR_ACCEL_IMAX.TabIndex + 1;
+            THR_HOVER.ValueUpdated += numeric_ValueUpdated;
+            groupBox2.Controls.Add(THR_HOVER);
+            groupBox2.Controls.Add(new Label { Name = "FMT_HoverLabel", Text = "HOVER",
+                AutoSize = false, Location = new Point(8, THR_HOVER.Top),
+                Size = new Size(THR_HOVER.Left - 12, THR_HOVER.Height),
+                TextAlign = ContentAlignment.MiddleLeft });
+            groupBox2.Height = Math.Max(groupBox2.Height, THR_HOVER.Bottom + 12);
+            var extra = groupBox2.Bottom - oldBottom;
+            foreach (Control control in Controls)
+                if (control != groupBox2 && control.Top >= oldBottom)
+                    control.Top += extra;
+
+            // Resource positions put the RC selectors across the group borders. Keep
+            // each selector row below its heading and use one consistent row spacing.
+            TUNE.Top = groupBox5.Bottom + 6;
+            myLabel2.Top = TUNE.Top;
+            TUNE_LOW.Top = TUNE_HIGH.Top = TUNE.Bottom + 8;
+            myLabel3.Top = TUNE_LOW.Top;
+            var options = new Control[] { CH6_OPTION, CH7_OPTION, CH8_OPTION, CH9_OPTION, CH10_OPTION };
+            var captions = new Control[] { label52, myLabel1, myLabel4, myLabel5, myLabel6 };
+            var optionTop = groupBox7.Bottom + 6;
+            var optionStep = Math.Max(27, CH6_OPTION.Height + 7);
+            for (int i = 0; i < options.Length; i++)
+            {
+                options[i].Top = optionTop + i * optionStep;
+                captions[i].Top = options[i].Top;
+            }
+        }
+
+        internal void BindHoverControl(MAVLink.MAVLinkParamList parameters, bool quadPlane)
+        {
+            // Never bind a different vehicle family's hover parameter as a fallback.
+            THR_HOVER.setup(0.125f, 0.6875f, 1, 0.001f,
+                quadPlane ? "Q_M_THST_HOVER" : "MOT_THST_HOVER", parameters);
+            THR_HOVER.DecimalPlaces = Math.Max(4, THR_HOVER.DecimalPlaces);
+            toolTip1.SetToolTip(THR_HOVER, THR_HOVER.ParamName +
+                "：懸停所需的正規化推力，0.35 表示 35%（不是 PWM 或油門搖桿位置）。" +
+                "啟用 HOVER_LEARN 時，飛控仍可能更新此值；本欄不變更學習設定。按「寫入參數」才送出。");
         }
 
         public void Activate()
@@ -52,6 +113,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             startup = true;
 
             changes.Clear();
+            BindHoverControl(MainV2.comPort.MAV.param,
+                MainV2.comPort.MAV.cs.firmware != Firmwares.ArduCopter2);
 
             // ensure the fields are populated before setting them
             TUNE.setup(
@@ -148,12 +211,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             THR_RATE_P.setup(0, 0, 1, 0.001f, new[] {"THR_RATE_P", "VEL_Z_P", "PSC_VELZ_P", "Q_P_VELZ_P", "PSC_D_VEL_P", "Q_P_D_VEL_P"},
                 MainV2.comPort.MAV.param);
 
-            WPNAV_LOIT_SPEED.setup(0, 0, 1, 0.001f, new[] {"WPNAV_LOIT_SPEED", "LOIT_SPEED", "Q_LOIT_SPEED", "LOIT_SPEED_MS", "Q_LOIT_SPEED_MS"},
+            SetupWpNavMetric(WPNAV_LOIT_SPEED, new[] {"WPNAV_LOIT_SPEED", "LOIT_SPEED", "Q_LOIT_SPEED", "LOIT_SPEED_MS", "Q_LOIT_SPEED_MS"},
                 MainV2.comPort.MAV.param);
-            WPNAV_RADIUS.setup(0, 0, 1, 0.001f, new[] {"WPNAV_RADIUS", "Q_WP_RADIUS", "WP_RADIUS_M", "Q_WP_RADIUS_M"}, MainV2.comPort.MAV.param);
-            WPNAV_SPEED.setup(0, 0, 1, 0.001f, new[] {"WPNAV_SPEED", "Q_WP_SPEED", "WP_SPD", "Q_WP_SPD"}, MainV2.comPort.MAV.param);
-            WPNAV_SPEED_DN.setup(0, 0, 1, 0.001f, new[] {"WPNAV_SPEED_DN", "Q_WP_SPEED_DN", "WP_SPD_DN", "Q_WP_SPD_DN"}, MainV2.comPort.MAV.param);
-            WPNAV_SPEED_UP.setup(0, 0, 1, 0.001f, new[] {"WPNAV_SPEED_UP", "Q_WP_SPEED_UP", "WP_SPD_UP", "Q_WP_SPD_UP"}, MainV2.comPort.MAV.param);
+            SetupWpNavMetric(WPNAV_RADIUS, new[] {"WPNAV_RADIUS", "Q_WP_RADIUS", "WP_RADIUS_M", "Q_WP_RADIUS_M"}, MainV2.comPort.MAV.param);
+            SetupWpNavMetric(WPNAV_SPEED, new[] {"WPNAV_SPEED", "Q_WP_SPEED", "WP_SPD", "Q_WP_SPD"}, MainV2.comPort.MAV.param);
+            SetupWpNavMetric(WPNAV_SPEED_DN, new[] {"WPNAV_SPEED_DN", "Q_WP_SPEED_DN", "WP_SPD_DN", "Q_WP_SPD_DN"}, MainV2.comPort.MAV.param);
+            SetupWpNavMetric(WPNAV_SPEED_UP, new[] {"WPNAV_SPEED_UP", "Q_WP_SPEED_UP", "WP_SPD_UP", "Q_WP_SPD_UP"}, MainV2.comPort.MAV.param);
 
             INS_GYRO_FILTER.setup(0, 0, 1, 1f, new[] { "INS_GYRO_FILTER" }, MainV2.comPort.MAV.param);
             INS_ACCEL_FILTER.setup(0, 0, 1, 1f, new[] { "INS_ACCEL_FILTER" }, MainV2.comPort.MAV.param);
@@ -203,6 +266,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             {
                 foreach (Control control2 in control1.Controls)
                 {
+                    if (control2 == THR_HOVER) continue;
                     if (control2 is MavlinkNumericUpDown)
                     {
                         var ParamName = ((MavlinkNumericUpDown) control2).ParamName;
@@ -371,6 +435,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void BUT_writePIDS_Click(object sender, EventArgs e)
         {
+            ValidateChildren(); // Commit text still being edited before taking the staged snapshot.
             var temp = (Hashtable)changes.Clone();
 
             foreach (string value in temp.Keys)
@@ -405,7 +470,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                         return;
                     }
 
-                    MainV2.comPort.setParam(value, (float)changes[value]);
+                    if (!MainV2.comPort.setParam(value, (float)temp[value]))
+                    {
+                        CustomMessageBox.Show(string.Format(Strings.ErrorSetValueFailed, value), Strings.ERROR);
+                        continue; // Keep the staged value and green editor for retry.
+                    }
 
                     changes.Remove(value);
 
@@ -436,92 +505,26 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
         protected void BUT_rerequestparams_Click(object sender, EventArgs e)
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
-                return;
-
-            ((Control)sender).Enabled = false;
-
-            try
-            {
-                MainV2.comPort.getParamList();
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.Show(Strings.ErrorReceivingParams + ex, Strings.ERROR);
-            }
-
-
-            ((Control)sender).Enabled = true;
-
-
-            Activate();
+            BUT_refreshpart_Click(sender, e);
         }
 
         private async void BUT_refreshpart_Click(object sender, EventArgs e)
         {
             if (refreshCancellation != null) return;
-            var link = MainV2.comPort;
-            if (link?.BaseStream == null || !link.BaseStream.IsOpen)
-                return;
-            if (changes.Count > 0 && CustomMessageBox.Show(
-                    "更新將捨棄此頁尚未寫入的修改，是否繼續？", "更新畫面",
-                    MessageBoxButtons.YesNo) != (int)DialogResult.Yes) return;
-
-            var vehicle = link.MAV;
-            var sysid = vehicle.sysid;
-            var compid = vehicle.compid;
-            var names = GetBoundRefreshParameters(this)
-                .Where(name => vehicle.param.ContainsKey(name)).ToArray();
-            var cancellation = new CancellationTokenSource();
-            refreshCancellation = cancellation;
-            var oldText = BUT_refreshpart.Text;
-            Enabled = false; // Prevent edits/writes while the snapshot is refreshed.
-            BUT_refreshpart.Text = "讀取中…";
-            bool completed = false;
-            try
+            using (var cancellation = new CancellationTokenSource())
             {
-                await Task.Run(() =>
+                refreshCancellation = cancellation;
+                try
                 {
-                    var elapsed = System.Diagnostics.Stopwatch.StartNew();
-                    int failures = 0;
-                    int totalFailures = 0;
-                    foreach (var name in names)
-                    {
-                        cancellation.Token.ThrowIfCancellationRequested();
-                        if (MainV2.comPort != link || link.MAV != vehicle || !link.BaseStream.IsOpen)
-                            throw new InvalidOperationException("連線或目前機體已變更，已停止更新。");
-                        if (elapsed.Elapsed > TimeSpan.FromSeconds(30))
-                            throw new TimeoutException("讀取超過 30 秒，已停止後續請求；請確認數傳連線。");
-                        try { link.GetParam(sysid, compid, name); failures = 0; }
-                        catch (Exception ex)
+                    await FmtPageParameterRefresh.RefreshAsync(this, sender as Control,
+                        GetBoundRefreshParameters(this), () =>
                         {
-                            totalFailures++;
-                            if (++failures >= 3)
-                                throw new TimeoutException("連續 3 筆參數讀取失敗，已停止更新。", ex);
-                        }
-                    }
-                    if (totalFailures > 0)
-                        throw new TimeoutException(totalFailures + " 筆參數未讀取成功；保留原畫面，請檢查連線後重試。");
-                });
-                completed = !cancellation.IsCancellationRequested && MainV2.comPort == link &&
-                    link.MAV == vehicle && link.BaseStream.IsOpen;
-            }
-            catch (OperationCanceledException) { }
-            catch (Exception ex)
-            {
-                if (!IsDisposed && !cancellation.IsCancellationRequested)
-                    CustomMessageBox.Show("更新未完成：" + ex.Message, "更新畫面");
-            }
-            finally
-            {
-                refreshCancellation = null;
-                cancellation.Dispose();
-                if (!IsDisposed)
-                {
-                    BUT_refreshpart.Text = oldText;
-                    Enabled = true;
-                    if (completed) Activate();
+                            refreshCancellation = null;
+                            changes.Clear();
+                            Activate();
+                        }, changes.Count > 0, cancellation.Token);
                 }
+                finally { refreshCancellation = null; }
             }
         }
 
@@ -536,6 +539,33 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 foreach (var nested in GetBoundRefreshParameters(ctl)) names.Add(nested);
             }
             return names.ToArray();
+        }
+
+        internal static void SetupWpNavMetric(MavlinkNumericUpDown editor, string[] aliases,
+            MAVLink.MAVLinkParamList parameters)
+        {
+            var name = aliases.FirstOrDefault(parameters.ContainsKey) ?? aliases[0];
+            // ArduPilot 4.7 renamed these fields when converting their wire units to metres.
+            bool metric = name.EndsWith("_SPEED_MS", StringComparison.Ordinal) ||
+                name.EndsWith("_RADIUS_M", StringComparison.Ordinal) ||
+                name == "WP_SPD" || name == "Q_WP_SPD" ||
+                name == "WP_SPD_UP" || name == "Q_WP_SPD_UP" ||
+                name == "WP_SPD_DN" || name == "Q_WP_SPD_DN";
+            float scale = metric ? 1f : 100f;
+            var firmware = MainV2.comPort.MAV.cs.firmware.ToString();
+            double min = 0, max = 0, increment = 0;
+            bool hasRange = ParameterMetaDataRepository.GetParameterRange(name, ref min, ref max, firmware);
+            ParameterMetaDataRepository.GetParameterIncrement(name, ref increment, firmware);
+            editor.setup(0, 0, scale, 0.01f, aliases, parameters);
+            // The shared editor scales the value/event, but not metadata limits or increments.
+            if (hasRange && min < max)
+            {
+                var value = editor.Value;
+                editor.Minimum = Math.Min(value, (decimal)(min / scale));
+                editor.Maximum = Math.Max(value, (decimal)(max / scale));
+            }
+            editor.DecimalPlaces = 3;
+            editor.Increment = increment > 0 ? (decimal)(increment / scale) : 0.01m;
         }
 
         private void numeric_ValueUpdated(object sender, EventArgs e)

@@ -146,6 +146,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         public ConfigFriendlyParams()
         {
             InitializeComponent();
+            BUT_rerequestparams.Text = "更新畫面顯示項目";
             flowLayoutPanel1.Height = Height;
 
             Resize += this_Resize;
@@ -209,30 +210,10 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
-        protected void BUT_rerequestparams_Click(object sender, EventArgs e)
+        protected async void BUT_rerequestparams_Click(object sender, EventArgs e)
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
-                return;
-
-            if (DialogResult.OK ==  Common.MessageShowAgain("Refresh Params", Strings.WarningUpdateParamList, true))
-            {
-                ((Control)sender).Enabled = false;
-
-                try
-                {
-                    MainV2.comPort.getParamList();
-                }
-                catch (Exception ex)
-                {
-                    log.Error("Exception getting param list", ex);
-                    CustomMessageBox.Show(Strings.ErrorReceivingParams, Strings.ERROR);
-                }
-
-
-                ((Control)sender).Enabled = true;
-
-                Activate();
-            }
+            await FmtPageParameterRefresh.RefreshAsync(this, sender as Control,
+                FmtPageParameterRefresh.DisplayedControls(flowLayoutPanel1), () => { _params_changed.Clear(); Activate(); }, _params_changed.Count > 0);
         }
 
         /// <summary>

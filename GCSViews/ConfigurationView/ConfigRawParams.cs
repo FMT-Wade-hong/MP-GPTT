@@ -70,6 +70,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         public ConfigRawParams()
         {
             InitializeComponent();
+            BUT_rerequestparams.Text = "重新載入全部參數";
             if (CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
             {
                 Desc.HeaderText = "功能說明";
@@ -502,9 +503,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 }
                 else
                 {
-                    CustomMessageBox.Show("The number of available parameters changed. A full param refresh will be done to show all params.", "Params");
-                    //Click on refresh button
-                    BUT_rerequestparams_Click(BUT_rerequestparams, null);
+                    CustomMessageBox.Show("可用參數數量已變更。不會自動下載整張參數表；新增參數可於安全停機後重新連線載入。", "參數");
                 }
             }
         }
@@ -537,35 +536,13 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void BUT_rerequestparams_Click(object sender, EventArgs e)
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
-                return;
-
-            if (!MainV2.comPort.MAV.cs.armed || DialogResult.OK ==
-                Common.MessageShowAgain("Refresh Params", Strings.WarningUpdateParamList, true))
-            {
-                ((Control)sender).Enabled = false;
-
-                try
+            FmtPageParameterRefresh.ReloadAll(this, BUT_rerequestparams, () =>
                 {
-                    MainV2.comPort.getParamList();
-                }
-                catch (Exception ex)
-                {
-                    log.Error("Exception getting param list", ex);
-                    CustomMessageBox.Show(Strings.ErrorReceivingParams, Strings.ERROR);
-                }
-
-
-                ((Control)sender).Enabled = true;
-
-                startup = true;
-
-                processToScreen();
-
-                FilterTimerOnElapsed(null, null);
-
-                startup = false;
-            }
+                    _changes.Clear();
+                    startup = true;
+                    try { processToScreen(); FilterTimerOnElapsed(null, null); }
+                    finally { startup = false; }
+                }, _changes.Count > 0);
         }
 
         private void Params_CellValueChanged(object sender, DataGridViewCellEventArgs e)

@@ -28,6 +28,33 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             startup = true;
 
             InitializeComponent();
+            if (components == null) components = new System.ComponentModel.Container();
+            ConfigureFmtSettingsHelp();
+            var mapIcons = new Button { Name = "BUT_FmtMapIcons", Text = "地圖載具圖示（含船／車）",
+                AutoSize = true, Location = new Point(BUT_mapCacheDir.Left, BUT_mapCacheDir.Bottom + 12) };
+            mapIcons.Click += (s, e) =>
+            {
+                using (var dialog = new FMT.FmtMapIconSettingsForm())
+                {
+                    ThemeManager.ApplyThemeTo(dialog);
+                    dialog.ShowDialog(FindForm());
+                }
+            };
+            Controls.Add(mapIcons);
+            AutoScroll = true;
+            var effectiveIdTimer = new System.Windows.Forms.Timer(components) { Interval = 500 };
+            effectiveIdTimer.Tick += (s, e) =>
+            {
+                if (!Visible || startup) return;
+                num_gcsid.Enabled = !MainV2.comPort.BaseStream.IsOpen;
+                if (num_gcsid.Value != MAVLinkInterface.gcssysid)
+                {
+                    startup = true;
+                    try { num_gcsid.Value = MAVLinkInterface.gcssysid; }
+                    finally { startup = false; }
+                }
+            };
+            effectiveIdTimer.Start();
             CMB_Layout.Items.Add(DisplayNames.Basic);
             CMB_Layout.Items.Add(DisplayNames.Advanced);
             CMB_Layout.Items.Add(DisplayNames.Custom);
@@ -157,7 +184,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             SetCheckboxFromConfig("speecharmenabled", CHK_speecharmdisarm);
             SetCheckboxFromConfig("speechlowspeedenabled", CHK_speechlowspeed);
             SetCheckboxFromConfig("beta_updates", CHK_beta);
-            SetCheckboxFromConfig("password_protect", CHK_Password);
+            CHK_Password.Checked = FMT.FmtAuthentication.ParameterProtectionEnabled;
             SetCheckboxFromConfig("showairports", CHK_showairports);
             SetCheckboxFromConfig("enableadsb", chk_ADSB);
             SetCheckboxFromConfig("norcreceiver", chk_norcreceiver);
@@ -244,7 +271,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             chk_displayradius.Checked = Settings.Instance.GetBoolean("GMapMarkerBase_DisplayRadius", true);
             chk_displaytarget.Checked = Settings.Instance.GetBoolean("GMapMarkerBase_DisplayTarget", true);
             chk_displaytooltip.Checked = Settings.Instance.GetString("mapicondesc", "") != "";
-            num_linelength.Value = Settings.Instance.GetInt32("GMapMarkerBase_Length", 500);
+            num_linelength.Value = Settings.Instance.GetInt32("GMapMarkerBase_length", 500);
 
             CMB_mapCache.DataSource = Enum.GetNames(typeof(GMap.NET.AccessMode));
             try
@@ -255,7 +282,62 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             {
             }
 
+            // These legacy controls do not configure the FMT update channel or Windows map overlay.
+            CHK_beta.Visible = false;
+            CHK_disttohomeflightdata.Visible = false;
+            label2.Visible = false;
+            num_gcsid.Enabled = !MainV2.comPort.BaseStream.IsOpen;
+            CHK_params_bg.Enabled = FMT.FmtRelayStationIdentity.StationNumber == 1;
             startup = false;
+        }
+
+        private void ConfigureFmtSettingsHelp()
+        {
+            if (!Thread.CurrentThread.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            CHK_speechArmedOnly.Text = "僅解鎖時播報";
+            CHK_speechcustom.Text = "每 30 秒";
+            label8.Text = "播報的最低訊息嚴重程度";
+            label6.Text = "高度單位";
+            label102.Text = "姿態";
+            label107.Text = "RC";
+            label1.Text = "地圖旋轉";
+            CHK_maprotation.Text = "隨機頭方向旋轉";
+            label9.Text = "非作用中飛機";
+            label10.Text = "飛機圖示";
+            label11.Text = "線長";
+            chk_displaycog.Text = "顯示 COG";
+            chk_displayheading.Text = "顯示機頭方向";
+            chk_displaynavbearing.Text = "顯示導航方位";
+            chk_displayradius.Text = "顯示轉彎半徑";
+            chk_displaytarget.Text = "顯示目標";
+            chk_displaytooltip.Text = "顯示提示";
+            chk_norcreceiver.Text = "隱藏無 RC 警告";
+            chk_analytics.Text = "不傳送匿名統計";
+            CHK_params_bg.Text = "主站背景下載參數";
+            chk_slowMachine.Text = "參數表低效能模式";
+            chk_tfr.Text = "TFR 限飛區";
+            chk_shownofly.Text = "禁飛區";
+            label13.Text = "地圖存取模式";
+            BUT_mapCacheDir.Text = "開啟地圖快取";
+            CHK_rtsresetesp32.Text = "停用 ESP32 RTS 重置";
+            BUT_Vario.Text = "升降音效開關";
+            CHK_AutoParamCommit.Text = "自動提交參數";
+            CHK_mavdebug.Text = "MAVLink 訊息偵錯";
+            chk_temp.Text = "測試畫面";
+
+            var tips = new ToolTip(components);
+            tips.SetToolTip(chk_norcreceiver, "只隱藏地面站的無 RC 接收機警告；不修改飛控 RC_OPTIONS、RC 輸入或遙控器／導控權限。");
+            tips.SetToolTip(num_gcsid, "目前有效的 GCS system ID，不是接力站號。連線期間不變更；若與飛控 MAV_GCS_SYSID／SYSID_MYGCS 不符，請斷線後人工確認設定。");
+            tips.SetToolTip(CHK_params_bg, "僅主站使用。接力分站略過完整參數下載；設定頁未回傳的參數仍需另外讀取。");
+            tips.SetToolTip(CHK_maprotation, "只控制地圖旋轉，不控制位置跟隨或首次定位縮放。與禁飛區顯示互斥，多機時停用。");
+            tips.SetToolTip(chk_shownofly, "與地圖隨機頭旋轉互斥，開啟此項會停用旋轉。");
+            tips.SetToolTip(CMB_theme, "FMT 固定品牌配色，目前不提供切換。");
+            tips.SetToolTip(NUM_tracklength, "軌跡保留點數上限；目前僅記錄解鎖時的軌跡，上鎖後會清除。");
+            tips.SetToolTip(chk_slowMachine, "只調整完整參數表的更新方式，不是整個程式或地圖的效能模式。");
+            tips.SetToolTip(label101, "連線中的資料串流頻率請求，不是永久寫入飛控 SRx_* 參數。");
+            tips.SetToolTip(CHK_speechbattery, "地面站語音提醒，不會設定飛控電池 failsafe。");
         }
 
         private void BUT_videostart_Click(object sender, EventArgs e)
@@ -512,24 +594,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void BUT_rerequestparams_Click(object sender, EventArgs e)
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
-                return;
-            ((MyButton)sender).Enabled = false;
-            try
-            {
-                MainV2.comPort.getParamList();
-            }
-            catch
-            {
-                CustomMessageBox.Show("Error: getting param list");
-            }
-
-
-            ((MyButton)sender).Enabled = true;
-            startup = true;
-
-
-            startup = false;
+            // Software preferences are local; they have no flight-controller parameter scope.
+            CustomMessageBox.Show("軟體設定是本機設定，不會向飛控下載參數。請到需要的設定頁更新。", "更新參數");
         }
 
         private void CHK_speechbattery_CheckedChanged(object sender, EventArgs e)
@@ -867,9 +933,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void CHK_beta_CheckedChanged(object sender, EventArgs e)
         {
-            Settings.Instance["beta_updates"] = CHK_beta.Checked.ToString();
-
-            MissionPlanner.Utilities.Update.dobeta = CHK_beta.Checked;
+            // FMT uses its own formal releases; never enable the upstream updater here.
         }
 
         private void CHK_Password_CheckedChanged(object sender, EventArgs e)
@@ -877,16 +941,16 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             if (startup)
                 return;
 
-            Settings.Instance["password_protect"] = CHK_Password.Checked.ToString();
-            if (CHK_Password.Checked)
+            var requested = CHK_Password.Checked;
+            using (var access = new FMT.FmtParameterAccessForm())
             {
-                // keep this one local
-                string pw = "";
-
-                InputBox.Show("Enter Password", "Please enter a password", ref pw, true);
-
-                Password.EnterPassword(pw);
+                ThemeManager.ApplyThemeTo(access);
+                if (access.ShowDialog(FindForm()) == DialogResult.OK)
+                    FMT.FmtAuthentication.SetParameterProtection(requested);
             }
+            startup = true;
+            try { CHK_Password.Checked = FMT.FmtAuthentication.ParameterProtectionEnabled; }
+            finally { startup = false; }
         }
 
         private void CHK_speechlowspeed_CheckedChanged(object sender, EventArgs e)
@@ -1071,6 +1135,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void num_gcsid_ValueChanged(object sender, EventArgs e)
         {
+            if (startup) return;
+            if (MainV2.comPort.BaseStream.IsOpen)
+            {
+                num_gcsid.Value = MAVLinkInterface.gcssysid;
+                return;
+            }
             MAVLinkInterface.gcssysid = (byte)num_gcsid.Value;
             Settings.Instance["gcsid"] = num_gcsid.Value.ToString();
         }
@@ -1150,6 +1220,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void num_linelength_ValueChanged(object sender, EventArgs e)
         {
+            if (startup) return;
             Settings.Instance["GMapMarkerBase_length"] = num_linelength.Value.ToString();
             Maps.GMapMarkerBase.length = (int)(num_linelength.Value);
         }

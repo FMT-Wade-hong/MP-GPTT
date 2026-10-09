@@ -508,6 +508,7 @@ namespace MissionPlanner
         /// It is enabled only when RC_OPTIONS explicitly ignores the physical receiver.
         /// </summary>
         internal static volatile bool FmtGroundControlInputEnabled;
+        internal static volatile bool FmtAircraftGroundControlConfirmed;
 
         /// <summary>
         /// track last joystick packet sent. used to control rate
@@ -607,12 +608,20 @@ namespace MissionPlanner
         private ToolStripButton MenuFmtPreflightCheck;
         private ToolStripButton MenuFmtArmDisarm;
         private ToolStripButton MenuFmtAirspeedZero;
+        private ToolStripButton MenuFmtIceEngine;
+        private bool FmtIceCommandPending;
+        private bool FmtIceStopAction;
+        private MAVState FmtIceTarget;
+        private bool? FmtIceRequestedState;
         private ToolStripControlHost MenuFmtControlSource;
         private Button FmtRcControlButton;
         private Button FmtGcsControlButton;
         private Label FmtControlSourceArrow;
         private int FmtControlSourceState = 1;
-        private bool FmtControlSourceStartupDefaultApplied;
+        private bool FmtControlSourceTransition;
+        private bool FmtControlSourceReadbackFailed;
+        private int FmtRelayParameterReadPending;
+        private DateTime FmtRelayParameterReadAfter = DateTime.MinValue;
         private List<FmtCriticalRcSwitch> FmtCriticalSwitchSnapshot = new List<FmtCriticalRcSwitch>();
         private ToolStripControlHost MenuFmtGpsStatus;
         private Label FmtGpsPrimaryLabel;
@@ -782,6 +791,7 @@ namespace MissionPlanner
             Settings.Instance["theme"] = FMT.FmtAuthentication.ThemeName;
 
             ThemeManager.LoadTheme(Settings.Instance["theme"]);
+            FMT.FmtMapIconSettings.Initialize();
 
             Utilities.ThemeManager.ApplyThemeTo(this);
 
@@ -1376,29 +1386,13 @@ namespace MissionPlanner
 
         public void MenuSetup_Click(object sender, EventArgs e)
         {
-            if (Settings.Instance.GetBoolean("password_protect") == false)
+            if (FMT.FmtAuthentication.ParameterProtectionEnabled)
+            using (var access = new FMT.FmtParameterAccessForm())
             {
-                MyView.ShowScreen("HWConfig");
+                ThemeManager.ApplyThemeTo(access);
+                if (access.ShowDialog(this) != DialogResult.OK) return;
             }
-            else
-            {
-                var pw = "";
-                if (InputBox.Show("Enter Password", "Please enter your password", ref pw, true) ==
-                    System.Windows.Forms.DialogResult.OK)
-                {
-                    bool ans = Password.ValidatePassword(pw);
-
-                    if (ans == false)
-                    {
-                        CustomMessageBox.Show("Bad Password", "Bad Password");
-                    }
-                }
-
-                if (Password.VerifyPassword(pw))
-                {
-                    MyView.ShowScreen("HWConfig");
-                }
-            }
+            MyView.ShowScreen("HWConfig");
         }
 
         private void MenuSimulation_Click(object sender, EventArgs e)
@@ -1408,29 +1402,13 @@ namespace MissionPlanner
 
         private void MenuTuning_Click(object sender, EventArgs e)
         {
-            if (Settings.Instance.GetBoolean("password_protect") == false)
+            if (FMT.FmtAuthentication.ParameterProtectionEnabled)
+            using (var access = new FMT.FmtParameterAccessForm())
             {
-                MyView.ShowScreen("SWConfig");
+                ThemeManager.ApplyThemeTo(access);
+                if (access.ShowDialog(this) != DialogResult.OK) return;
             }
-            else
-            {
-                var pw = "";
-                if (InputBox.Show("Enter Password", "Please enter your password", ref pw, true) ==
-                    System.Windows.Forms.DialogResult.OK)
-                {
-                    bool ans = Password.ValidatePassword(pw);
-
-                    if (ans == false)
-                    {
-                        CustomMessageBox.Show("Bad Password", "Bad Password");
-                    }
-                }
-
-                if (Password.VerifyPassword(pw))
-                {
-                    MyView.ShowScreen("SWConfig");
-                }
-            }
+            MyView.ShowScreen("SWConfig");
         }
 
         private void MenuTerminal_Click(object sender, EventArgs e)
@@ -1499,6 +1477,7 @@ namespace MissionPlanner
 
         public void doConnect(MAVLinkInterface comPort, string portname, string baud, bool getparams = true, bool showui = true)
         {
+            var timeSyncGeneration = FmtConnectionTimeSync.Begin(comPort);
             bool skipconnectcheck = false;
             log.Info($"We are connecting to {portname} {baud}");
             switch (portname)
@@ -1711,11 +1690,11 @@ namespace MissionPlanner
                 // Keep relay connection startup responsive and request only the aircraft-wide
                 // control-source parameter in the background. Station 1 remains responsible
                 // for the authoritative full parameter download.
-                if (getparams && FmtRelayStationIdentity.StationNumber != 1)
+                if (FmtRelayStationIdentity.StationNumber != 1)
                 {
                     getparams = false;
                     log.Info("FMT relay station: skipping duplicate full parameter download");
-                    Task.Run(() => PrefetchFmtRelayControlParameters(comPort));
+                    // Parameter acquisition is maintained independently of setup pages below.
                 }
 
                 //158	MAV_COMP_ID_PERIPHERAL	Generic autopilot peripheral component ID. Meant for devices that do not implement the parameter microservice.
@@ -1750,6 +1729,9 @@ namespace MissionPlanner
                         }
                     }
                 }
+
+                // One background SYSTEM_TIME message per successfully opened connection.
+                FmtConnectionTimeSync.Schedule(comPort, timeSyncGeneration);
 
                 // check for newer firmware
                 if (showui)
@@ -2654,6 +2636,7 @@ namespace MissionPlanner
 
         private void MenuFmtParameterSettings_Click(object sender, EventArgs e)
         {
+            if (FMT.FmtAuthentication.ParameterProtectionEnabled)
             using (var access = new FMT.FmtParameterAccessForm())
             {
                 ThemeManager.ApplyThemeTo(access);
@@ -2771,9 +2754,9 @@ namespace MissionPlanner
 
             string lastmessagehigh = "";
 
-            DateTime speechcustomtime = DateTime.Now;
+            DateTime speechcustomtime = DateTime.UtcNow;
 
-            DateTime speechlowspeedtime = DateTime.Now;
+            DateTime speechlowspeedtime = DateTime.UtcNow;
 
             DateTime linkqualitytime = DateTime.Now;
 
@@ -4210,7 +4193,7 @@ namespace MissionPlanner
 
             try
             {
-                MissionPlanner.Utilities.Update.CheckForUpdate();
+                checkFmtUpdate(stuff);
             }
             catch (Exception ex)
             {
@@ -4272,8 +4255,8 @@ namespace MissionPlanner
 
             if (keyData == Keys.F5)
             {
-                comPort.getParamList();
-                MyView.ShowScreen(MyView.current.Name);
+                if (!FmtPageParameterRefresh.TryRefreshVisible(this))
+                    CustomMessageBox.Show("目前頁面沒有可用的參數更新按鈕；不會下載整張參數表。", "更新當頁參數");
                 return true;
             }
 
@@ -4803,7 +4786,7 @@ namespace MissionPlanner
             foreach (ToolStripItem item in MainMenu.Items)
             {
                 if (item == MenuFmtPreflightCheck || item == MenuFmtArmDisarm ||
-                    item == MenuFmtAirspeedZero)
+                    item == MenuFmtAirspeedZero || item == MenuFmtIceEngine)
                 {
                     ApplyFmtQuickActionButtonStyle(item);
                     continue;
@@ -4871,6 +4854,11 @@ namespace MissionPlanner
             new ConnectionOptions().Show(this);
         }
 
+        public void CheckFmtUpdateManually()
+        {
+            System.Threading.ThreadPool.QueueUserWorkItem(checkFmtUpdate, true);
+        }
+
         private void checkFmtUpdate(object state)
         {
             try
@@ -4888,8 +4876,14 @@ namespace MissionPlanner
                     Version latest = null;
                     Version current = null;
                     if (!Version.TryParse(latestText, out latest) ||
-                        !Version.TryParse(FMT.FmtAuthentication.ProductVersion, out current) || latest <= current)
+                        !Version.TryParse(FMT.FmtAuthentication.ProductVersion, out current))
+                        throw new InvalidDataException("無法判讀 FMT 發布版本。");
+                    if (latest <= current)
+                    {
+                        if (state is bool && (bool)state)
+                            BeginInvoke((Action)(() => CustomMessageBox.Show("目前已是最新的 FMT 正式版本。")));
                         return;
+                    }
 
                     var page = Convert.ToString(release.html_url);
                     var notes = Convert.ToString(release.body);
@@ -4908,6 +4902,8 @@ namespace MissionPlanner
             catch (Exception ex)
             {
                 log.Warn("FMT update check failed", ex);
+                if (state is bool && (bool)state)
+                    BeginInvoke((Action)(() => CustomMessageBox.Show("無法檢查 FMT 更新，請稍後再試。")));
             }
         }
 
@@ -5064,6 +5060,27 @@ namespace MissionPlanner
             };
             MenuFmtAirspeedZero.Click += MenuFmtAirspeedZero_Click;
 
+            MenuFmtIceEngine = new FmtQuickActionToolStripButton
+            {
+                Name = "MenuFmtIceEngine", Visible = false,
+                Text = "啟動引擎", Alignment = ToolStripItemAlignment.Left,
+                DisplayStyle = ToolStripItemDisplayStyle.Text, AutoSize = false,
+                Size = new Size(116, 35), Margin = new Padding(0, 0, 4, 0),
+                Font = new Font(SystemFonts.MenuFont, FontStyle.Bold)
+            };
+            MenuFmtIceEngine.Click += MenuFmtIceEngine_Click;
+            // Stop remains accessible when no RPM sensor is installed, or when
+            // the engine was started externally before this GCS connected.
+            MenuFmtIceEngine.MouseUp += (sender, args) =>
+            {
+                if (args.Button != MouseButtons.Right) return;
+                var menu = new ContextMenuStrip();
+                menu.Items.Add("停止引擎（狀態未知時仍可送出）", null,
+                    (s, e) => ExecuteFmtIceCommand(false));
+                menu.Closed += (s, e) => menu.Dispose();
+                menu.Show(Cursor.Position);
+            };
+
             var controlSourcePanel = new Panel
             {
                 Name = "FmtControlSourcePanel",
@@ -5106,7 +5123,8 @@ namespace MissionPlanner
             MainMenu.Items.Insert(quickActionIndex, MenuFmtPreflightCheck);
             MainMenu.Items.Insert(quickActionIndex + 1, MenuFmtArmDisarm);
             MainMenu.Items.Insert(quickActionIndex + 2, MenuFmtAirspeedZero);
-            MainMenu.Items.Insert(quickActionIndex + 3, MenuFmtControlSource);
+            MainMenu.Items.Insert(quickActionIndex + 3, MenuFmtIceEngine);
+            MainMenu.Items.Insert(quickActionIndex + 4, MenuFmtControlSource);
             ApplyFmtQuickActionButtonStyle(MenuFmtPreflightCheck);
             ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
             ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
@@ -5498,14 +5516,15 @@ namespace MissionPlanner
         internal static bool IsFmtAirspeedZeroAvailable(MAVLinkParamList parameters)
         {
             if (parameters == null) return false;
-            var use = parameters["ARSPD_USE"];
             var enable = parameters["ARSPD_ENABLE"];
             var type = parameters["ARSPD_TYPE"];
+            var secondType = parameters["ARSPD2_TYPE"];
             // Missing/unread parameters are not evidence of an enabled sensor.
-            // USE=2 (automatic use) is also enabled, when offered by the firmware.
-            return use != null && (float)use > 0 &&
-                (enable == null || (float)enable > 0) &&
-                (type != null ? (float)type > 0 : enable != null && (float)enable > 0);
+            // ARSPD_USE controls navigation use, not sensor availability/calibration.
+            return (enable == null || (float)enable > 0) &&
+                ((type != null && (float)type > 0) ||
+                 (secondType != null && (float)secondType > 0) ||
+                 (type == null && secondType == null && enable != null && (float)enable > 0));
         }
 
         private void UpdateFmtQuickActionButtons()
@@ -5535,10 +5554,13 @@ namespace MissionPlanner
                     : (armed ? "DISARM" : "ARM");
                 MenuFmtArmDisarm.Enabled = connected && !comPort.ReadOnly;
                 MenuFmtAirspeedZero.Visible = showAirspeedZero;
-                MenuFmtAirspeedZero.Enabled = showAirspeedZero && !armed && !comPort.ReadOnly;
+                MenuFmtAirspeedZero.Enabled = showAirspeedZero && !armed && !comPort.ReadOnly &&
+                    FlightData?.IsFmtAirspeedZeroRunning != true && !comPort.giveComport &&
+                    !comPort.IsParameterListLoading && !comPort.IsLogDownloadActive;
                 ApplyFmtQuickActionButtonStyle(MenuFmtPreflightCheck);
                 ApplyFmtQuickActionButtonStyle(MenuFmtArmDisarm);
                 ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
+                UpdateFmtIceEngineButton(connected);
                 UpdateFmtControlSourceButtons(connected);
                 UpdateFmtGpsStatus(connected, gpsStatus, satCount, hdop, vdop);
                 UpdateFmtRotorRpm(showRotorRpm, rotorRpm);
@@ -5577,6 +5599,15 @@ namespace MissionPlanner
         {
             // Visibility is presentation only: keep authority/safety updates running.
             UpdateFmtControlSourceVisibility();
+            if (!connected)
+            {
+                FmtGroundControlInputEnabled = false;
+                FmtAircraftGroundControlConfirmed = false;
+                FmtControlSourceReadbackFailed = false;
+            }
+            if (FmtControlSourceTransition)
+                return; // Do not re-enable output from stale cache during a parameter transaction.
+            MaintainFmtRelayControlParameters(connected);
             var parameterAvailable = false;
             var nextState = connected ? 0 : 1;
             var startupDefaultWarning = string.Empty;
@@ -5588,50 +5619,16 @@ namespace MissionPlanner
                     parameterAvailable = true;
                     nextState = GetFmtControlSourceState((int)Math.Round(parameters["RC_OPTIONS"].Value));
 
-                    if (!FmtControlSourceStartupDefaultApplied && IsFmtHeartbeatFresh())
-                    {
-                        FmtControlSourceStartupDefaultApplied = true;
-                        if (FmtRelayStationIdentity.StationNumber != 1)
-                        {
-                            // RC_OPTIONS is aircraft-wide. Relay stations observe it but must
-                            // never race the main station by applying their own startup value.
-                        }
-                        else if (comPort.ReadOnly)
-                        {
-                            startupDefaultWarning = "唯讀連線無法套用啟動預設的遙控器控制";
-                        }
-                        else if (comPort.MAV.cs.armed)
-                        {
-                            startupDefaultWarning = "飛行器已解鎖，為避免飛行中突變，未自動切換控制來源";
-                        }
-                        else
-                        {
-                            var currentOptions = (int)Math.Round(parameters["RC_OPTIONS"].Value);
-                            var receiverOptions = (currentOptions & ~3) | 2;
-                            FmtGroundControlInputEnabled = false;
-                            if (joystick != null && joystick.enabled)
-                                joystick.releaseRCOverride();
-
-                            if (currentOptions != receiverOptions)
-                            {
-                                if (!comPort.setParam((byte)comPort.sysidcurrent, (byte)comPort.compidcurrent,
-                                        "RC_OPTIONS", receiverOptions, true))
-                                    throw new InvalidOperationException("飛控拒絕啟動預設的 RC_OPTIONS 設定。");
-                            }
-
-                            nextState = 1;
-                        }
-                    }
+                    // Observe the aircraft configuration only. Connecting/reconnecting must
+                    // never change RC_OPTIONS or select a default control source.
                 }
             }
             catch (Exception ex)
             {
-                startupDefaultWarning = "無法套用啟動預設的遙控器控制";
-                log.Warn("Unable to initialize the FMT control source to receiver control", ex);
+                startupDefaultWarning = "無法讀取控制來源；未變更飛控設定。";
+                log.Warn("Unable to observe the FMT control source", ex);
             }
 
-            if (!connected)
-                FmtControlSourceStartupDefaultApplied = false;
 
             var isMainRelayStation = FmtRelayStationIdentity.StationNumber == 1;
             var canChange = connected && parameterAvailable && !comPort.ReadOnly && isMainRelayStation;
@@ -5642,7 +5639,10 @@ namespace MissionPlanner
                 gcsSystemIdAligned = TryAlignFmtGcsSystemId(out gcsSystemIdError);
             FmtRcControlButton.Enabled = canChange;
             FmtGcsControlButton.Enabled = canChange && joystickReady;
-            FmtGroundControlInputEnabled = nextState == 2 && joystickReady && gcsSystemIdAligned;
+            FmtGroundControlInputEnabled = !FmtControlSourceReadbackFailed && nextState == 2 && joystickReady && gcsSystemIdAligned;
+            FmtAircraftGroundControlConfirmed = !FmtControlSourceReadbackFailed && connected && parameterAvailable && nextState == 2;
+            if (FmtControlSourceReadbackFailed)
+                startupDefaultWarning = "控制來源回讀失敗；導控輸出已封鎖，請重新選擇控制來源確認。";
 
             if (nextState != 2 && FmtControlSourceState != nextState && joystick != null && joystick.enabled)
             {
@@ -5671,7 +5671,7 @@ namespace MissionPlanner
             {
                 FmtControlSourceArrow.Text = "⇄";
                 FmtControlSourceArrow.ForeColor = Color.Gray;
-                MenuFmtControlSource.ToolTipText = "啟動預設為遙控器控制；連線飛控後才能變更";
+                MenuFmtControlSource.ToolTipText = "尚未連線；連線後保留飛控原有控制來源，不自動改寫參數";
             }
             else if (!isMainRelayStation)
             {
@@ -5689,7 +5689,7 @@ namespace MissionPlanner
             {
                 FmtControlSourceArrow.Text = "!";
                 FmtControlSourceArrow.ForeColor = Color.OrangeRed;
-                MenuFmtControlSource.ToolTipText = "控制來源尚未隔離；請選擇遙控器控制或導控控制";
+                MenuFmtControlSource.ToolTipText = "保留飛控 RC_OPTIONS 原值；導控搖桿未啟用。ELRS MAVLink 需允許 RC Override，請勿套用傳統接收機隔離設定";
             }
             else if (!joystickReady && nextState == 2)
             {
@@ -5784,12 +5784,9 @@ namespace MissionPlanner
 
                 if (MAVLinkInterface.gcssysid != requiredSystemId)
                 {
-                    var previousSystemId = MAVLinkInterface.gcssysid;
-                    MAVLinkInterface.gcssysid = (byte)requiredSystemId;
-                    Settings.Instance["gcsid"] = requiredSystemId.ToString(CultureInfo.InvariantCulture);
-                    log.WarnFormat(
-                        "FMT aligned MAVLink GCS system id from {0} to {1} using {2} so RC override is accepted",
-                        previousSystemId, requiredSystemId, parameterName);
+                    error = "GCS ID 與飛控 " + parameterName + "（" + requiredSystemId +
+                        "）不符；未自動變更。請斷線後在軟體設定確認 GCS ID，再重新連線。";
+                    return false;
                 }
 
                 return true;
@@ -5805,6 +5802,8 @@ namespace MissionPlanner
         private void SetFmtControlSource(bool groundControl)
         {
             const string title = "FMT 控制來源";
+            if (FmtControlSourceTransition)
+                return;
             if (FmtRelayStationIdentity.StationNumber != 1)
             {
                 CustomMessageBox.Show("控制來源由 1 號主站統一管理。2～5 號站只能申請接管，不能修改 RC_OPTIONS。",
@@ -5833,7 +5832,7 @@ namespace MissionPlanner
 
             var current = (int)Math.Round(parameters["RC_OPTIONS"].Value);
             var updated = (current & ~3) | (groundControl ? 1 : 2);
-            if (GetFmtControlSourceState(current) == (groundControl ? 2 : 1))
+            if (!FmtControlSourceReadbackFailed && GetFmtControlSourceState(current) == (groundControl ? 2 : 1))
                 return;
 
             if (groundControl)
@@ -5937,14 +5936,18 @@ namespace MissionPlanner
 
                 const string confirmation =
                     "切換為「遙控器控制」後，導控站會停止輸出並釋放 RC Override。\r\n\r\n" +
+                    "警告：這是傳統 SBUS／CRSF 接收機的隔離方式，會阻擋 ELRS MAVLink 遙控。使用 ELRS MAVLink 時請取消，保留原設定。\r\n\r\n" +
                     "注意：目前 MAVLink 無法回報被隔離接收機的待命原始位置，因此本方向無法由導控站驗證無擾對位。請先人工對齊實體遙控器。確定切換嗎？";
                 if (CustomMessageBox.Show(confirmation, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) !=
                     (int)DialogResult.Yes)
                     return;
             }
 
-            var previousGroundGate = FmtGroundControlInputEnabled;
             var joystickWasEnabled = joystick != null && joystick.enabled;
+            FmtControlSourceTransition = true;
+            FmtAircraftGroundControlConfirmed = false;
+            FmtGroundControlInputEnabled = false;
+            FmtRcControlButton.Enabled = FmtGcsControlButton.Enabled = false;
             if (!groundControl)
             {
                 FmtGroundControlInputEnabled = false;
@@ -5962,13 +5965,22 @@ namespace MissionPlanner
                 if (!accepted)
                     throw new InvalidOperationException("飛控拒絕 RC_OPTIONS 設定。");
 
+                var readback = (int)Math.Round(comPort.GetParam((byte)comPort.sysidcurrent,
+                    (byte)comPort.compidcurrent, "RC_OPTIONS"));
+                if (readback != updated)
+                    throw new InvalidOperationException("RC_OPTIONS 回讀與要求不一致；導控輸出保持封鎖。");
+
                 FmtGroundControlInputEnabled = groundControl;
+                FmtAircraftGroundControlConfirmed = groundControl;
+                FmtControlSourceReadbackFailed = false;
                 FmtControlSourceState = groundControl ? 2 : 1;
                 UpdateFmtQuickActionButtons();
             }
             catch (Exception ex)
             {
-                FmtGroundControlInputEnabled = previousGroundGate;
+                FmtGroundControlInputEnabled = false;
+                FmtAircraftGroundControlConfirmed = false;
+                FmtControlSourceReadbackFailed = true;
                 if (joystickWasEnabled && joystick != null)
                     joystick.enabled = true;
                 log.Error("FMT control-source switch failed", ex);
@@ -5976,6 +5988,25 @@ namespace MissionPlanner
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 UpdateFmtQuickActionButtons();
             }
+            finally
+            {
+                FmtControlSourceTransition = false;
+            }
+        }
+
+        private void MaintainFmtRelayControlParameters(bool connected)
+        {
+            if (!connected || FmtRelayStationIdentity.StationNumber == 1 ||
+                DateTime.UtcNow < FmtRelayParameterReadAfter ||
+                System.Threading.Interlocked.CompareExchange(ref FmtRelayParameterReadPending, 1, 0) != 0)
+                return;
+            var port = comPort;
+            FmtRelayParameterReadAfter = DateTime.UtcNow.AddSeconds(3);
+            Task.Run(() =>
+            {
+                try { PrefetchFmtRelayControlParameters(port); }
+                finally { System.Threading.Interlocked.Exchange(ref FmtRelayParameterReadPending, 0); }
+            });
         }
 
         private static void PrefetchFmtRelayControlParameters(MAVLinkInterface port)
@@ -5983,14 +6014,28 @@ namespace MissionPlanner
             if (port == null || port.MAV == null ||
                 port.MAV.compid == (byte)MAVLink.MAV_COMPONENT.MAV_COMP_ID_PERIPHERAL)
                 return;
-            try
+            var sysid = port.MAV.sysid;
+            var compid = port.MAV.compid;
+            var names = new List<string> { "RC_OPTIONS" };
+            if (!port.MAV.param.ContainsKey("SYSID_MYGCS") && !port.MAV.param.ContainsKey("MAV_GCS_SYSID"))
+                names.AddRange(new[] { "SYSID_MYGCS", "MAV_GCS_SYSID" });
+            for (var channel = 1; channel <= 16; channel++)
+                foreach (var suffix in new[] { "_MIN", "_MAX", "_TRIM" })
+                {
+                    var name = "RC" + channel + suffix;
+                    if (!port.MAV.param.ContainsKey(name)) names.Add(name);
+                }
+            foreach (var name in names)
             {
-                port.GetParam(port.MAV.sysid, port.MAV.compid, "RC_OPTIONS");
-                port.GetParam(port.MAV.sysid, port.MAV.compid, "SYSID_MYGCS");
-            }
-            catch (Exception ex)
-            {
-                log.Warn("Unable to prefetch RC_OPTIONS for FMT relay station", ex);
+                if (port.BaseStream == null || !port.BaseStream.IsOpen ||
+                    port.MAV.sysid != sysid || port.MAV.compid != compid) return;
+                try
+                {
+                    // Nonblocking individual reads: absent/renamed parameters cannot abort the batch.
+                    port.GetParam(sysid, compid, name, -1, false);
+                    System.Threading.Thread.Sleep(20);
+                }
+                catch (Exception ex) { log.Warn("Unable to request relay parameter " + name, ex); }
             }
         }
 
@@ -6180,6 +6225,119 @@ namespace MissionPlanner
         {
             FlightData?.ExecuteFmtAirspeedZero();
             UpdateFmtQuickActionButtons();
+        }
+
+        internal static bool IsFmtIceEnabled(MAVLinkParamList parameters)
+        {
+            var enable = parameters?["ICE_ENABLE"];
+            return enable != null && (float)enable > 0;
+        }
+
+        internal static bool IsFmtIcePacketFresh(DateTime received, DateTime now)
+        {
+            var age = (now - received).TotalSeconds;
+            return age >= 0 && age <= 3;
+        }
+
+        // RPM is evidence of rotation, not proof of combustion. Do not interpret
+        // unreceived/default CurrentState RPM values as a stopped engine.
+        internal static bool? GetFmtIceRotation(MAVState mav, DateTime now)
+        {
+            var channel = mav.param["ICE_RPM_CHAN"];
+            var rpmPacket = mav.getPacketLast((uint)MAVLink.MAVLINK_MSG_ID.RPM);
+            if (channel != null && ((int)channel == 1 || (int)channel == 2) &&
+                rpmPacket != null && IsFmtIcePacketFresh(rpmPacket.rxtime, now))
+            {
+                var rpm = rpmPacket.ToStructure<MAVLink.mavlink_rpm_t>();
+                return ((int)channel == 1 ? rpm.rpm1 : rpm.rpm2) > 0;
+            }
+            var efiPacket = mav.getPacketLast((uint)MAVLink.MAVLINK_MSG_ID.EFI_STATUS);
+            if (efiPacket != null && IsFmtIcePacketFresh(efiPacket.rxtime, now))
+            {
+                var efi = efiPacket.ToStructure<MAVLink.mavlink_efi_status_t>();
+                if (efi.ecu_index == 0 && efi.health != 0)
+                    return efi.rpm > 0;
+            }
+            return null;
+        }
+
+        private bool CanSendFmtIceCommand(MAVLinkInterface port, MAVState target)
+        {
+            return ReferenceEquals(port, comPort) && ReferenceEquals(target, port.MAV) &&
+                port.BaseStream != null && port.BaseStream.IsOpen && !port.ReadOnly &&
+                !port.logreadmode && IsFmtIceEnabled(target.param) &&
+                IsFmtIcePacketFresh(target.lastvalidpacket, DateTime.UtcNow) &&
+                FmtRelayControlService.CanLocalStationTransmitControl;
+        }
+
+        private void UpdateFmtIceEngineButton(bool connected)
+        {
+            if (MenuFmtIceEngine == null) return;
+            var target = connected ? comPort.MAV : null;
+            if (!ReferenceEquals(FmtIceTarget, target))
+            {
+                FmtIceTarget = target;
+                FmtIceRequestedState = null;
+                FmtIceStopAction = false;
+            }
+            var enabled = target != null && IsFmtIceEnabled(target.param);
+            MenuFmtIceEngine.Visible = enabled;
+            if (!enabled) return;
+            var rotation = GetFmtIceRotation(target, DateTime.UtcNow);
+            // Keep Stop available throughout cranking/retries, including zero RPM.
+            // An accepted start is a requested state, never a claim of engine health.
+            FmtIceStopAction = rotation == true || FmtIceRequestedState == true;
+            MenuFmtIceEngine.Text = FmtIceCommandPending ? "指令處理中…" :
+                (FmtIceStopAction ? "停止引擎" : "啟動引擎");
+            MenuFmtIceEngine.Enabled = !FmtIceCommandPending && CanSendFmtIceCommand(comPort, target);
+            MenuFmtIceEngine.ToolTipText = rotation == true ? "收到引擎轉速回傳；按下可停止引擎。" :
+                (FmtIceRequestedState == true ? "已送出啟動要求，尚未確認引擎運轉；可按下停止啟動／運轉。" :
+                "按下發送 ICE 啟動指令；未收到轉速不代表已停止。右鍵可選擇停止引擎。");
+            ApplyFmtQuickActionButtonStyle(MenuFmtIceEngine);
+        }
+
+        private void MenuFmtIceEngine_Click(object sender, EventArgs e)
+        {
+            ExecuteFmtIceCommand(!FmtIceStopAction);
+        }
+
+        private async void ExecuteFmtIceCommand(bool start)
+        {
+            var port = comPort;
+            var target = port.MAV;
+            if (FmtIceCommandPending || !CanSendFmtIceCommand(port, target)) return;
+            FmtIceCommandPending = true;
+            try
+            {
+                UpdateFmtIceEngineButton(true);
+                if (CustomMessageBox.Show(start
+                    ? "確認啟動引擎？請確認機體固定、油門位置安全且螺旋槳周圍淨空。\n本操作不會解鎖或略過飛控安全限制。"
+                    : "確認停止引擎？飛行中停止引擎將失去推力。",
+                    "ICE 引擎控制", MessageBoxButtons.YesNo) != (int)DialogResult.Yes) return;
+                if (!CanSendFmtIceCommand(port, target)) return;
+                // ACK loss is ambiguous: retain Stop even if the start times out.
+                if (start) FmtIceRequestedState = true;
+                var accepted = await Task.Run(() =>
+                {
+                    if (!CanSendFmtIceCommand(port, target)) return false;
+                    // ArduPilot DO_ENGINE_CONTROL: start, cold-start, height-delay,
+                    // flags. No ALLOW_START_WHILE_DISARMED override is requested.
+                    return port.doCommand(target.sysid, target.compid,
+                        MAVLink.MAV_CMD.DO_ENGINE_CONTROL, start ? 1 : 0, 0, 0, 0, 0, 0, 0);
+                });
+                if (!ReferenceEquals(port, comPort) || !ReferenceEquals(target, port.MAV)) return;
+                if (!accepted) throw new InvalidOperationException("飛控未接受引擎控制指令。請查看飛控訊息並確認 ICE／安全開關設定。");
+                FmtIceRequestedState = start;
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.Show("引擎控制未確認成功，請確認實際引擎狀態。\n" + ex.Message, "ICE 引擎控制");
+            }
+            finally
+            {
+                FmtIceCommandPending = false;
+                UpdateFmtQuickActionButtons();
+            }
         }
 
         private void MenuArduPilot_Click(object sender, EventArgs e)

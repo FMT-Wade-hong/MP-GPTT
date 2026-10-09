@@ -9,9 +9,27 @@ namespace MissionPlanner.Maps
     [Serializable]
     public class GMapMarkerBoat : GMapMarkerBase
     {
+        private static readonly Bitmap DefaultIcon = LoadDefaultIcon();
+        public static Bitmap CreateDefaultPreview() { return new Bitmap(DefaultIcon); }
+        private static Bitmap LoadDefaultIcon()
+        {
+            using (var stream = typeof(GMapMarkerBoat).Assembly.GetManifestResourceStream("MissionPlanner.Maps.FMTMapBoat.png"))
+            {
+                if (stream == null) return new Bitmap(Resources.boat);
+                using (var source = new Bitmap(stream))
+                {
+                    var result = new Bitmap(64, 64);
+                    using (var graphics = Graphics.FromImage(result))
+                    {
+                        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        graphics.DrawImage(source, new Rectangle(0, 0, 64, 64));
+                    }
+                    return result;
+                }
+            }
+        }
         static readonly System.Drawing.Size SizeSt =
-            new System.Drawing.Size(global::MissionPlanner.Maps.Resources.boat.Width,
-                global::MissionPlanner.Maps.Resources.boat.Height);
+            DefaultIcon.Size;
 
         float heading = 0;
         float cog = -1;
@@ -74,21 +92,26 @@ namespace MissionPlanner.Maps
             {
             }
 
+            if (!DrawCustomIcon(g, "Boat"))
+            {
 #if NET472_OR_GREATER
-            var img = Resources.boat;
-            var ia = new System.Drawing.Imaging.ImageAttributes();
+            var img = DefaultIcon;
+            using (var ia = new System.Drawing.Imaging.ImageAttributes())
+            {
             if(IsTransparent)
             {
                 // Draw image with transparency using a color matrix
                 var cm = new System.Drawing.Imaging.ColorMatrix { Matrix33 = 0.39f };
                 ia.SetColorMatrix(cm, System.Drawing.Imaging.ColorMatrixFlag.Default, System.Drawing.Imaging.ColorAdjustType.Bitmap);
             }
-            g.DrawImage(img, new Rectangle(-img.Width / 2, -img.Width / 2, img.Width, img.Height), 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, ia);
+            g.DrawImage(img, new Rectangle(-img.Width / 2, -img.Height / 2, img.Width, img.Height), 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, ia);
+            }
 #else
-            g.DrawImageUnscaled(global::MissionPlanner.Maps.Resources.boat,
+            g.DrawImageUnscaled(DefaultIcon,
                 Size.Width / -2,
                 Size.Height / -2);
 #endif
+            }
 
             g.Transform = temp;
         }

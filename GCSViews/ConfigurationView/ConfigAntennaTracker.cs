@@ -135,6 +135,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void BUT_writePIDS_Click(object sender, EventArgs e)
         {
+            ValidateChildren();
             var temp = (Hashtable)changes.Clone();
 
             foreach (string value in temp.Keys)
@@ -153,7 +154,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                         return;
                     }
 
-                    MainV2.comPort.setParam(value, (float)changes[value]);
+                    if (!MainV2.comPort.setParam(value, (float)temp[value]))
+                    {
+                        CustomMessageBox.Show(string.Format(Strings.ErrorSetValueFailed, value), Strings.ERROR);
+                        continue;
+                    }
 
                     try
                     {
@@ -180,66 +185,18 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="System.EventArgs" /> instance containing the event data.</param>
-        protected void BUT_rerequestparams_Click(object sender, EventArgs e)
+        protected async void BUT_rerequestparams_Click(object sender, EventArgs e)
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
-                return;
-
-            ((Control)sender).Enabled = false;
-
-            try
-            {
-                MainV2.comPort.getParamList();
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.Show(Strings.ErrorReceivingParams + ex, Strings.ERROR);
-            }
-
-
-            ((Control)sender).Enabled = true;
-
-
-            Activate();
+            await FmtPageParameterRefresh.RefreshAsync(this, sender as Control,
+                FmtPageParameterRefresh.BoundNames(this, true), () => { changes.Clear(); Activate(); }, changes.Count > 0);
         }
 
-        private void BUT_refreshpart_Click(object sender, EventArgs e)
+        private async void BUT_refreshpart_Click(object sender, EventArgs e)
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
-                return;
-
-            ((Control)sender).Enabled = false;
-
-
-            updateparam(this);
-
-            ((Control)sender).Enabled = true;
-
-
-            Activate();
+            await FmtPageParameterRefresh.RefreshAsync(this, sender as Control,
+                FmtPageParameterRefresh.BoundNames(this, true), () => { changes.Clear(); Activate(); }, changes.Count > 0);
         }
 
-        private void updateparam(Control parentctl)
-        {
-            foreach (Control ctl in parentctl.Controls)
-            {
-                if (typeof(NumericUpDown) == ctl.GetType() || typeof(ComboBox) == ctl.GetType())
-                {
-                    try
-                    {
-                        MainV2.comPort.GetParam(ctl.Name);
-                    }
-                    catch
-                    {
-                    }
-                }
-
-                if (ctl.Controls.Count > 0)
-                {
-                    updateparam(ctl);
-                }
-            }
-        }
 
         private void BUT_test_yaw_Click(object sender, EventArgs e)
         {

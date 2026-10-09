@@ -680,6 +680,9 @@ namespace MissionPlanner
             if (BaseStream == null || BaseStream.IsOpen && !skipconnectedcheck)
                 return;
 
+            // Never carry a delayed parameter-storage command into a new connection.
+            lastparamset = DateTime.MinValue;
+
             MAVlist.Clear();
 
             if (showui)
@@ -1788,8 +1791,11 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
         /// <summary>
         /// With GUI
         /// </summary>
+        public bool LastParamListSucceeded { get; private set; }
+
         public void getParamList()
         {
+            LastParamListSucceeded = false;
             log.InfoFormat("getParamList {0} {1}", sysidcurrent, compidcurrent);
 
             frmProgressReporter = CreateIProgressReporterDialogue(Strings.GettingParams + " " + sysidcurrent);
@@ -1799,6 +1805,9 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
             frmProgressReporter.RunBackgroundOperationAsync();
 
+            LastParamListSucceeded = !frmProgressReporter.doWorkArgs.CancelRequested &&
+                !frmProgressReporter.doWorkArgs.CancelAcknowledged &&
+                string.IsNullOrEmpty(frmProgressReporter.doWorkArgs.ErrorMessage);
             frmProgressReporter.Dispose();
 
             _ParamListChanged?.Invoke(this, null);
@@ -1821,6 +1830,16 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
         }
 
         public async Task<MAVLinkParamList> getParamListMavftpAsync(byte sysid, byte compid)
+        {
+            Interlocked.Increment(ref activeParamDownloads);
+            try { return await GetParamListMavftpCoreAsync(sysid, compid).ConfigureAwait(false); }
+            finally { Interlocked.Decrement(ref activeParamDownloads); }
+        }
+
+        private int activeParamDownloads;
+        public bool IsParameterListLoading => Volatile.Read(ref activeParamDownloads) != 0;
+
+        private async Task<MAVLinkParamList> GetParamListMavftpCoreAsync(byte sysid, byte compid)
         {
             var sub2 = SubscribeToPacketType(MAVLINK_MSG_ID.STATUSTEXT, buffer =>
             {
@@ -6025,6 +6044,16 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
         }
 
         public async Task<string> GetLog(byte sysid, byte compid, ushort no)
+        {
+            Interlocked.Increment(ref activeLogDownloads);
+            try { return await GetLogCore(sysid, compid, no).ConfigureAwait(false); }
+            finally { Interlocked.Decrement(ref activeLogDownloads); }
+        }
+
+        private int activeLogDownloads;
+        public bool IsLogDownloadActive => Volatile.Read(ref activeLogDownloads) != 0;
+
+        private async Task<string> GetLogCore(byte sysid, byte compid, ushort no)
         {
             var filename = Path.GetTempFileName();
             using (FileStream ms = new FileStream(filename, FileMode.Create, FileAccess.ReadWrite))

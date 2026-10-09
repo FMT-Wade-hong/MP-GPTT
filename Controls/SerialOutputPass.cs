@@ -477,6 +477,7 @@ namespace MissionPlanner.Controls
                     {
                         int station;
                         return FmtRelayStationIdentity.StationNumber == 1 &&
+                            MainV2.FmtAircraftGroundControlConfirmed &&
                             FmtRelayControlService.TryResolveStationByAddress(endpoint.Address.ToString(), out station) &&
                             FmtRelayControlService.CanAcceptMavlinkWriteFrom(station);
                     };
@@ -485,6 +486,7 @@ namespace MissionPlanner.Controls
                     relayStationNumber >= 2 && relayStationNumber <= 5)
                 {
                     mirror.MirrorStreamWriteAllowed = () =>
+                        MainV2.FmtAircraftGroundControlConfirmed &&
                         FmtRelayControlService.CanAcceptMavlinkWriteFrom(relayStationNumber);
                 }
                 MainV2.comPort.Mirrors.Add(mirror);

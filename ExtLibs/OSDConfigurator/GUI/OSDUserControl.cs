@@ -17,6 +17,21 @@ namespace OSDConfigurator.GUI
         
         public IItemCaptionProvider CaptionProvider { get; set; }
 
+        // Index zero is global options; subsequent tabs are individual OSD screens.
+        public IEnumerable<string> CurrentParameterNames
+        {
+            get
+            {
+                if (config == null) return Enumerable.Empty<string>();
+                var index = tabControl.SelectedIndex;
+                if (index <= 0) return config.Options.Select(option => option.Name).ToArray();
+                if (index > config.Screens.Length) return Enumerable.Empty<string>();
+                var screen = config.Screens[index - 1];
+                return screen.Options.Concat(screen.Items.SelectMany(item => item.Options))
+                    .Select(setting => setting.Name).ToArray();
+            }
+        }
+
         public OSDUserControl()
         {
             InitializeComponent();
@@ -24,6 +39,7 @@ namespace OSDConfigurator.GUI
 
         public void ApplySettings(IList<IOSDSetting> settings)
         {
+            var selectedIndex = tabControl.SelectedIndex;
             ClearOptions();
             ClearScreens();
 
@@ -35,6 +51,7 @@ namespace OSDConfigurator.GUI
 
             foreach (var scr in config.Screens)
                 AddScreen(scr);
+            tabControl.SelectedIndex = Math.Max(0, Math.Min(selectedIndex, tabControl.TabPages.Count - 1));
         }
         
         private void FillGlobalOptions()

@@ -18,6 +18,13 @@ namespace MissionPlanner.FMT
         private const string LoginUserKey = "fmt_login_user";
         private const string LoginPasswordKey = "fmt_login_password";
         private const string ParameterPasswordKey = "fmt_parameter_password";
+        internal static bool ParameterProtectionEnabled => Settings.Instance.GetBoolean("password_protect", true);
+
+        internal static void SetParameterProtection(bool enabled)
+        {
+            Settings.Instance["password_protect"] = enabled.ToString();
+            Settings.Instance.Save();
+        }
 
         internal static void EnsureDefaults()
         {
