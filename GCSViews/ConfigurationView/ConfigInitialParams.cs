@@ -73,7 +73,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         static double RoundTo(double value, int precision)
         {
-            if (precision < -4 && precision > 15)
+            if (precision < -4 || precision > 15)
                 throw new ArgumentOutOfRangeException("precision", "Must be and integer between -4 and 15");
 
             if (precision >= 0) return Math.Round(value, precision);
@@ -237,7 +237,14 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             if (paramCompareForm.DialogResult == DialogResult.OK)
             {
-                CustomMessageBox.Show("Initial Parameters succesfully updated.\r\nCheck parameters before flight!\r\n\r\nAfter test flight :\r\n\tSet ATC_THR_MIX_MAN to 0.5\r\n\tSet PSC_ACCZ_P/PSC_D_ACC_P to MOT_THST_HOVER\r\n\tSet PSC_ACCZ_I/PSC_D_ACC_I to 2*MOT_THST_HOVER\r\n\r\nHappy flying!", "Initial parameter calculator");
+                CustomMessageBox.Show("初始參數寫入完成，飛行前請再次核對。\r\n\r\n" +
+                    "完成穩定懸停學習並降落上鎖後，才評估以下初始調整：\r\n" +
+                    "4.7 新版：PSC_D_ACC_P = 0.1 × MOT_THST_HOVER；PSC_D_ACC_I = 0.2 × MOT_THST_HOVER。\r\n" +
+                    "4.6 與更早版本：PSC_ACCZ_P = MOT_THST_HOVER；PSC_ACCZ_I = 2 × MOT_THST_HOVER。\r\n" +
+                    "請依實際回傳的參數名稱選用公式，勿將新舊倍率混用。\r\n" +
+                    "ATC_THR_MIX_MAN 的後續調整須確認試飛穩定；不要只依公式覆寫已調妥的參數。\r\n" +
+                    "上述說明針對 Copter；QuadPlane 請依 Q_ 參數及對應韌體文件核對。此提示不會自動寫入。",
+                    "初始參數計算器");
             }
 
             }

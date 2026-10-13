@@ -251,25 +251,26 @@ namespace MissionPlanner.GCSViews
             if (MainV2.DisplayConfiguration.displayHWIDs)
                 AddBackstageViewPage(typeof(ConfigHWIDs), "HW ID", isConnected && gotAllParams, mand);
 
+            AddBackstageViewPage(typeof(ConfigIceEngine), "引擎控制 ICE", true, mand);
+            AddBackstageViewPage(typeof(ConfigTakeoff), "起飛設定 TAKEOFF", true, mand);
+            AddBackstageViewPage(typeof(ConfigLanding), "降落設定 LAND", true, mand);
+
+            // Radio setup is available offline, so its optional-hardware parent
+            // must remain visible even when battery setup is hidden.
+            var opt = AddBackstageViewPage(typeof(ConfigOptional), rm.GetString("backstageViewPageopt.Text"));
             if (MainV2.DisplayConfiguration.displayRTKInject)
             {
                 AddBackstageViewPage(typeof(ConfigSerialInjectGPS),
                     CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
                         ? "RTK 定位設定"
                         : "RTK Positioning",
-                    true, mand);
+                    true, opt);
             }
 
-            AddBackstageViewPage(typeof(ConfigSiKRadio), "SIK 數傳設定", true, mand);
-            AddBackstageViewPage(typeof(ConfigP400), "P400 數傳設定", true, mand);
-            AddBackstageViewPage(typeof(ConfigIceEngine), "引擎控制 ICE", true, mand);
-            AddBackstageViewPage(typeof(ConfigTakeoff), "起飛設定 TAKEOFF", true, mand);
-            AddBackstageViewPage(typeof(ConfigLanding), "降落設定 LAND", true, mand);
+            AddBackstageViewPage(typeof(ConfigSiKRadio), "SIK 數傳設定", true, opt);
+            AddBackstageViewPage(typeof(ConfigP400), "P400 數傳設定", true, opt);
 
             // Battery setup remains available without exposing unrelated optional pages.
-            var opt = (ShowFmtOptionalHardware || MainV2.DisplayConfiguration.displayBattMonitor)
-                ? AddBackstageViewPage(typeof(ConfigOptional), rm.GetString("backstageViewPageopt.Text"))
-                : null;
             if (MainV2.DisplayConfiguration.displayBattMonitor)
             {
                 var chinese = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);

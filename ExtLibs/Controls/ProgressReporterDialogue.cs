@@ -262,6 +262,7 @@ namespace MissionPlanner.Controls
             // * Signal the worker.
             this.btnCancel.Visible = false;
             this.lblProgressMessage.Text = "Cancelling...";
+            lock (locker) { _status = "正在中止…"; _progress = -1; }
             this.progressBar1.Style = ProgressBarStyle.Marquee;
 
             doWorkArgs.CancelRequested = true;

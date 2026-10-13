@@ -57,8 +57,10 @@ namespace MissionPlanner.FMT
             header.Controls.Add(refresh);
             header.Resize += (sender, args) =>
             {
-                refresh.Location = new Point(Math.Max(610, header.ClientSize.Width - refresh.Width - 12), 17);
-                status.Width = Math.Max(260, refresh.Left - status.Left - 12);
+                var narrow = header.ClientSize.Width < 430;
+                header.Height = narrow ? 104 : 68;
+                refresh.Location = new Point(Math.Max(12, header.ClientSize.Width - refresh.Width - 12), narrow ? 65 : 5);
+                status.Width = Math.Max(1, header.ClientSize.Width - status.Left - 12);
             };
 
             cards = new FlowLayoutPanel
@@ -106,7 +108,7 @@ namespace MissionPlanner.FMT
             }
 
             status.Text = connected
-                ? "各安全項目獨立寫入；飛行器解鎖時禁止修改。共載入 " + definitions.Length + " 項。"
+                ? "各安全項目獨立寫入；解鎖時會提示風險並要求確認。共載入 " + definitions.Length + " 項。"
                 : "目前未連線；可檢視快取值，但無法寫入。共載入 " + definitions.Length + " 項。";
             status.ForeColor = connected ? Color.FromArgb(74, 210, 116) : Color.FromArgb(255, 174, 72);
         }
@@ -131,12 +133,14 @@ namespace MissionPlanner.FMT
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            if (port.MAV.cs.armed)
+            if (port.ReadOnly || port.logreadmode)
             {
-                MessageBox.Show(this, "飛行器已解鎖，請先鎖定後再修改安全設定。", "安全設定",
+                MessageBox.Show(this, "唯讀或回放狀態不能寫入安全設定。", "安全設定",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+            var targetSystem = port.sysidcurrent;
+            var targetComponent = port.compidcurrent;
 
             var writeBlockedReason = GetWriteBlockedReason(parameterName, port.MAV.param);
             if (writeBlockedReason != null)
@@ -151,6 +155,7 @@ namespace MissionPlanner.FMT
             var prompt = card.Title + "\r\n" + parameterName + "：" +
                          oldValue.ToString(CultureInfo.InvariantCulture) + " → " +
                          value.ToString(CultureInfo.InvariantCulture) +
+                         (port.MAV.cs.armed ? "\r\n\r\n警告：飛行器已解鎖。修改失效保護可能立即影響飛行行為，請確認現場安全。" : "") +
                          "\r\n\r\n確定要寫入飛控嗎？";
             if (MessageBox.Show(this, prompt, "確認安全設定", MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
@@ -158,7 +163,10 @@ namespace MissionPlanner.FMT
 
             try
             {
-                if (!port.setParam((byte)port.sysidcurrent, (byte)port.compidcurrent, parameterName, value, true))
+                if (port != MainV2.comPort || !port.BaseStream.IsOpen || port.ReadOnly || port.logreadmode ||
+                    port.sysidcurrent != targetSystem || port.compidcurrent != targetComponent)
+                    throw new InvalidOperationException("連線或目標已變更，請重新確認後再寫入。");
+                if (!port.setParam((byte)targetSystem, (byte)targetComponent, parameterName, value, true))
                     throw new InvalidOperationException("飛控未確認參數寫入。");
 
                 card.SetCurrentValue(port.MAV.param[parameterName]?.Value ?? value);

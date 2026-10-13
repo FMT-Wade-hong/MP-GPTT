@@ -280,6 +280,8 @@ namespace MissionPlanner.GCSViews
             log.Info("Ctor Start");
 
             InitializeComponent();
+            // Hide the legacy map shortcut; joystick control itself is unchanged.
+            but_disablejoystick.Visible = false;
             FmtTraditionalChineseContextMenus.Apply(
                 contextMenuStripHud,
                 contextMenuStripactionstab,
@@ -297,6 +299,8 @@ namespace MissionPlanner.GCSViews
                 UseVisualStyleBackColor = true
             };
             chkFmtAirspace.CheckedChanged += CHK_fmtAirspace_CheckedChanged;
+            contextMenuStripMap.Items.Add("CAA 離線資料／更新", null,
+                (sender, args) => TaiwanCaaAirspace.ShowOfflineUpdate(this, () => RefreshFmtAirspaceForAircraft(true)));
 
             chkFmt3DMap = new CheckBox
             {
@@ -2260,6 +2264,7 @@ namespace MissionPlanner.GCSViews
             var top = panel_persistent != null && panel_persistent.Visible
                 ? panel_persistent.Bottom
                 : 0;
+            fmtFlightModeBar.SetAvailableHeight(SubMainLeft.Panel2.ClientSize.Height - top);
             fmtFlightModeBar.SetBounds(0, top, SubMainLeft.Panel2.ClientSize.Width,
                 fmtFlightModeBar.Height);
 
@@ -4827,11 +4832,7 @@ namespace MissionPlanner.GCSViews
                          tracklast.AddSeconds(Settings.Instance.GetDouble("FD_MapUpdateDelay", 0.3)) < DateTime.Now) ||
                         tracklast.AddSeconds(2) < DateTime.Now)
                     {
-                        // show disable joystick button
-                        if (MainV2.joystick != null && MainV2.joystick.enabled)
-                        {
-                            this.BeginInvoke((MethodInvoker) delegate { but_disablejoystick.Visible = true; });
-                        }
+                        // The legacy joystick map shortcut stays hidden.
 
                         if (MainV2.comPort.MAV.cs.Location != PointLatLngAlt.Zero)
                         {
@@ -5786,6 +5787,8 @@ namespace MissionPlanner.GCSViews
 
             GMapRoute homeroute = new GMapRoute("homepath");
             homeroute.Stroke = new Pen(Color.Yellow, 2);
+            // Keep the sharp return/departure junction from projecting past HOME.
+            homeroute.Stroke.LineJoin = System.Drawing.Drawing2D.LineJoin.Bevel;
             homeroute.Stroke.DashStyle = DashStyle.Dash;
             // add first point past home
             homeroute.Points.Add(polygonPoints[1]);

@@ -296,6 +296,11 @@ namespace MissionPlanner.Controls
 
         protected override void Dispose(bool disposing)
         {
+            if (disposing && warningPulseTimer != null)
+            {
+                warningPulseTimer.Dispose();
+                warningPulseTimer = null;
+            }
             log.Info("HUD Dispose");
 
             if (opengl)
@@ -908,6 +913,54 @@ namespace MissionPlanner.Controls
 
         [System.ComponentModel.Browsable(true), System.ComponentModel.Category("Values")]
         public bool failsafe { get; set; }
+
+        public bool warningActive { get; set; }
+        private System.Windows.Forms.Timer warningPulseTimer;
+
+        internal bool HasWarningBorder()
+        {
+            return connected && (warningActive || failsafe || _gpsfix < 3 ||
+                (_gpsfix2 > 0 && _gpsfix2 < 3) || ekfstatus > 0.5f ||
+                vibex > 30 || vibey > 30 || vibez > 30 || load >= 100 ||
+                (!status && !prearmstatus));
+        }
+
+        private void DrawWarningBorder()
+        {
+            bool active = HasWarningBorder();
+            if (warningPulseTimer == null && active && !DesignMode)
+            {
+                warningPulseTimer = new System.Windows.Forms.Timer { Interval = 50 };
+                warningPulseTimer.Tick += (sender, args) =>
+                {
+                    if (!IsDisposed && Visible) Invalidate();
+                };
+            }
+            if (warningPulseTimer != null) warningPulseTimer.Enabled = active;
+            if (!active) return;
+
+            // Monotonic two-second breathing cycle; no telemetry requests or UI sleeps.
+            double seconds = System.Diagnostics.Stopwatch.GetTimestamp() /
+                (double)System.Diagnostics.Stopwatch.Frequency;
+            int opacity = (int)(65 + 105 * (0.5 - 0.5 * Math.Cos(seconds * Math.PI)));
+            int depth = Math.Max(8, Math.Min(24, Math.Min(Width, Height) / 30));
+            graphicsObject.ResetTransform();
+            // Non-overlapping translucent rings work consistently in GDI and OpenGL.
+            // Fade to clear inward; leave all central flight information untouched.
+            for (int inset = 0; inset < depth && 2 * inset + 2 < Math.Min(Width, Height); inset++)
+            {
+                double fade = 1.0 - inset / (double)(depth - 1);
+                int alpha = (int)(opacity * fade * fade);
+                if (alpha == 0) continue;
+                using (var tint = new SolidBrush(Color.FromArgb(alpha, 255, 0, 0)))
+                {
+                    graphicsObject.FillRectangle(tint, new RectangleF(inset, inset, Width - 2 * inset, 1));
+                    graphicsObject.FillRectangle(tint, new RectangleF(inset, Height - inset - 1, Width - 2 * inset, 1));
+                    graphicsObject.FillRectangle(tint, new RectangleF(inset, inset + 1, 1, Height - 2 * inset - 2));
+                    graphicsObject.FillRectangle(tint, new RectangleF(Width - inset - 1, inset + 1, 1, Height - 2 * inset - 2));
+                }
+            }
+        }
 
         [System.ComponentModel.Browsable(true), System.ComponentModel.Category("Values")]
         public bool safetyactive { get; set; }
@@ -2082,8 +2135,11 @@ namespace MissionPlanner.Controls
 
                 // localize it
                 float _roll = this._roll;
+                float _pitch = this._pitch;
+                float _heading = this._heading;
 
-                if (float.IsNaN(_roll) || float.IsNaN(_pitch) || float.IsNaN(_heading))
+                if (float.IsNaN(this._roll) || float.IsNaN(this._pitch) || float.IsNaN(this._heading) ||
+                    float.IsInfinity(this._roll) || float.IsInfinity(this._pitch) || float.IsInfinity(this._heading))
                 {
                     isNaN = true;
 
@@ -2824,49 +2880,38 @@ namespace MissionPlanner.Controls
                             waypointDistance = (float)Math.Round(waypointDistance / 5280.0, 1);
                         }
 
-                        waypointDistanceText = waypointDistance.ToString("0.0") + " " + waypointDistanceUnit;
+                        waypointDistanceText = waypointDistance.ToString("0.0");
                     }
                     else
                     {
-                        waypointDistanceText = ((int)waypointDistance).ToString("0") + " " + waypointDistanceUnit;
+                        waypointDistanceText = ((int)waypointDistance).ToString("0");
                     }
 
-                    var waypointLabel = "WP 航點距離";
-                    if (_wpno > 0 && string.Equals(mode, "Auto", StringComparison.OrdinalIgnoreCase))
-                        waypointLabel = "WP " + _wpno + " 航點距離";
-                    else if (string.Equals(mode, "RTL", StringComparison.OrdinalIgnoreCase))
-                        waypointLabel = "返航距離";
-                    else if (string.Equals(mode, "Guided", StringComparison.OrdinalIgnoreCase))
-                        waypointLabel = "引導點距離";
-                    else if (string.Equals(mode, "Loiter", StringComparison.OrdinalIgnoreCase))
-                        waypointLabel = "盤旋點距離";
-
                     var waypointBadgeWidth = Math.Max(fontsize * 7.2f, this.Width / 5.2f);
-                    var waypointBadgeHeight = fontsize * 3.05f;
-                    var gpsStatusTop = this.Height - (fontsize + 13);
+                    var waypointBadgeHeight = fontsize * 1.35f;
+                    // Reserve both GPS text lines even before GPS2 is available.
+                    var gpsStatusTop = this.Height - (displayicons ? 2 * (fontsize + 13) : fontsize * 3f + 16);
                     var waypointBadgeBottom = gpsStatusTop - Math.Max(3, fontsize / 3f);
                     var waypointBadgeTop = waypointBadgeBottom - waypointBadgeHeight;
-                    var minimumBadgeTop = scrollbg.Bottom + Math.Max(3, fontsize / 3f);
-                    if (waypointBadgeTop < minimumBadgeTop)
-                        waypointBadgeTop = minimumBadgeTop;
 
                     var waypointBadge = new RectangleF(
                         this.Width - waypointBadgeWidth - 3,
                         waypointBadgeTop,
                         waypointBadgeWidth,
-                        Math.Max(fontsize * 2.35f, waypointBadgeBottom - waypointBadgeTop));
+                        waypointBadgeHeight);
 
                     graphicsObject.FillRectangle(FmtWaypointBadgeBrush, waypointBadge);
                     graphicsObject.DrawRectangle(FmtWaypointBadgePen, waypointBadge);
 
-                    var waypointLabelSize = calcsize(waypointLabel, fontsize - 2, FmtWaypointLabelBrush);
-                    var waypointValueSize = calcsize(waypointDistanceText, fontsize + 4, _whiteBrush);
-                    drawstring(waypointLabel, font, fontsize - 2, FmtWaypointLabelBrush,
-                        waypointBadge.Left + (waypointBadge.Width - waypointLabelSize.Width) / 2f,
-                        waypointBadge.Top + Math.Max(2, fontsize / 5f));
-                    drawstring(waypointDistanceText, font, fontsize + 4, _whiteBrush,
-                        waypointBadge.Left + (waypointBadge.Width - waypointValueSize.Width) / 2f,
-                        waypointBadge.Bottom - waypointValueSize.Height - Math.Max(2, fontsize / 6f));
+                    DrawFmtBadgeColumns(waypointBadge, "WP", waypointDistanceText,
+                        waypointDistanceUnit.ToUpperInvariant(), font, fontsize);
+
+                    var throttleBadge = new RectangleF(waypointBadge.Left,
+                        waypointBadge.Top - waypointBadge.Height - Math.Max(3, fontsize / 3f),
+                        waypointBadge.Width, waypointBadge.Height);
+                    graphicsObject.FillRectangle(FmtWaypointBadgeBrush, throttleBadge);
+                    graphicsObject.DrawRectangle(FmtWaypointBadgePen, throttleBadge);
+                    DrawFmtBadgeColumns(throttleBadge, "油門", _throttlePercent.ToString("0"), "%", font, fontsize);
                 }
 
                 if (displayconninfo)
@@ -2961,18 +3006,7 @@ namespace MissionPlanner.Controls
                     graphicsObject.FillPolygon(Brushes.Black, AOA_arrow);
                     graphicsObject.DrawPolygon(_whitePen, AOA_arrow);
 
-                    // FMT: show live throttle output directly below the coloured HUD bar.
-                    var throttleLabel = "油門";
-                    var throttleValue = _throttlePercent.ToString("0") + "%";
-                    var throttleFontSize = Math.Max(6, fontsize - 2);
-                    var throttleLabelWidth = throttleLabel.Length * throttleFontSize * 0.75f;
-                    var throttleValueWidth = throttleValue.Length * throttleFontSize * 0.55f;
-                    var throttleTop = scrollbg.Bottom + Math.Max(2, fontsize / 5f);
-                    drawstring(throttleLabel, font, throttleFontSize, _whiteBrush,
-                        scrollbg.Left + scrollbg.Width / 2f - throttleLabelWidth / 2f, throttleTop);
-                    drawstring(throttleValue, font, throttleFontSize, _whiteBrush,
-                        scrollbg.Left + scrollbg.Width / 2f - throttleValueWidth / 2f,
-                        throttleTop + throttleFontSize + 1);
+                    // Throttle output is displayed in its own badge above WP.
                 }
 
 
@@ -3168,15 +3202,11 @@ namespace MissionPlanner.Controls
                             var width = (fontsize + 8) * 3;
                             var gap = 5;
                             var rightMargin = 3;
-                            // GPS2 is slot 1 (rightmost), GPS1 is slot 2 when dual or slot 1 when single
-                            int slot;
-                            if (_gpsfix2 > 0)
-                                slot = (a == 0) ? 2 : 1; // GPS1 at slot 2, GPS2 at slot 1
-                            else
-                                slot = 1; // Single GPS at slot 1
+                            // Both receivers share the rightmost column.
+                            int slot = 1; // GPS1 stays bottom-right; GPS2 stacks above it.
 
                             var hor_pos = this.Width - rightMargin - slot * width - (slot - 1) * gap;
-                            DrawImage(icon, hor_pos, this.Height - (fontsize + 13) + 2, width, fontsize + 8);
+                            DrawImage(icon, hor_pos, this.Height - (a + 1) * (fontsize + 13) + 2, width, fontsize + 8);
                         }
                         else
                         {
@@ -3304,7 +3334,7 @@ namespace MissionPlanner.Controls
                         var width = (fontsize + 8) * 3;
                         var gap = 5;
                         var rightMargin = 3;
-                        int gpsCount = (_gpsfix2 > 0) ? 2 : 1;
+                        int gpsCount = 1; // GPS2 is stacked, not another horizontal slot.
                         int slot = gpsCount + 1; // Vibe is after GPS icons
                         vibehitzone = new Rectangle(this.Width - rightMargin - slot * width - (slot - 1) * gap, this.Height - (fontsize + 13), width, fontsize + 8);
                     }
@@ -3368,7 +3398,7 @@ namespace MissionPlanner.Controls
                         var width = (fontsize + 8) * 3;
                         var gap = 5;
                         var rightMargin = 3;
-                        int gpsCount = (_gpsfix2 > 0) ? 2 : 1;
+                        int gpsCount = 1; // GPS2 is stacked, not another horizontal slot.
                         int slot = gpsCount + 2; // EKF is after GPS icons and Vibe
                         ekfhitzone = new Rectangle(this.Width - rightMargin - slot * width - (slot - 1) * gap, this.Height - (fontsize + 13), width, fontsize + 8);
                     }
@@ -3467,6 +3497,7 @@ namespace MissionPlanner.Controls
                 drawstring(_mode, font, fontsize, _whiteBrush, mode_x, graphicsObject.Height - (fontsize * 1.5f), true);
 
                 OnCustomPaint?.Invoke(this);
+                DrawWarningBorder();
 
                 if (DesignMode)
                 {
@@ -3575,6 +3606,34 @@ namespace MissionPlanner.Controls
                 return calcfontsize(text, font, fontsize - 1, brush, targetwidth);
 
             return fontsize;
+        }
+
+        private void DrawFmtBadgeColumns(RectangleF bounds, string label, string value, string unit, Font font, float size)
+        {
+            // Keep the label and unit anchored; right-align the value half an em
+            // before the unit instead of centering it in the whole badge.
+            var texts = new[] { label, value, unit };
+            var widths = new[] { bounds.Width * 0.28f - 4, bounds.Width * 0.44f - 4, bounds.Width * 0.28f - 4 };
+            float valueRight = bounds.Right - 3;
+            foreach (int column in new[] { 2, 0, 1 })
+            {
+                float textSize = size;
+                var measured = calcsize(texts[column], textSize, _whiteBrush);
+                var available = Math.Max(1, column == 1
+                    ? valueRight - (bounds.Left + bounds.Width * 0.28f + 3)
+                    : widths[column]);
+                if (measured.Width > available)
+                {
+                    textSize *= available / measured.Width;
+                    measured = calcsize(texts[column], textSize, _whiteBrush);
+                }
+                var x = column == 0 ? bounds.Left + 3 : column == 2 ? bounds.Right - 3 - measured.Width :
+                    valueRight - measured.Width;
+                if (column == 2)
+                    valueRight = x - size * 0.5f;
+                drawstring(texts[column], font, textSize, _whiteBrush, x,
+                    bounds.Top + (bounds.Height - measured.Height) / 2f);
+            }
         }
 
         Size calcsize(string text, float fontsize, SolidBrush brush)

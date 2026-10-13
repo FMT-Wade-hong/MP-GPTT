@@ -25,6 +25,7 @@ foreach ($required in @('if (FmtControlSourceTransition)','if (readback != updat
 }
 if ($switch.IndexOf('FmtGroundControlInputEnabled = groundControl') -lt $switch.IndexOf('if (readback != updated)')) { throw 'Output enabled before readback' }
 if ($switch.Contains('FmtGroundControlInputEnabled = previousGroundGate')) { throw 'Failed switch restores stale output gate' }
+if (!$switch.Contains('ELRS MAVLink') -or !$switch.Contains('MessageBoxDefaultButton.Button2')) { throw 'Traditional receiver switching must explicitly warn MAVLink users and default to No' }
 $prefetch = $source.Substring($source.IndexOf('private static void PrefetchFmtRelayControlParameters'))
 $prefetch = $prefetch.Substring(0,$prefetch.IndexOf('private bool IsFmtTraditionalHelicopter'))
 if ($prefetch -match '\.setParam\s*\(') { throw 'Background parameter acquisition must remain read-only' }

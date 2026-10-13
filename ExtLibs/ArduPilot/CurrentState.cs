@@ -1294,6 +1294,20 @@ namespace MissionPlanner
         public List<(DateTime time, string message, byte severity)> messages { get; set; } =
             new List<(DateTime, string, byte)>();
 
+        [JsonIgnore, IgnoreDataMember]
+        public bool hudWarningActive
+        {
+            get
+            {
+                var snapshot = messages;
+                var now = DateTime.Now;
+                lock (snapshot)
+                    return snapshot.Any(item => item.severity <= (byte)MAVLink.MAV_SEVERITY.WARNING &&
+                        !string.IsNullOrWhiteSpace(item.message) && item.time <= now &&
+                        item.time >= now.AddSeconds(-10));
+            }
+        }
+
         /// <summary>
         /// a message that originates from the mav
         /// </summary>

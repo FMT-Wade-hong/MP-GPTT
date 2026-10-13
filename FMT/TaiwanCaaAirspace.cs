@@ -24,7 +24,7 @@ namespace MissionPlanner.FMT
         internal List<List<PointLatLng>> Polygons { get; } = new List<List<PointLatLng>>();
     }
 
-    internal static class TaiwanCaaAirspace
+    internal static partial class TaiwanCaaAirspace
     {
         internal const string OfficialMapUrl =
             "https://dronegis.caa.gov.tw/portal/apps/webappviewer/index.html?id=807bd21438ba4208b4a7e28569fe41aa";
@@ -36,6 +36,13 @@ namespace MissionPlanner.FMT
             new ConcurrentDictionary<string, Task<IReadOnlyList<TaiwanCaaZone>>>();
 
         internal static async Task<IReadOnlyList<TaiwanCaaZone>> LoadNearbyAsync(PointLatLng center)
+        {
+            return await LoadOfflineNearbyAsync(center);
+        }
+
+        // Legacy cell downloader retained for compatibility; normal display uses
+        // the complete, versioned offline snapshot, never per-cell network requests.
+        private static async Task<IReadOnlyList<TaiwanCaaZone>> LoadLegacyNearbyAsync(PointLatLng center)
         {
             if (center.Lat < 20 || center.Lat > 27 || center.Lng < 117 || center.Lng > 123.5)
                 return new List<TaiwanCaaZone>();

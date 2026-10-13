@@ -27,7 +27,23 @@ namespace MissionPlanner.FMT
             form.Icon = WindowIcon.Value;
             form.HandleCreated -= RefreshWindowIcon;
             form.HandleCreated += RefreshWindowIcon;
+            form.Shown -= RefreshWindowIcon;
+            form.Shown += RefreshWindowIcon;
+            form.Activated -= RefreshWindowIcon;
+            form.Activated += RefreshWindowIcon;
             RefreshWindowIcon(form, EventArgs.Empty);
+        }
+
+        // The shell may query again after startup/theme activation. Answer directly
+        // from process-lifetime handles instead of relying only on WM_SETICON state.
+        internal static bool TryGetApplicationIcon(ref Message message)
+        {
+            if (message.Msg != 0x007F || Environment.OSVersion.Platform != PlatformID.Win32NT)
+                return false;
+            long kind = message.WParam.ToInt64();
+            if (kind < 0 || kind > 2) return false;
+            message.Result = kind == 1 ? LargeWindowIcon.Value.Handle : SmallWindowIcon.Value.Handle;
+            return true;
         }
 
         private static void RefreshWindowIcon(object sender, EventArgs e)

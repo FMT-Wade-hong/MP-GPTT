@@ -574,6 +574,9 @@ namespace MissionPlanner.ArduPilot
                 });
 
                 homeroute.Stroke = new Pen(Color.Yellow, 2);
+                // The return/departure legs meet at HOME. A miter join can project
+                // beyond HOME when those legs form a narrow angle.
+                homeroute.Stroke.LineJoin = LineJoin.Bevel;
                 // if we have a large distance between home and the first/last point, it hangs on the draw of a the dashed line.
                 if (homepoint.GetDistance(lastpoint) < 5000 && homepoint.GetDistance(firstpoint) < 5000)
                     homeroute.Stroke.DashStyle = DashStyle.Dash;

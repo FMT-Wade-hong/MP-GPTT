@@ -21,7 +21,7 @@ namespace MissionPlanner.Comms
 
         private bool _isopen;
 
-        public bool CancelConnect = false;
+        public volatile bool CancelConnect = false;
         /// <summary>
         /// add to EndPointList if need when injecting
         /// </summary>
@@ -131,7 +131,7 @@ namespace MissionPlanner.Comms
 
             while (true)
             {
-                Thread.Sleep(500);
+                Thread.Sleep(20);
 
                 if (CancelConnect)
                 {

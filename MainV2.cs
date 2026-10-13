@@ -4633,6 +4633,8 @@ namespace MissionPlanner
 
         protected override void WndProc(ref Message m)
         {
+            if (FMT.FmtBranding.TryGetApplicationIcon(ref m))
+                return;
             switch (m.Msg)
             {
                 case WM_CREATE:
@@ -5018,7 +5020,7 @@ namespace MissionPlanner
                 Alignment = ToolStripItemAlignment.Left,
                 DisplayStyle = ToolStripItemDisplayStyle.Text,
                 AutoSize = false,
-                Size = new Size(116, 35),
+                Size = new Size(87, 35),
                 Margin = new Padding(8, 0, 4, 0),
                 Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
                 ToolTipText = IsFmtTraditionalChineseUi
@@ -5034,7 +5036,7 @@ namespace MissionPlanner
                 Alignment = ToolStripItemAlignment.Left,
                 DisplayStyle = ToolStripItemDisplayStyle.Text,
                 AutoSize = false,
-                Size = new Size(116, 35),
+                Size = new Size(87, 35),
                 Margin = new Padding(0, 0, 4, 0),
                 Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
                 ToolTipText = IsFmtTraditionalChineseUi
@@ -5051,7 +5053,7 @@ namespace MissionPlanner
                 Alignment = ToolStripItemAlignment.Left,
                 DisplayStyle = ToolStripItemDisplayStyle.Text,
                 AutoSize = false,
-                Size = new Size(116, 35),
+                Size = new Size(87, 35),
                 Margin = new Padding(0, 0, 4, 0),
                 Font = new Font(SystemFonts.MenuFont, FontStyle.Bold),
                 ToolTipText = IsFmtTraditionalChineseUi
@@ -5065,7 +5067,7 @@ namespace MissionPlanner
                 Name = "MenuFmtIceEngine", Visible = false,
                 Text = "啟動引擎", Alignment = ToolStripItemAlignment.Left,
                 DisplayStyle = ToolStripItemDisplayStyle.Text, AutoSize = false,
-                Size = new Size(116, 35), Margin = new Padding(0, 0, 4, 0),
+                Size = new Size(87, 35), Margin = new Padding(0, 0, 4, 0),
                 Font = new Font(SystemFonts.MenuFont, FontStyle.Bold)
             };
             MenuFmtIceEngine.Click += MenuFmtIceEngine_Click;
@@ -5085,22 +5087,22 @@ namespace MissionPlanner
             {
                 Name = "FmtControlSourcePanel",
                 BackColor = Color.FromArgb(24, 24, 24),
-                Size = new Size(236, 35),
+                Size = new Size(184, 35),
                 Margin = Padding.Empty
             };
-            FmtRcControlButton = CreateFmtControlSourceButton("遙控器控制", new Point(0, 1), 104);
+            FmtRcControlButton = CreateFmtControlSourceButton("遙控器控制", new Point(0, 1), 78);
             FmtControlSourceArrow = new Label
             {
                 Name = "FmtControlSourceArrow",
                 Text = "⇄",
-                Location = new Point(104, 1),
+                Location = new Point(78, 1),
                 Size = new Size(28, 32),
                 TextAlign = ContentAlignment.MiddleCenter,
                 ForeColor = Color.Gray,
                 BackColor = Color.Transparent,
                 Font = new Font(SystemFonts.MenuFont.FontFamily, 12F, FontStyle.Bold)
             };
-            FmtGcsControlButton = CreateFmtControlSourceButton("導控控制", new Point(132, 1), 104);
+            FmtGcsControlButton = CreateFmtControlSourceButton("導控控制", new Point(106, 1), 78);
             FmtRcControlButton.Click += (sender, args) => SetFmtControlSource(false);
             FmtGcsControlButton.Click += (sender, args) => SetFmtControlSource(true);
             controlSourcePanel.Controls.Add(FmtRcControlButton);
@@ -5112,7 +5114,7 @@ namespace MissionPlanner
                 Visible = Settings.Instance.GetBoolean("FMT_ShowControlSourceButtons", false),
                 Alignment = ToolStripItemAlignment.Left,
                 AutoSize = false,
-                Size = new Size(236, 35),
+                Size = new Size(184, 35),
                 Margin = new Padding(0, 0, 4, 0),
                 Padding = Padding.Empty,
                 BackColor = Color.FromArgb(24, 24, 24),
@@ -5833,6 +5835,16 @@ namespace MissionPlanner
             var current = (int)Math.Round(parameters["RC_OPTIONS"].Value);
             var updated = (current & ~3) | (groundControl ? 1 : 2);
             if (!FmtControlSourceReadbackFailed && GetFmtControlSourceState(current) == (groundControl ? 2 : 1))
+                return;
+
+            // RC_OPTIONS distinguishes receiver vs MAVLink, not two MAVLink sources.
+            // Do not infer an ELRS transport from its name, serial port or option bits.
+            if (System.Windows.Forms.MessageBox.Show(this,
+                "此切換僅適用傳統 PWM／SBUS／CRSF 接收機。\r\n" +
+                "ELRS MAVLink 與導控同屬 MAVLink 輸入，目前無法由此按鈕互斥接管。\r\n" +
+                "若使用 ELRS MAVLink，請選「否」；繼續可能阻斷遙控輸入。\r\n\r\n" +
+                "確定目前使用傳統接收機，並繼續切換？", title,
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
                 return;
 
             if (groundControl)

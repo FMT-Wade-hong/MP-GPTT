@@ -1,6 +1,6 @@
-# FeiMaoTecPlanner V1.2.2（FMTPlanner）使用手冊
+# FeiMaoTecPlanner V1.2.3（FMTPlanner）使用手冊
 
-本次為 **FeiMaoTecPlanner V1.2.2 正式發布版**。[下載 V1.2.2](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.2)。完整解壓 ZIP 後執行 `FMTPlanner-V1.2.2.exe`，並保留同資料夾內的完整相依檔案。發布建置位於 `bin/Release122Final/net461/FMTPlanner.exe`。變更與限制見 [稽核紀錄](FMT/RELEASE-AUDIT-V1.2.2.md)；不得將離線測試視為實飛驗證。
+目前版本為 **FeiMaoTecPlanner V1.2.3**。[下載正式套件](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.3)。請完整解壓縮後執行 `FMTPlanner-V1.2.3.exe`，保留同資料夾相依檔案。姿態儀維持原本更新機制，不包含試驗性平滑／快速更新；CAA 空域可離線使用，衛星底圖仍需快取。變更與限制見 [更新紀錄](CHANGELOG-FMT.md)，離線測試不等於實飛驗證。
 
 V1.1.8 新增限禁航區顯示開關與 HOME 半徑（整數公里、預設 5 KM），縮放 10～18 級才顯示；修正 WP 拖曳、距離標籤與接力按鈕重疊。既有半徑會保留並四捨五入。顯示設定不會停用航線安全檢查，完整離線限禁航區資料包尚未內建。
 

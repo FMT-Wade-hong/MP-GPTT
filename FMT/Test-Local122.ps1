@@ -1,8 +1,14 @@
-param([string]$Directory = 'bin/Release122Final/net461')
+param([string]$Directory = 'bin/Local123/net461')
 $ErrorActionPreference = 'Stop'
 $tests = @('ReleaseVersion','ElrsSerialSettings','IceToolbar','InitialMapZoom','SettingsAudit','PasswordLink','RollPitchMix','LandingSetup','RelaySourceSync','RelayControlVisibility','MessagesRollingBuffer','CopterRefreshBindings','CopterVersionWarning','PowerModuleMenu','TraditionalMapLabels','TelemetryDisplayIsolation','JoystickRecovery','ParamCompareStaging','SafetyReadback','PerformanceStability','TaskbarIcon','ShutdownCleanup','PageParameterRefresh')
 $failed = @()
-$tests += @('ParameterUiFix','WpNavMetric','HoverControl','MapIcons','AirspeedZeroAsync','ConnectionTimeSync')
+$tests += 'HomeRouteJoin'
+$tests += 'OptionalRadioMenu'
+$tests += 'HudWarning'
+$tests += 'HomeSymbol'
+$tests += 'CaaOffline'
+$tests += @('HudDefault','MissionReloadHome','AirspaceDisplay')
+$tests += @('ParameterUiFix','WpNavMetric','HoverControl','MapIcons','AirspeedZeroAsync','ConnectionTimeSync','RelayLatency','MissionEstimate','ConnectCancel','InitialTuningAdvice','ModeScaleSafety')
 foreach ($name in $tests) {
     Write-Output "TEST: $name"
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "Test-$name.ps1") -Directory $Directory

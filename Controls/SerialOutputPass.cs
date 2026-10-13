@@ -490,6 +490,7 @@ namespace MissionPlanner.Controls
                         FmtRelayControlService.CanAcceptMavlinkWriteFrom(relayStationNumber);
                 }
                 MainV2.comPort.Mirrors.Add(mirror);
+                if (RelayControlMode) MainV2.comPort.StartMirrorInput(mirror);
                 row.Tag = new ForwardRuntime { Started = true, Mirror = mirror, Listener = rowListener };
                 SetRuntimeStatus(row, true, null);
                 Save();
@@ -497,6 +498,7 @@ namespace MissionPlanner.Controls
             catch (Exception ex)
             {
                 try { if (rowListener != null) rowListener.Stop(); } catch { }
+                mirror?.StopInput();
                 try { if (mirror != null && mirror.MirrorStream != null) mirror.MirrorStream.Close(); } catch { }
                 if (mirror != null)
                     MainV2.comPort.Mirrors.Remove(mirror);
@@ -697,6 +699,7 @@ namespace MissionPlanner.Controls
             var runtime = row == null ? null : row.Tag as ForwardRuntime;
             if (runtime != null)
             {
+                runtime.Mirror?.StopInput();
                 try { if (runtime.Listener != null) runtime.Listener.Stop(); } catch { }
                 try
                 {

@@ -6,7 +6,7 @@ $assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path "$Directory/FMTPlanner
 $radiusType = $assembly.GetType('MissionPlanner.FMT.FmtAirspaceRadius')
 $toKm = $radiusType.GetMethod('MetresToKilometres', [Reflection.BindingFlags]'Static,NonPublic')
 $toMetres = $radiusType.GetMethod('KilometresToMetres', [Reflection.BindingFlags]'Static,NonPublic')
-foreach ($metres in @(1, 30, 5000, 10000, 30000)) {
+foreach ($metres in @(1, 30, 5000, 10000, 30000, 500000)) {
     $km = $toKm.Invoke($null, @([int]$metres))
     if ($km -ne ([decimal]$metres / 1000)) { throw 'Incorrect kilometre display' }
     if ($toMetres.Invoke($null, @([decimal]$km)) -ne $metres) { throw 'Saved radius changed during unit conversion' }
@@ -15,10 +15,10 @@ foreach ($metres in @(1, 30, 5000, 10000, 30000)) {
 $uiSource = Get-Content (Join-Path $PSScriptRoot '../GCSViews/FlightPlanner.AirspaceDisplay.cs') -Raw
 if (!$uiSource.Contains('GetInt32("fmt_airspace_radius_m", 5000)') -or !$uiSource.Contains('DecimalPlaces = 0')) { throw 'Default must be 5 km without decimals' }
 $whole = $radiusType.GetMethod('WholeKilometres', [Reflection.BindingFlags]'Static,NonPublic')
-foreach ($case in @(@(0.03,1), @(5,5), @(5.4,5), @(5.5,6), @(40,30))) {
+foreach ($case in @(@(0.03,1), @(5,5), @(5.4,5), @(5.5,6), @(40,40), @(500,500), @(501,500))) {
     if ($whole.Invoke($null, @([decimal]$case[0])) -ne $case[1]) { throw 'Whole kilometre normalization failed' }
 }
-'PASS: default 5 km without decimals; old values and typed decimals normalize to 1-30 whole km'
+'PASS: default 5 km without decimals; values normalize to 1-500 whole km'
 $visibility = $assembly.GetType('MissionPlanner.FMT.FmtAirspaceRadius').GetMethod('ShouldDisplay', [Reflection.BindingFlags]'Static,NonPublic')
 foreach ($zoom in @(9.99, 10.0, 14.0, 18.0, 18.01, [double]::NaN)) {
     $expected = $zoom -ge 10 -and $zoom -le 18
@@ -48,5 +48,5 @@ Test-Ring @(@(1,1),@(2,1),@(2,2),@(1,2)) $true 'Small nearby zone included'
 $source = Get-Content (Join-Path $PSScriptRoot '../GCSViews/FlightPlanner.cs') -Raw
 $display = $source.Substring($source.IndexOf('private async Task UpdateTaiwanCaaAirspace('))
 $display = $display.Substring(0, $display.IndexOf('private void MainMap_OnCurrentPositionChanged('))
-if (!$display.Contains('!fmtAirspaceVisible.Checked') -or !$display.Contains('LoadNearbyAsync(home)') -or !$display.Contains('IsHitTestVisible = false')) { throw 'Display guard missing' }
+if (!$display.Contains('!fmtAirspaceVisible.Checked') -or !$display.Contains('LoadDisplayRadiusAsync(home, radius)') -or !$display.Contains('IsHitTestVisible = false')) { throw 'Display guard missing' }
 'PASS: display off guard, HOME-centered query and no polygon mouse hit testing (source checks)'

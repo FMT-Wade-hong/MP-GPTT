@@ -346,9 +346,28 @@ namespace MissionPlanner.GCSViews
             BUT_fmtAltitudeCheck.Click += BUT_fmtAltitudeCheck_Click;
             BUT_fmtAirspaceCheck.Click += BUT_fmtAirspaceCheck_Click;
 
-            BUT_write.Location = new Point(3, 90);
-            but_writewpfast.Location = new Point(3, 119);
-            panel5.Height = 148;
+            var estimate = new MyButton { Name = "BUT_fmtMissionEstimate", Text = "預估飛行時間", Location = new Point(3, 90), Size = new Size(115, 23) };
+            estimate.Click += (sender, args) =>
+            {
+                try
+                {
+                    if ((MAVLink.MAV_MISSION_TYPE)cmb_missiontype.SelectedValue != MAVLink.MAV_MISSION_TYPE.MISSION)
+                        throw new InvalidOperationException("請先切換至飛行任務，圍籬／集結點不是飛行路徑。");
+                    Commands.EndEdit();
+                    var home = new PointLatLngAlt(double.Parse(TXT_homelat.Text), double.Parse(TXT_homelng.Text),
+                        double.Parse(TXT_homealt.Text) / CurrentState.multiplieralt);
+                    if (double.IsNaN(home.Lat) || double.IsNaN(home.Lng) || double.IsNaN(home.Alt) ||
+                        double.IsInfinity(home.Alt) || Math.Abs(home.Lat) > 90 || Math.Abs(home.Lng) > 180)
+                        throw new InvalidOperationException("請設定有效 HOME 座標與高度。");
+                    using (var form = new FmtMissionEstimateForm(GetCommandList(false), home))
+                    { ThemeManager.ApplyThemeTo(form); form.ShowDialog(this); }
+                }
+                catch (Exception ex) { CustomMessageBox.Show("無法估算任務：" + ex.Message, "預估飛行時間"); }
+            };
+            panel5.Controls.Add(estimate);
+            BUT_write.Location = new Point(3, 119);
+            but_writewpfast.Location = new Point(3, 148);
+            panel5.Height = 177;
             panel5.Controls.Add(BUT_fmtAltitudeCheck);
             panel5.Controls.Add(BUT_fmtAirspaceCheck);
             BUT_fmtAltitudeCheck.BringToFront();
@@ -1539,6 +1558,28 @@ namespace MissionPlanner.GCSViews
 
         public void WPtoScreen(List<Locationwp> cmds)
         {
+            WPtoScreen(cmds, false);
+        }
+
+        internal static bool PreserveMissionHomeDuringFlight(bool armed, byte landedState)
+        {
+            // EXTENDED_SYS_STATE: undefined=0, on ground=1, in air=2,
+            // takeoff=3, landing=4. Unknown state uses the conservative armed fallback.
+            if (landedState == 1)
+                return false;
+            if (landedState >= 2 && landedState <= 4)
+                return true;
+            return armed;
+        }
+
+        private bool ShouldPreserveMissionHome()
+        {
+            var state = MainV2.comPort.MAV.cs;
+            return PreserveMissionHomeDuringFlight(state.armed, state.landed_state);
+        }
+
+        private void WPtoScreen(List<Locationwp> cmds, bool preserveHome)
+        {
             try
             {
                 Invoke((MethodInvoker) delegate
@@ -1546,7 +1587,7 @@ namespace MissionPlanner.GCSViews
                     try
                     {
                         log.Info("Process " + cmds.Count);
-                        processToScreen(cmds);
+                        processToScreen(cmds, false, preserveHome);
                     }
                     catch (Exception exx)
                     {
@@ -2390,7 +2431,7 @@ namespace MissionPlanner.GCSViews
             else
             {
                 BUT_Add.Visible = true;
-                processToScreen(MainV2.comPort.MAV.wps.Select(a => (Locationwp) a.Value).ToList());
+                processToScreen(MainV2.comPort.MAV.wps.OrderBy(a => a.Key).Select(a => (Locationwp) a.Value).ToList(), false, ShouldPreserveMissionHome());
             }
 
             writeKML();
@@ -3243,7 +3284,7 @@ namespace MissionPlanner.GCSViews
             AddWPToMap(MainV2.comPort.MAV.cs.lat, MainV2.comPort.MAV.cs.lng, (int) MainV2.comPort.MAV.cs.alt);
         }
 
-        private Locationwp DataViewtoLocationwp(int a)
+        private Locationwp DataViewtoLocationwp(int a, bool normalize = true)
         {
             try
             {
@@ -3263,7 +3304,7 @@ namespace MissionPlanner.GCSViews
                 if (command == "WAYPOINT")
                 {
                     // Clamp the delay value to 0
-                    if (temp.p1 < 0)
+                    if (normalize && temp.p1 < 0)
                     {
                         temp.p1 = 0;
                         DataGridViewTextBoxCell cell = Commands.Rows[a].Cells[Param1.Index] as DataGridViewTextBoxCell;
@@ -4087,13 +4128,13 @@ namespace MissionPlanner.GCSViews
             }
         }
 
-        private List<Locationwp> GetCommandList()
+        private List<Locationwp> GetCommandList(bool normalize = true)
         {
             List<Locationwp> commands = new List<Locationwp>();
 
             for (int a = 0; a < Commands.Rows.Count - 0; a++)
             {
-                var temp = DataViewtoLocationwp(a);
+                var temp = DataViewtoLocationwp(a, normalize);
 
                 commands.Add(temp);
             }
@@ -4194,7 +4235,7 @@ namespace MissionPlanner.GCSViews
                     var values = missionpck.unpack(paramfileTask.GetAwaiter().GetResult().ToArray());
                     MainV2.comPort.MAVlist[MainV2.comPort.MAV.sysid, MainV2.comPort.MAV.compid].wps.Clear();
                     values.wps.ForEach(wp => MainV2.comPort.MAVlist[MainV2.comPort.MAV.sysid, MainV2.comPort.MAV.compid].wps[wp.seq] = wp);
-                    WPtoScreen(values.wps.Select(a => (Locationwp)a).ToList());
+                    WPtoScreen(values.wps.Select(a => (Locationwp)a).ToList(), ShouldPreserveMissionHome());
                     return;
                 }
                 catch (Exception ex)
@@ -4219,7 +4260,7 @@ namespace MissionPlanner.GCSViews
                     sender.UpdateProgressAndStatus(percent, status);
                 }).GetAwaiter().GetResult();
 
-            WPtoScreen(cmds);
+            WPtoScreen(cmds, ShouldPreserveMissionHome());
         }
 
         public void insertSplineWPToolStripMenuItem_Click(object sender, EventArgs e)
@@ -5683,7 +5724,7 @@ namespace MissionPlanner.GCSViews
         /// <summary>
         /// Processes a loaded EEPROM to the map and datagrid
         /// </summary>
-        private void processToScreen(List<Locationwp> cmds, bool append = false)
+        private void processToScreen(List<Locationwp> cmds, bool append = false, bool preserveHome = false)
         {
             quickadd = true;
 
@@ -5830,7 +5871,7 @@ namespace MissionPlanner.GCSViews
                 {
                     DataGridViewTextBoxCell cellhome;
                     cellhome = Commands.Rows[0].Cells[Lat.Index] as DataGridViewTextBoxCell;
-                    if (cellhome.Value != null)
+                    if (!preserveHome && cellhome.Value != null)
                     {
                         if (cellhome.Value.ToString() != TXT_homelat.Text && cellhome.Value.ToString() != "0")
                         {
@@ -8676,7 +8717,7 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
             fmtAirspaceLoadingKey = key;
             try
             {
-                var zones = await TaiwanCaaAirspace.LoadNearbyAsync(home);
+                var zones = await TaiwanCaaAirspace.LoadDisplayRadiusAsync(home, radius);
                 if (IsDisposed)
                     return;
 
@@ -8696,8 +8737,6 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
                         for (var index = 0; index < zone.Polygons.Count; index++)
                         {
                             var id = zone.Id + "-" + index;
-                            if (!FMT.FmtAirspaceRadius.Intersects(zone.Polygons[index], home, radius))
-                                continue;
                             if (!taiwanCaaZoneIds.Add(id))
                                 continue;
 

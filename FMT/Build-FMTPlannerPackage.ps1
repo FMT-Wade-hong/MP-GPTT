@@ -88,6 +88,9 @@ $excludedFiles = @()
 $excludedBytes = 0L
 
 function Get-ReleaseExclusionReason([string]$RelativePath) {
+    if ($RelativePath -match '(?i)^(hud-.*\.png|home-(join-.*|symbol)\.png|screen-size-.*|mode-scale-.*|caa-update-test-[^\\/]+([\\/].*)?)$') {
+        return 'local display and airspace regression artifacts'
+    }
     $entryName = $rootFolder + '/' + $RelativePath.Replace('\', '/')
     if ($RelativePath -in @('README-FIRST.txt', 'RELEASE-MANIFEST.txt') -or
         @($documentationFiles | Where-Object { $_.Entry -eq $entryName }).Count -gt 0) {

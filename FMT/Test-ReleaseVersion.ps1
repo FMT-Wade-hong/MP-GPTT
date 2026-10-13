@@ -1,4 +1,4 @@
-param([string]$Directory = 'bin/Release122/net461', [string]$Version = '1.2.2')
+param([string]$Directory = 'bin/Local123/net461', [string]$Version = '1.2.3')
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/Test-RoverChinese.ps1" -Directory $Directory
 $info = (Get-Item "$Directory/FMTPlanner.exe").VersionInfo

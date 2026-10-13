@@ -34,7 +34,7 @@ namespace MissionPlanner.GCSViews
             };
             fmtAirspaceRadius = new NumericUpDown
             {
-                Name = "fmtAirspaceRadius", Minimum = 1, Maximum = 30,
+                Name = "fmtAirspaceRadius", Minimum = 1, Maximum = 500,
                 DecimalPlaces = 0, Increment = 1,
                 Value = FMT.FmtAirspaceRadius.WholeKilometres(FMT.FmtAirspaceRadius.MetresToKilometres(Settings.Instance.GetInt32("fmt_airspace_radius_m", 5000))),
                 Width = Math.Max(90, panel1.ClientSize.Width - 8),
@@ -43,10 +43,15 @@ namespace MissionPlanner.GCSViews
             panel1.Controls.Add(fmtAirspaceVisible);
             panel1.Controls.Add(label);
             panel1.Controls.Add(fmtAirspaceRadius);
-            panel1.Height = fmtAirspaceRadius.Bottom + 8;
+            var updateAirspace = new Button { Text = "CAA 資料／更新", Width = fmtAirspaceRadius.Width,
+                Height = 30, Location = new Point(3, fmtAirspaceRadius.Bottom + 6) };
+            updateAirspace.Click += (sender, args) => FMT.TaiwanCaaAirspace.ShowOfflineUpdate(this,
+                () => FmtAirspaceDisplayChanged(this, EventArgs.Empty));
+            panel1.Controls.Add(updateAirspace);
+            panel1.Height = updateAirspace.Bottom + 8;
             flowLayoutPanel1.AutoScroll = true;
             toolTip1.SetToolTip(fmtAirspaceVisible, "僅在縮放 10～18 級顯示；只控制地圖顯示，不停用限禁航區航線檢查。");
-            toolTip1.SetToolTip(fmtAirspaceRadius, "以起始位置 HOME 為中心，顯示與半徑相交的完整區域；不是裁切邊界。預設 5 公里，範圍 1～30 整數公里；既有設定四捨五入至整數公里。");
+            toolTip1.SetToolTip(fmtAirspaceRadius, "以起始位置 HOME 為中心，顯示與半徑相交的完整區域；不是裁切邊界。預設 5 公里，範圍 1～500 整數公里；範圍越大，繪圖負載越高。");
             fmtAirspaceDisplayTimer = new Timer(components) { Interval = 350 };
             fmtAirspaceDisplayTimer.Tick += async (sender, args) =>
             {

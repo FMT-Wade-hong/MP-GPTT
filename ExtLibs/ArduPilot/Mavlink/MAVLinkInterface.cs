@@ -167,6 +167,12 @@ namespace MissionPlanner
 
         public class Mirror
         {
+            internal volatile bool IndependentInput;
+            internal CancellationTokenSource InputCancellation;
+            public void StopInput()
+            {
+                lock (this) { InputCancellation?.Cancel(); }
+            }
             public ICommsSerial MirrorStream { get; set; }
             public bool MirrorStreamWrite { get; set; }
             public Func<bool> MirrorStreamWriteAllowed { get; set; }
@@ -721,43 +727,59 @@ namespace MissionPlanner
             OpenBg(sender, false);
         }
 
+        private static void WaitForConnectSettle(IProgressReporterDialogue sender, int milliseconds)
+        {
+            for (int elapsed = 0; elapsed < milliseconds; elapsed += 20)
+            {
+                ThrowIfConnectCancelled(sender);
+                Thread.Sleep(Math.Min(20, milliseconds - elapsed));
+            }
+            ThrowIfConnectCancelled(sender);
+        }
+
+        private static void ThrowIfConnectCancelled(IProgressReporterDialogue sender)
+        {
+            if (sender.doWorkArgs.CancelRequested) throw new OperationCanceledException();
+        }
+
         private void OpenBg(IProgressReporterDialogue PRsender, bool getparams)
         {
             _openComplete = false;
 
             frmProgressReporter.UpdateProgressAndStatus(-1, Strings.MavlinkConnecting);
 
-            if (BaseStream is SerialPort)
-            {
-                // allow settings to settle - previous dtr
-                log.Debug("SerialPort Sleep 1");
-                Thread.Sleep(1000);
-            }
-
             Terrain?.UnSub();
             Terrain = new TerrainFollow(this);
 
             bool hbseen = false;
+            Timer countDown = null;
+            System.ComponentModel.PropertyChangedEventHandler cancelConnect = null;
+            var udpConnecting = BaseStream as UdpSerial;
 
             try
             {
+                ThrowIfConnectCancelled(PRsender);
+                if (BaseStream is SerialPort)
+                    WaitForConnectSettle(PRsender, 1000);
                 BaseStream.ReadBufferSize = 16 * 1024;
 
                 lock (writelock) // so we dont have random traffic
                 {
                     log.Info("Open port with " + BaseStream.PortName + " " + BaseStream.BaudRate);
 
-                    if (BaseStream is UdpSerial)
+                    if (udpConnecting != null)
                     {
-                        PRsender.doWorkArgs.CancelRequestChanged += (o, e) =>
+                        udpConnecting.CancelConnect = false;
+                        cancelConnect = (o, e) =>
                         {
-                            ((UdpSerial) BaseStream).CancelConnect = true;
-                            ((ProgressWorkerEventArgs) o)
-                                .CancelAcknowledged = true;
+                            udpConnecting.CancelConnect = true;
                         };
+                        PRsender.doWorkArgs.CancelRequestChanged += cancelConnect;
                     }
 
+                    ThrowIfConnectCancelled(PRsender);
                     BaseStream.Open();
+                    ThrowIfConnectCancelled(PRsender);
 
                     BaseStream.DiscardInBuffer();
 
@@ -765,7 +787,7 @@ namespace MissionPlanner
                     if (BaseStream is SerialPort)
                     {
                         log.Debug("SerialPort Sleep 2");
-                        Thread.Sleep(1000);
+                        WaitForConnectSettle(PRsender, 1000);
                     }
                 }
 
@@ -774,12 +796,13 @@ namespace MissionPlanner
                 DateTime start = DateTime.Now;
                 DateTime deadline = start.AddSeconds(CONNECT_TIMEOUT_SECONDS);
 
-                var countDown = new Timer {Interval = 1000, AutoReset = false};
+                countDown = new Timer {Interval = 1000, AutoReset = false};
                 countDown.Elapsed += (sender, e) =>
                 {
+                    if (PRsender.doWorkArgs.CancelRequested) return;
                     int secondsRemaining = Convert.ToInt32((deadline - e.SignalTime).TotalSeconds);
                     frmProgressReporter.UpdateProgressAndStatus(-1, string.Format(Strings.Trying, secondsRemaining));
-                    if (secondsRemaining > 0) countDown.Start();
+                    if (secondsRemaining > 0 && !PRsender.doWorkArgs.CancelRequested) countDown.Start();
                 };
                 countDown.Start();
 
@@ -826,7 +849,9 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
                     Thread.Sleep(1);
 
-                    var buffer = getHeartBeat();
+                    var buffer = getHeartBeatAsync(() => PRsender.doWorkArgs.CancelRequested).AwaitSync();
+                    if (PRsender.doWorkArgs.CancelRequested)
+                        continue; // The loop's cancellation branch owns stream cleanup.
                     if (buffer.Length > 0)
                     {
                         if (buffer.msgid == (ulong)MAVLINK_MSG_ID.HEARTBEAT)
@@ -936,9 +961,13 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                     compidcurrent, true, true);
 
                 // this ensures a mavlink2 change has been noticed
-                getHeartBeat();
+                getHeartBeatAsync(() => PRsender.doWorkArgs.CancelRequested).AwaitSync();
+                if (PRsender.doWorkArgs.CancelRequested)
+                    throw new OperationCanceledException();
 
-                getVersion((byte) sysidcurrent, (byte) compidcurrent);
+                getVersionAsync((byte) sysidcurrent, (byte) compidcurrent, true,
+                    () => PRsender.doWorkArgs.CancelRequested).AwaitSync();
+                ThrowIfConnectCancelled(PRsender);
 
                 doCommand((byte) sysidcurrent, (byte) compidcurrent, MAV_CMD.DO_SEND_BANNER, 0, 0, 0, 0, 0, 0, 0,
                     false);
@@ -970,10 +999,22 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                 }
 
                 giveComport = false;
+                if (PRsender.doWorkArgs.CancelRequested)
+                {
+                    PRsender.doWorkArgs.CancelAcknowledged = true;
+                    return;
+                }
                 if (string.IsNullOrEmpty(PRsender.doWorkArgs.ErrorMessage))
                     PRsender.doWorkArgs.ErrorMessage = Strings.ConnectFailed;
                 log.Error(e);
                 throw;
+            }
+
+            finally
+            {
+                if (cancelConnect != null) PRsender.doWorkArgs.CancelRequestChanged -= cancelConnect;
+                countDown?.Stop();
+                countDown?.Dispose();
             }
 
             //frmProgressReporter.Close();
@@ -1163,8 +1204,14 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
             return getHeartBeatAsync().AwaitSync();
         }
 
-        public async Task<MAVLinkMessage> getHeartBeatAsync()
+        public Task<MAVLinkMessage> getHeartBeatAsync()
         {
+            return getHeartBeatAsync(null);
+        }
+
+        private async Task<MAVLinkMessage> getHeartBeatAsync(Func<bool> cancelled)
+        {
+            if (cancelled != null && cancelled()) return MAVLinkMessage.Invalid;
             giveComport = true;
 
             sendPacket(new MAVLink.mavlink_heartbeat_t()
@@ -1178,7 +1225,12 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
             int readcount = 0;
             while (true)
             {
-                MAVLinkMessage buffer = await readPacketAsync().ConfigureAwait(false);
+                MAVLinkMessage buffer = await readPacketAsync(cancelled).ConfigureAwait(false);
+                if (cancelled != null && cancelled())
+                {
+                    giveComport = false;
+                    return MAVLinkMessage.Invalid;
+                }
                 readcount++;
                 if (buffer.Length > 5)
                 {
@@ -4693,7 +4745,12 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
             return readPacketAsync().AwaitSync();
         }
 
-        public async Task<MAVLinkMessage> readPacketAsync()
+        public Task<MAVLinkMessage> readPacketAsync()
+        {
+            return readPacketAsync(null);
+        }
+
+        private async Task<MAVLinkMessage> readPacketAsync(Func<bool> cancelled)
         {
             byte[] buffer = new byte[MAVLINK_MAX_PACKET_LEN + 25];
             int count = 0;
@@ -4714,7 +4771,13 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
             if (debug)
                 Console.WriteLine(DateTime.Now.Millisecond + " SR0 " + BaseStream?.BytesToRead);
 
-            await readlock.WaitAsync().ConfigureAwait(false);
+            if (cancelled == null)
+                await readlock.WaitAsync().ConfigureAwait(false);
+            else
+            {
+                while (!await readlock.WaitAsync(25).ConfigureAwait(false))
+                    if (cancelled()) return MAVLinkMessage.Invalid;
+            }
             
             try
             {
@@ -4725,6 +4788,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
                 while ((BaseStream != null && BaseStream.IsOpen) || logreadmode)
                 {
+                    if (cancelled != null && cancelled()) return MAVLinkMessage.Invalid;
                     try
                     {
                         if (readcount > 300)
@@ -4758,6 +4822,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
                                 while (BaseStream.IsOpen && BaseStream.BytesToRead <= 0)
                                 {
+                                    if (cancelled != null && cancelled()) return MAVLinkMessage.Invalid;
                                     if (DateTime.UtcNow > to)
                                     {
                                         log.InfoFormat("MAVLINK: 1 wait time out btr {0} len {1}",
@@ -4852,6 +4917,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
                             while (BaseStream.IsOpen && BaseStream.BytesToRead < headerlength - count)
                             {
+                                if (cancelled != null && cancelled()) return MAVLinkMessage.Invalid;
                                 if (DateTime.UtcNow > to)
                                 {
                                     log.InfoFormat("MAVLINK: 2 wait time out btr {0} len {1}", BaseStream.BytesToRead,
@@ -4908,6 +4974,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
                                     while (BaseStream.IsOpen && BaseStream.BytesToRead < (length - (headerlengthstx)))
                                     {
+                                        if (cancelled != null && cancelled()) return MAVLinkMessage.Invalid;
                                         if (DateTime.UtcNow > to)
                                         {
                                             log.InfoFormat("MAVLINK: 3 wait time out btr {0} len {1}",
@@ -5499,10 +5566,47 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
             return message;
         }
 
-        private void ProcessMirrorStream(byte[] buffer)
+        public void StartMirrorInput(Mirror mirror)
         {
-            foreach (var Mirror in Mirrors)
+            lock (mirror)
             {
+                if (mirror.InputCancellation != null) return;
+                var cancellation = new CancellationTokenSource();
+                mirror.InputCancellation = cancellation;
+                mirror.IndependentInput = true;
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        while (!cancellation.IsCancellationRequested)
+                        {
+                            // TCP listeners may not have accepted a peer when forwarding is enabled.
+                            if (mirror.MirrorStream != null && mirror.MirrorStream.IsOpen)
+                                ProcessMirrorStream(null, mirror);
+                            await Task.Delay(10, cancellation.Token).ConfigureAwait(false);
+                        }
+                    }
+                    catch (OperationCanceledException) { }
+                    catch (Exception ex) { log.Warn("Relay input worker stopped", ex); }
+                    finally
+                    {
+                        lock (mirror)
+                        {
+                            mirror.InputCancellation = null;
+                            cancellation.Dispose();
+                        }
+                    }
+                });
+            }
+        }
+
+        private void ProcessMirrorStream(byte[] buffer, Mirror inputOnly = null)
+        {
+            foreach (var Mirror in inputOnly == null ? Mirrors.ToArray() : new[] { inputOnly })
+            {
+                lock (Mirror)
+                {
+                if (Mirror.InputCancellation?.IsCancellationRequested == true) continue;
                 var MirrorStream = Mirror.MirrorStream;
                 try
                 {
@@ -5513,7 +5617,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                         if (server != null && Mirror.UdpWriteAllowed != null)
                         {
                             // Keep datagram boundaries: never authorize a mixed-source byte buffer.
-                            for (var count = 0; count < 64 && server.client.Available > 0; count++)
+                            for (var count = 0; (buffer == null || !Mirror.IndependentInput) && count < 64 && server.client.Available > 0; count++)
                             {
                                 var sender = new System.Net.IPEndPoint(System.Net.IPAddress.Any, 0);
                                 var packet = server.client.Receive(ref sender);
@@ -5523,12 +5627,14 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                                 if (Mirror.MirrorStreamWrite && Mirror.UdpWriteAllowed(sender))
                                     lock (writelock)
                                     {
+                                        if (BaseStream == null || !BaseStream.IsOpen || ReadOnly || logreadmode ||
+                                            !Mirror.UdpWriteAllowed(sender)) continue;
                                         BaseStream.Write(packet, 0, packet.Length);
                                         if (rawlogfile != null && rawlogfile.CanWrite)
                                             rawlogfile.Write(packet, 0, packet.Length);
                                     }
                             }
-                            foreach (var peer in Mirror.UdpPeers.ToArray())
+                            if (buffer != null) foreach (var peer in Mirror.UdpPeers.ToArray())
                             {
                                 if (DateTime.UtcNow - peer.Value > TimeSpan.FromSeconds(30))
                                     Mirror.UdpPeers.Remove(peer.Key);
@@ -5538,11 +5644,12 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                             }
                             continue;
                         }
-                        MirrorStream.Write(buffer, 0, buffer.Length);
+                        if (buffer != null) MirrorStream.Write(buffer, 0, buffer.Length);
+                        if (buffer != null && Mirror.IndependentInput) continue;
 
-                        while (MirrorStream.BytesToRead > 0)
+                        for (var batch = 0; batch < 64 && MirrorStream.BytesToRead > 0; batch++)
                         {
-                            var len = MirrorStream.BytesToRead;
+                            var len = Math.Min(4096, MirrorStream.BytesToRead);
 
                             byte[] buf = new byte[len];
 
@@ -5552,6 +5659,8 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                                 (Mirror.MirrorStreamWriteAllowed == null || Mirror.MirrorStreamWriteAllowed()))
                                 lock (writelock)
                                 {
+                                    if (BaseStream == null || !BaseStream.IsOpen || ReadOnly || logreadmode ||
+                                        (Mirror.MirrorStreamWriteAllowed != null && !Mirror.MirrorStreamWriteAllowed())) continue;
                                     BaseStream.Write(buf, 0, len);
 
                                     if (rawlogfile != null && rawlogfile.CanWrite)
@@ -5563,6 +5672,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                 }
                 catch
                 {
+                }
                 }
             }
         }
@@ -5915,6 +6025,12 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
         public async Task<bool> getVersionAsync(byte sysid, byte compid, bool responcerequired = true)
         {
+            return await getVersionAsync(sysid, compid, responcerequired, null).ConfigureAwait(false);
+        }
+
+        private async Task<bool> getVersionAsync(byte sysid, byte compid, bool responcerequired, Func<bool> cancelRequested)
+        {
+            if (cancelRequested != null && cancelRequested()) return false;
             mavlink_autopilot_version_request_t req = new mavlink_autopilot_version_request_t();
 
             req.target_component = compid;
@@ -5952,6 +6068,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
             while (!responce)
             {
+                if (cancelRequested != null && cancelRequested()) break;
                 if (!(start.AddMilliseconds(500) > DateTime.Now))
                 {
                     if (retrys > 0)
@@ -5966,7 +6083,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                     break;
                 }
 
-                await Task.Delay((100));
+                await Task.Delay(cancelRequested == null ? 100 : 20).ConfigureAwait(false);
             }
 
             UnSubscribeToPacketType(sub);
@@ -6924,6 +7041,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
             Terrain?.UnSub();
             Terrain = null;
 
+            foreach (var mirror in Mirrors.ToArray()) mirror.StopInput();
             Mirrors.Clear();
 
             logreadmode = false;
