@@ -1,24 +1,18 @@
-# FeiMaoTecPlanner V1.1.5
+# FeiMaoTecPlanner V1.2.4
 
-## 本版更新
+這次集中修正長時間操作的繪圖資源、ICE 參數寫入，以及 ArduPilot 4.6／4.7 參數相容性。
 
-- 地圖上方新增「接力控制」介面，將站台與控制權、MAVLink 轉發、本機搖桿及導控站位置整合在同一區域。
-- MAVLink 轉發新增啟用燈號、逐列運作狀態、IP／Port 格式與重複端點檢查，發生衝突時阻止啟動並顯示原因。
-- 可在地圖顯示本機與接力站導控電腦位置及站號；無有效定位時不顯示，飛機 HOME 點維持飛控原始設定。
-- QNH 右側新增「遙控器控制／導控控制」切換。程式啟動及重新連線預設使用實體遙控器；只有已建立且啟用電腦搖桿時才可切換。
-- 導控控制切換前新增搖桿軸值對齊、穩定時間及 `RC1_OPTION`～`RC18_OPTION` 關鍵開關檢查；飛行器解鎖時不自動切換控制來源。
-- 電子圍籬未啟用時停用 `FENCE_ACTION` 設定，避免寫入不會生效的動作。
+主要更新：
 
-## 下載與使用
+- HUD Bitmap／Graphics／字型資源釋放與有容量上限的本機診斷紀錄。
+- ICE／起飛參數作業互斥、離頁及斷線取消後續重試、寫入後讀回確認；修正失敗後通訊卡住。
+- 模式列按鈕與文字隨視窗縮放，取消水平／垂直捲軸。
+- 31 組官方 4.6／4.7 參數文件，修正 PID、起飛、直升機、OSD 與數值精度。
+- 雙 GPS 狀態與警示顏色、馬達測試防連點、adsb.fi 兩秒更新與台灣／100 海里範圍限制。
+- 繁體中文資源及參數說明檢查；參數代碼、原文與原始數值保留。
 
-1. 下載 `FMTPlanner-V1.1.5.zip` 並完整解壓縮。
-2. 執行資料夾內的 `FMTPlanner-V1.1.5.exe`；不要只複製 EXE 或在壓縮檔內執行。
-3. 使用 `FMTPlanner-V1.1.5.zip.sha256` 核對下載檔案。操作說明見包內 `README-FMT.md` 及 `FMT` 下的 MQTT／SiK 文件。
+驗證：Release 編譯 0 errors（1,439 warnings）、62 項離線回歸全部通過；10 分鐘連續測試中 GDI／OpenGL 各 8,659 幀，87 次 ICE 頁生命週期，資源留存未超過門檻。未實機／實飛驗證，不宣稱已排除所有不定時閃退。
 
-## 驗證範圍
+下載 `FMTPlanner-V1.2.4.zip`，完整解壓後執行 `FMTPlanner-V1.2.4.exe`。旁附 SHA-256 校驗檔。
 
-已完成 Release 編譯、離線原始碼回歸、封裝內容及 SHA-256 檢查。測試不使用正式帳密，不連接實體飛控，也不驗證 VPN、防火牆或遠端網路品質。
-
-標準 MAVLink 遙測不保證能在導控控制期間持續取得被隔離實體接收機的原始開關位置，因此回切實體遙控器仍採人工清單確認。正式使用 MAVLink 接力、電腦搖桿控制、RC_OPTIONS 切換或 Failsafe 前，必須在拆槳或無動力的地面安全狀態完成端到端驗證。
-
-本次只發布 Windows MP，不包含手機 App、VM 網頁管理工具、個人連線設定或私密簽章檔案。
+[操作手冊](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.2.4/README-FMT.md) · [完整更新紀錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.2.4/CHANGELOG-FMT.md) · [測試與資源紀錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.2.4/FMT/RELEASE-AUDIT-V1.2.4.md)
