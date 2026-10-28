@@ -29,7 +29,7 @@ jobs:
           $msbuildPath = Split-Path (& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\Current\Bin\amd64\MSBuild.exe | Select-Object -First 1) -Parent
           $env:PATH = $msbuildPath + ';' + $env:PATH
           nuget locals all -clear
-          msbuild -v:m -restore -t:Build -p:Configuration=Release MissionPlanner.sln
+          msbuild -v:m -restore -t:Build -m:1 -p:BuildInParallel=false -p:Configuration=Release MissionPlanner.csproj
 
       - name: Offline MQTT, SiK and flight actions regression
         shell: pwsh
@@ -104,7 +104,7 @@ jobs:
           $msbuildPath = Split-Path (& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\Current\Bin\amd64\MSBuild.exe | Select-Object -First 1) -Parent
           $env:PATH = $msbuildPath + ';' + $env:PATH
           nuget locals all -clear
-          msbuild -v:m -restore -t:Build -p:Configuration=Debug MissionPlanner.sln
+          msbuild -v:m -restore -t:Build -m:1 -p:BuildInParallel=false -p:Configuration=Debug MissionPlanner.csproj
 
       - name: Cleanup
         shell: pwsh
