@@ -1,8 +1,8 @@
-# FeiMaoTecPlanner V1.2.3
+# FeiMaoTecPlanner V1.2.4
 
-最新正式版本為 **FeiMaoTecPlanner V1.2.3**；下載套件完整解壓後執行 `FMTPlanner-V1.2.3.exe`，保留同資料夾的相依檔案。
+最新正式版本為 **FeiMaoTecPlanner V1.2.4**；下載套件完整解壓後執行 `FMTPlanner-V1.2.4.exe`，保留同資料夾的相依檔案。
 
-> 已完成編譯、43 項回歸測試與套件校驗，尚未完成實機／實飛驗證。姿態儀維持原本預設更新方式，不主動提高飛控回報率；詳見 [V1.2.3 發布說明](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.3)。
+> 已通過編譯、62 項離線回歸及 10 分鐘連續運行測試；資源紀錄見 [V1.2.4 發布驗證](FMT/RELEASE-AUDIT-V1.2.4.md)。尚未完成實機／實飛驗證，不宣稱已排除所有不定時閃退。
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.6/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
@@ -14,14 +14,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.3/FMTPlanner-V1.2.3.zip"><strong>下載 FMTPlanner V1.2.3</strong></a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.4/FMTPlanner-V1.2.4.zip"><strong>下載 FMTPlanner V1.2.4</strong></a>
   ·
   <a href="README-FMT.md">繁體中文圖文操作手冊</a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.3">版本發布頁</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.4">版本發布頁</a>
 </p>
 
-![Version](https://img.shields.io/badge/version-V1.2.3-22a9dc)
+![Version](https://img.shields.io/badge/version-V1.2.4-22a9dc)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
 ![Package](https://img.shields.io/badge/package-portable%20ZIP-35a853)
 ![Language](https://img.shields.io/badge/UI-English%20%7C%20繁體中文-f0ad00)
@@ -30,8 +30,8 @@
 
 | 項目 | 內容 |
 |---|---|
-| 軟體名稱 | **FeiMaoTecPlanner V1.2.3** |
-| 執行檔 | 本機建置 **FMTPlanner.exe**；下載套件 **FMTPlanner-V1.2.3.exe** |
+| 軟體名稱 | **FeiMaoTecPlanner V1.2.4** |
+| 執行檔 | 本機建置 **FMTPlanner.exe**；下載套件 **FMTPlanner-V1.2.4.exe** |
 | 公司／品牌 | **FMT 飛貓科技** |
 | 基礎專案 | ArduPilot Mission Planner |
 | 支援系統 | Windows |
@@ -39,7 +39,20 @@
 | 支援構型 | 多旋翼、定翼機、VTOL／QuadPlane |
 | 介面語言 | 預設英文，可使用繁體中文 |
 
-## V1.2.3 主要更新
+## V1.2.4 主要更新
+
+- **4.6／4.7 參數相容性**：內嵌 31 組官方發布版本的完整參數文件，依飛控機型與韌體版本選用；修正 PID、起飛、直升機與 OSD 的名稱／單位及小數精度。實際可用參數仍以飛控回傳為準。
+- **穩定性修正**：釋放 HUD 縮放／關閉後的圖像資源，修正縮放時仍被標籤使用的字型遭到釋放；診斷日誌限制容量並保留本機錯誤記錄。
+- **ICE 參數操作**：寫入與當頁更新互斥，離頁、斷線或安全條件變更後停止後續重試；保留寫入後讀回確認，修正失敗後通訊卡在忙碌狀態。
+- **模式按鈕隨介面縮放**：各分組維持單列，按鈕、字型與標題依可用寬高縮放，不出現水平或垂直捲軸。
+- **雙 GPS 顯示**：正常定位時第一組綠色、第二組黃色；兩組各自顯示衛星數與 H／V 精度，未定位紅色警示優先。
+- **馬達測試防連點**：等待回覆時阻擋重複啟動，合併停止請求，避免累積命令。
+- **ADS-B**：預設改用 adsb.fi、每 2 秒更新，保留台灣識別區及 100 海里範圍限制；顯示數量依來源覆蓋與回傳資料而定。
+- **繁體中文檢查**：補齊 185 項共用訊息、18 段參數說明，修正定位、校準與失效保護文字。保留參數代碼、原始數值及未審核選項，不宣稱所有翻譯已逐句完成人工審核。
+
+詳細內容：[完整更新紀錄](CHANGELOG-FMT.md)、[發布驗證](FMT/RELEASE-AUDIT-V1.2.4.md)、[參數核對](FMT/ParameterAudit/ArduPilot-4.6-4.7-audit.html)、[翻譯檢查](FMT/TranslationAudit/translation-audit-v1.2.4.html)。
+
+## V1.2.3 主要更新（歷史版本）
 
 - 姿態儀維持原本預設更新機制，撤回試驗性平滑／快速更新；異常警示採透明紅色漸層呼吸外框。
 - 油門與 WP 改為獨立資訊格，數值靠右並預留 GPS2 顯示位置。
@@ -134,9 +147,9 @@
 
 ## 快速開始
 
-1. 下載 [FMTPlanner-V1.2.3.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.3/FMTPlanner-V1.2.3.zip)。
+1. 下載 [FMTPlanner-V1.2.4.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.4/FMTPlanner-V1.2.4.zip)。
 2. 將 ZIP **完整解壓縮**到可寫入的資料夾。
-3. 執行 **FMTPlanner-V1.2.3.exe**，不要直接在壓縮檔內啟動。
+3. 執行 **FMTPlanner-V1.2.4.exe**，不要直接在壓縮檔內啟動。
 4. 登入後選擇正確 COM 埠與傳輸速率，再按 **CONNECT／連線**。
 5. 正式使用前請變更預設密碼，並先完成飛控校正與任務安全檢查。
 
@@ -152,10 +165,10 @@
 
 ## 文件與下載
 
-- [V1.2.3 發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.3)
-- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.3/FMTPlanner-V1.2.3.zip)
+- [V1.2.4 發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.4)
+- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.4/FMTPlanner-V1.2.4.zip)
 - [完整繁體中文圖文操作手冊](README-FMT.md)
-- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.2.3/CHANGELOG-FMT.md)
+- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.2.4/CHANGELOG-FMT.md)
 - [FMT 飛貓科技官網](https://www.feimaotec.com)
 
 ## 安全提醒

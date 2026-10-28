@@ -80,7 +80,7 @@ for c in comparisons:
         '</pre><h3>逐項定義差異</h3>'+details+'</details>')
 document = '''<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>FMTPlanner V1.2.4 參數核對</title>
 <style>body{font:16px system-ui;max-width:1100px;margin:40px auto;padding:0 20px;color:#17382f}table{border-collapse:collapse;width:100%}td,th{border:1px solid #cadad5;padding:8px;text-align:left}summary{cursor:pointer;padding:8px;background:#edf4f1}details{margin:8px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;background:#f6f8f7;padding:12px}h1{font-size:28px}</style>
-<h1>FMTPlanner V1.2.4｜ArduPilot 4.6–4.7 參數核對</h1><p>2026-10-27・本機候選版，未發布。</p>
+<h1>FMTPlanner V1.2.4｜ArduPilot 4.6–4.7 參數核對</h1><p>2026-10-27 核對・V1.2.4 發布附件。</p>
 <p>從官方發布標籤執行各版本自己的 param_parse.py，包含所有文件化的共用函式庫、機型參數與腳本參數。下表逐一列出來源；附帶完整新增、移除、說明、單位、範圍、步進、選項及位元遮罩差異。</p>
 <p>專用設定頁依機型提供常用項目；完整參數頁顯示飛控實際回傳的所有參數。官方文件可能包含該硬體未編入或未啟用的功能，不能把文件數量視為實機應回傳數量。Sub 沒有本次查到的 4.6 發布標籤，因此只列實際存在的 4.7 版本；Blimp／AP_Periph 沒有對應標籤，未冒用其他機型版本。未進行實機寫入或試飛。</p>
 <p>修正：完整快照內嵌、依目前機型與版本選擇、缺欄位不混用其他版本、PID 與起飛名稱／倍率／小數、直升機爬升／下降／返航高度、OSD 的 SRx→MAVx 對應。4.7 ARMING_SKIPCHK 的位元代表略過檢查，沿用新版定義，不將 ARMING_CHECK 值自動轉入。</p>
