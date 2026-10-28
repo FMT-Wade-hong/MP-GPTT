@@ -263,43 +263,43 @@
     <value>Zero</value>
   </data>
   <data name="BUT_HS4save.Text" xml:space="preserve">
-    <value>Manual</value>
+    <value>手動</value>
   </data>
   <data name="BUT_reset_swash.Text" xml:space="preserve">
     <value>Reset Swash</value>
   </data>
   <data name="BUT_swash_manual.Text" xml:space="preserve">
-    <value>Manual</value>
+    <value>手動</value>
   </data>
   <data name="CCPM.Text" xml:space="preserve">
     <value>CCPM</value>
   </data>
   <data name="fbl_modeFBL.Text" xml:space="preserve">
-    <value>Flybarless</value>
+    <value>無平衡翼</value>
   </data>
   <data name="groupBox10.Text" xml:space="preserve">
     <value>Land Col Min</value>
   </data>
   <data name="groupBox3.Text" xml:space="preserve">
-    <value>Tail Type</value>
+    <value>尾旋翼類型</value>
   </data>
   <data name="groupBox4.Text" xml:space="preserve">
     <value>Collective Compensation</value>
   </data>
   <data name="groupBox5.Text" xml:space="preserve">
-    <value>Swash Type</value>
+    <value>斜盤類型</value>
   </data>
   <data name="groupBox6.Text" xml:space="preserve">
     <value>Stabilize Col Min/Max</value>
   </data>
   <data name="groupBox7.Text" xml:space="preserve">
-    <value>RSC Ramp Rate</value>
+    <value>旋翼轉速控制漸增率</value>
   </data>
   <data name="groupBox8.Text" xml:space="preserve">
-    <value>Mode 1 Setpoint</value>
+    <value>模式 1 目標值</value>
   </data>
   <data name="groupBox9.Text" xml:space="preserve">
-    <value>Rotor Speed Control</value>
+    <value>主旋翼轉速控制</value>
   </data>
   <data name="HS4_MAX.Text" xml:space="preserve">
     <value>1500</value>
@@ -332,10 +332,10 @@
     <value>H1</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>Min</value>
+    <value>最小</value>
   </data>
   <data name="label17.Text" xml:space="preserve">
-    <value>Swash-Servo position</value>
+    <value>斜盤伺服位置</value>
   </data>
   <data name="label18.Text" xml:space="preserve">
     <value>1</value>
@@ -344,72 +344,72 @@
     <value>2</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>Max</value>
+    <value>最大</value>
   </data>
   <data name="label20.Text" xml:space="preserve">
     <value>3</value>
   </data>
   <data name="label21.Text" xml:space="preserve">
-    <value>Top</value>
+    <value>頂部</value>
   </data>
   <data name="label22.Text" xml:space="preserve">
     <value>Swash Travel</value>
   </data>
   <data name="label23.Text" xml:space="preserve">
-    <value>Rudder Travel</value>
+    <value>方向舵行程</value>
   </data>
   <data name="label24.Text" xml:space="preserve">
-    <value>Max</value>
+    <value>最大</value>
   </data>
   <data name="label25.Text" xml:space="preserve">
     <value>Roll Max</value>
   </data>
   <data name="label26.Text" xml:space="preserve">
-    <value>Pitch Max</value>
+    <value>最大俯仰角</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
     <value>Bottom %</value>
   </data>
   <data name="label36.Text" xml:space="preserve">
-    <value>Servo</value>
+    <value>伺服機</value>
   </data>
   <data name="label37.Text" xml:space="preserve">
-    <value>Position</value>
+    <value>位置</value>
   </data>
   <data name="label38.Text" xml:space="preserve">
-    <value>Rev</value>
+    <value>反向</value>
   </data>
   <data name="label39.Text" xml:space="preserve">
-    <value>Trim</value>
+    <value>微調</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
     <value>Top %</value>
   </data>
   <data name="label40.Text" xml:space="preserve">
-    <value>Min</value>
+    <value>最小</value>
   </data>
   <data name="label41.Text" xml:space="preserve">
-    <value>Bottom</value>
+    <value>底部</value>
   </data>
   <data name="label42.Text" xml:space="preserve">
     <value>Rudder</value>
   </data>
   <data name="label43.Text" xml:space="preserve">
-    <value>Rev</value>
+    <value>反向</value>
   </data>
   <data name="label44.Text" xml:space="preserve">
-    <value>Trim</value>
+    <value>微調</value>
   </data>
   <data name="label46.Text" xml:space="preserve">
-    <value>Gain</value>
+    <value>增益</value>
   </data>
   <data name="label5.Text" xml:space="preserve">
-    <value>Rate(Sec)</value>
+    <value>速率（秒）</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
-    <value>Tail Speed</value>
+    <value>尾旋翼轉速</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>Runup(Sec)</value>
+    <value>加速時間（秒）</value>
   </data>
 </root>

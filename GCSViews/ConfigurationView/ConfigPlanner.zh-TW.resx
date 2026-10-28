@@ -142,7 +142,7 @@
     <value>進階功能選項</value>
   </data>
   <data name="chk_analytics.Text" xml:space="preserve">
-    <value>OptOut Anon Stats</value>
+    <value>停用匿名統計</value>
   </data>
   <data name="CHK_beta.Text" xml:space="preserve">
     <value>測試版更新</value>
@@ -166,7 +166,7 @@
     <value>地圖隨機頭方向旋轉</value>
   </data>
   <data name="CHK_mavdebug.Text" xml:space="preserve">
-    <value>Mavlink Message Debug</value>
+    <value>MAVLink 訊息除錯</value>
   </data>
   <data name="CHK_Password.Text" xml:space="preserve">
     <value>調參密碼設定</value>
@@ -187,7 +187,7 @@
     <value>電源警報</value>
   </data>
   <data name="CHK_speechcustom.Text" xml:space="preserve">
-    <value>30s Interval</value>
+    <value>間隔 30 秒</value>
   </data>
   <data name="CHK_speechlowspeed.Text" xml:space="preserve">
     <value>速度過低</value>
@@ -367,7 +367,7 @@
     <value>9</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>Map Follow</value>
+    <value>地圖跟隨</value>
   </data>
   <data name="label101.Text" xml:space="preserve">
     <value>數傳封包率</value>

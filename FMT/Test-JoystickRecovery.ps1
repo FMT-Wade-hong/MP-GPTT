@@ -1,7 +1,8 @@
 param([string]$Directory = 'bin/JoystickRecoveryTest/net461')
 $ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName System.Windows.Forms
-$assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path "$Directory/FMTPlanner.exe"))
+# Install the same dependency resolver used by the other offline UI tests.
+# PowerShell does not apply FMTPlanner.exe.config assembly binding redirects.
+. "$PSScriptRoot/Test-RoverChinese.ps1" -Directory $Directory
 $type = $assembly.GetType('MissionPlanner.Joystick.JoystickSetup')
 $main = $assembly.GetType('MissionPlanner.MainV2')
 $flags = [Reflection.BindingFlags]'Instance,Public,NonPublic'

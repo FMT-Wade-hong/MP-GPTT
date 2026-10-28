@@ -1,5 +1,6 @@
-param([string]$Directory = 'bin/Local123/net461', [string]$Version = '1.2.3')
+param([string]$Directory = 'bin/Local124/net461', [string]$Version = '')
 $ErrorActionPreference = 'Stop'
+if (!$Version) { $Version = (Get-Content "$PSScriptRoot/VERSION" -Raw).Trim() }
 . "$PSScriptRoot/Test-RoverChinese.ps1" -Directory $Directory
 $info = (Get-Item "$Directory/FMTPlanner.exe").VersionInfo
 if ($info.FileVersion -ne "$Version.0" -or $info.ProductVersion -ne "V$Version") { throw 'EXE version mismatch' }

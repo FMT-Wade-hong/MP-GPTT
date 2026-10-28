@@ -66,7 +66,7 @@ foreach ($guide in 'MQTT-EMBEDDED.md', 'SIK-SETTINGS.md', 'P400-AT-README.md', "
         Entry = "$rootFolder/FMT/$guide"
     }
 }
-foreach ($assetDirectory in 'Assets', 'ManualImages') {
+foreach ($assetDirectory in 'Assets', 'ManualImages', 'ParameterAudit', 'TranslationAudit') {
     $assetPath = Join-Path $documentationAssetRoot $assetDirectory
     if (Test-Path -LiteralPath $assetPath -PathType Container) {
         foreach ($asset in Get-ChildItem -LiteralPath $assetPath -Recurse -File) {
@@ -88,7 +88,13 @@ $excludedFiles = @()
 $excludedBytes = 0L
 
 function Get-ReleaseExclusionReason([string]$RelativePath) {
-    if ($RelativePath -match '(?i)^(hud-.*\.png|home-(join-.*|symbol)\.png|screen-size-.*|mode-scale-.*|caa-update-test-[^\\/]+([\\/].*)?)$') {
+    if ($RelativePath -match '(?i)(^|[\\/])(crash-test-[^\\/]+|Diagnostics)([\\/]|$)') {
+        return 'local crash diagnostics and regression artifacts'
+    }
+    if ($RelativePath -match '(?i)(^|[\\/])[^\\/]*Harness\.exe(?:\.config)?$') {
+        return 'offline regression test harness'
+    }
+    if ($RelativePath -match '(?i)^(hud-.*\.png|home-(join-.*|symbol)\.png|screen-size-.*|screen-\d+(?:\.\d+)?-\d+-\d+\.png|mode-scale-.*|caa-update-test-[^\\/]+([\\/].*)?)$') {
         return 'local display and airspace regression artifacts'
     }
     $entryName = $rootFolder + '/' + $RelativePath.Replace('\', '/')

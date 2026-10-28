@@ -1,6 +1,7 @@
 ﻿param(
     [string]$Directory = 'bin/ReviewedTranslationFix/net461',
-    [string]$MetadataDirectory = 'C:/ProgramData/Mission Planner'
+    [string]$MetadataDirectory = 'C:/ProgramData/Mission Planner',
+    [string]$VersionedMetadataDirectory = "$PSScriptRoot/../ExtLibs/Utilities/ParameterMetadata"
 )
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/Test-RoverChinese.ps1" -Directory $Directory
@@ -31,9 +32,24 @@ $pendingReferences = @{}
 $labels = New-Object 'System.Collections.Generic.HashSet[string]'
 $reports = @()
 $files = @(Get-ChildItem -LiteralPath $MetadataDirectory -Filter '*.apm.pdef.xml')
+$files += @(Get-ChildItem -LiteralPath $VersionedMetadataDirectory -Filter '*.gz')
 if (!$files.Count) { throw 'No official parameter metadata available' }
 foreach ($file in $files) {
-    [xml]$metadata = Get-Content $file.FullName -Raw -Encoding UTF8
+    $stream = [IO.File]::OpenRead($file.FullName)
+    try {
+        $hash = [Security.Cryptography.SHA256]::Create()
+        try { $sha256 = [BitConverter]::ToString($hash.ComputeHash($stream)).Replace('-','') }
+        finally { $hash.Dispose() }
+    } finally { $stream.Dispose() }
+    if ($file.Extension -eq '.gz') {
+        $stream = [IO.File]::OpenRead($file.FullName)
+        $gzip = New-Object IO.Compression.GZipStream $stream,([IO.Compression.CompressionMode]::Decompress)
+        $reader = New-Object IO.StreamReader $gzip,([Text.Encoding]::UTF8)
+        try { [xml]$metadata = $reader.ReadToEnd() }
+        finally { $reader.Dispose(); $gzip.Dispose(); $stream.Dispose() }
+    } else {
+        [xml]$metadata = Get-Content $file.FullName -Raw -Encoding UTF8
+    }
     $reviewed = 0; $legacy = 0; $english = 0; $empty = 0
     foreach ($node in $metadata.SelectNodes('//param')) {
         $source = [string]$node.documentation
@@ -67,10 +83,11 @@ foreach ($file in $files) {
             }
         }
     }
-    $reports += [pscustomobject]@{File=$file.Name; SHA256=(Get-FileHash $file.FullName -Algorithm SHA256).Hash; ReviewedDescriptions=$reviewed; LegacyDictionaryDescriptions=$legacy; OriginalEnglishDescriptions=$english; EmptyDescriptions=$empty}
+    $reports += [pscustomobject]@{File=$file.Name; SHA256=$sha256; ReviewedDescriptions=$reviewed; LegacyDictionaryDescriptions=$legacy; OriginalEnglishDescriptions=$english; EmptyDescriptions=$empty}
 }
+$catalogSourcesNotInSnapshots = @()
 foreach ($entry in $catalogEntries) {
-    if (!$sources.Contains($entry.Name)) { throw "No official source found: $($entry.Name)" }
+    if (!$sources.Contains($entry.Name)) { $catalogSourcesNotInSnapshots += $entry.Name }
     if ($translator.Invoke($null,@($entry.Name)) -cne $entry.Value) { throw "Reviewed catalog not used: $($entry.Name)" }
     foreach ($reference in [regex]::Matches($entry.Name,'\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b')) {
         if (!$entry.Value.Contains($reference.Value)) { throw "Parameter reference lost: $($reference.Value)" }
@@ -85,12 +102,13 @@ foreach ($label in $labels) {
     else { $localizedOptionCount++ }
 }
 $report = [ordered]@{
-    Scope='All local public ArduPilot pdef metadata, not connected vehicle values'
+    Scope='All local public ArduPilot pdef metadata plus bundled 4.6/4.7 versioned snapshots; not connected vehicle values'
     VisibilityIndependent=$true
     VisibilityNote='Scans every metadata param without checking vehicle connection, enable flags or UI visibility; metadata presence does not prove firmware support.'
     CompleteSemanticReview=$false
     DescriptionCoverageComplete=($pending.Count -eq 0)
     ReviewedCatalogEntries=$catalogEntries.Count
+    CatalogSourcesNotInCurrentSnapshots=$catalogSourcesNotInSnapshots
     UniqueDescriptions=$sources.Count
     UntranslatedUniqueDescriptions=$pending.Count
     OptionLabelsChecked=$labels.Count
@@ -111,6 +129,7 @@ $report = [ordered]@{
 $reportPath = Join-Path (Resolve-Path $Directory) 'parameter-translation-audit.json'
 $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $reportPath -Encoding UTF8
 $reports | Where-Object File -in @('ArduCopter.apm.pdef.xml','ArduPlane.apm.pdef.xml','Rover.apm.pdef.xml','ArduSub.apm.pdef.xml') | Format-Table -AutoSize
-"PASS: $($files.Count) metadata files, $($labels.Count) option labels retain original, bit indices unchanged, source/version checks passed"
+"PASS: $($files.Count) metadata files, $($labels.Count) option labels retain original, bit indices unchanged, source-matched lookup checks passed"
+"HISTORICAL CATALOG: $($catalogSourcesNotInSnapshots.Count) source texts are absent from the currently installed snapshots; listed in audit, not counted as verified sources."
 "DESCRIPTION COVERAGE: $($pending.Count) unique descriptions still original English. Audit: $reportPath"
 "OPTION COVERAGE: $localizedOptionCount bilingual labels; $($unchangedOptions.Count) original labels (includes technical names). Semantic review is tracked separately."

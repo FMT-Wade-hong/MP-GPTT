@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using MissionPlanner.Controls;
@@ -16,12 +17,26 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             public string Name, Title, Unit, Range, Meaning, Advice;
             public double? Min, Max;
             public bool Integer;
+            internal Definition MetricVersion;
             public Definition(string name, string title, string unit, string range,
                 double? min, double? max, bool integer, string meaning, string advice)
             {
                 Name = name; Title = title; Unit = unit; Range = range;
                 Min = min; Max = max; Integer = integer; Meaning = meaning; Advice = advice;
             }
+            internal Definition WithMetricVersion(string name, string unit)
+            {
+                // Both definitions use wire units. Only select the version actually
+                // reported by the FC; never migrate or multiply a stored value here.
+                MetricVersion = new Definition(name, Title, unit,
+                    (Min.Value / 100).ToString("G", CultureInfo.InvariantCulture) + "–" +
+                    (Max.Value / 100).ToString("G", CultureInfo.InvariantCulture),
+                    Min / 100, Max / 100, false, Meaning, Advice);
+                return this;
+            }
+            internal Definition Resolve(MAVLink.MAVLinkParamList parameters) =>
+                MetricVersion != null && parameters != null && parameters.ContainsKey(MetricVersion.Name)
+                    ? MetricVersion : this;
             internal bool Accepts(double value) => !double.IsNaN(value) && !double.IsInfinity(value) &&
                 (!Min.HasValue || value >= Min.Value) && (!Max.HasValue || value <= Max.Value) &&
                 (!Integer || value == Math.Truncate(value));
@@ -82,7 +97,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private volatile bool hasStarter;
         private MAVLinkInterface port;
         private MAVState target;
-        private bool busy, active;
+        private bool busy;
+        private volatile bool active;
+        private CancellationTokenSource operationCancellation;
         private Definition[] pageDefinitions;
         private readonly string pageGuide;
         private readonly bool icePage;
@@ -203,6 +220,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             };
             availabilityTimer.Start();
             Disposed += (s, e) => availabilityTimer.Dispose();
+            Disposed += (s, e) => { active = false; operationCancellation?.Cancel(); };
+            VisibleChanged += (s, e) => { if (!Visible) operationCancellation?.Cancel(); };
             status.Dock = DockStyle.Fill; layout.Controls.Add(status, 0, 6);
             Controls.Add(layout);
             refresh.Click += async (s, e) =>
@@ -221,7 +240,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             };
             write.Click += async (s, e) => await Transfer(true);
             read.Click += async (s, e) => await Transfer(false);
-            safe.CheckedChanged += (s, e) => UpdateButtons();
+            safe.CheckedChanged += (s, e) =>
+            {
+                if (!safe.Checked) operationCancellation?.Cancel();
+                UpdateButtons();
+            };
             LoadValues();
         }
 
@@ -237,7 +260,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             "參數依據：ArduPilot Plane-4.5.7 / Plane-4.6.3 的 libraries/AP_ICEngine/AP_ICEngine.cpp；較新韌體以實際回傳及對應版本文件為準。";
 
         public void Activate() { active = true; if (!busy) LoadValues(); }
-        public void Deactivate() { active = false; safe.Checked = false; }
+        public void Deactivate() { active = false; operationCancellation?.Cancel(); safe.Checked = false; }
         private Definition Selected => grid.CurrentRow?.Tag as Definition;
         internal static bool IsStarterParameter(string name) => name == "ICE_STARTER_TIME" ||
             name == "ICE_START_DELAY" || name == "ICE_STRT_MX_RTRY" ||
@@ -257,8 +280,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             port = MainV2.comPort; target = port?.MAV;
             var selected = Selected?.Name;
             grid.Rows.Clear();
-            foreach (var def in pageDefinitions)
+            foreach (var definition in pageDefinitions)
             {
+                var def = definition.Resolve(target?.param);
                 var value = target?.param[def.Name];
                 // Non-zero off-profile values remain visible for explicit review/correction.
                 // Hiding a row never disables the corresponding autopilot feature.
@@ -298,8 +322,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             FMT.FmtRelayControlService.CanLocalStationTransmitControl;
         private void UpdateButtons()
         {
-            read.Enabled = !busy && SameTarget() && Selected != null;
-            write.Enabled = !busy && ProfileReady && !IsStarterLocked(Selected?.Name) && safe.Checked && Writable() && target.param[Selected?.Name ?? ""] != null;
+            if (IsDisposed || Disposing) return;
+            var available = !FmtPageParameterRefresh.IsBusy && port != null && !port.giveComport &&
+                !port.IsParameterListLoading && !port.IsLogDownloadActive;
+            read.Enabled = !busy && available && SameTarget() && Selected != null;
+            write.Enabled = !busy && available && ProfileReady && !IsStarterLocked(Selected?.Name) && safe.Checked && Writable() && target.param[Selected?.Name ?? ""] != null;
             refresh.Enabled = !busy; proposed.Enabled = !busy && ProfileReady && !IsStarterLocked(Selected?.Name); grid.Enabled = !busy;
             starter.Enabled = !busy;
             if (profile != null) { profile.Enabled = !busy; showAll.Enabled = !busy; }
@@ -329,20 +356,37 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 if (!double.TryParse(proposed.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out value) || !def.Accepts(value))
                 { status.Text = "數值格式或範圍不符：" + def.Range; return; }
             }
+            if (originalPort.giveComport || originalPort.IsParameterListLoading || originalPort.IsLogDownloadActive)
+            { status.Text = "連線正在處理其他作業，請完成後再寫入。"; return; }
+            var lease = FmtPageParameterRefresh.TryBeginWrite();
+            if (lease == null) { status.Text = "已有參數作業進行中，請等待完成後再寫入。"; return; }
+            var originalStream = originalPort.BaseStream;
+            var systemId = originalTarget.sysid;
+            var componentId = originalTarget.compid;
+            var cancellation = new CancellationTokenSource();
+            operationCancellation = cancellation;
+            Func<bool> current = () => !cancellation.IsCancellationRequested && SameTarget() &&
+                ReferenceEquals(originalPort, port) && ReferenceEquals(originalTarget, target) &&
+                ReferenceEquals(originalStream, originalPort.BaseStream) &&
+                originalTarget.sysid == systemId && originalTarget.compid == componentId &&
+                Writable() && !IsStarterLocked(def.Name);
             busy = true; UpdateButtons();
             try
             {
                 if (writing && CustomMessageBox.Show(def.Name + "：" + target.param[def.Name] + " → " + value +
                     "\r\n\r\n" + def.Advice + "\r\n\r\n確定只寫入此參數？", "參數設定確認", MessageBoxButtons.YesNo) != (int)DialogResult.Yes) return;
-                var actual = await Task.Run(() =>
+                var actual = await Task.Run(async () =>
                 {
-                    if (!SameTarget() || (writing && (!Writable() || IsStarterLocked(def.Name)))) throw new InvalidOperationException("連線、控制權、啟動器選項或解鎖狀態已變更，已停止操作。");
-                    if (writing && !originalPort.setParam(originalTarget.sysid, originalTarget.compid, def.Name, value))
-                        throw new InvalidOperationException("飛控未接受寫入。");
-                    return originalPort.GetParam(originalTarget.sysid, originalTarget.compid, def.Name);
+                    if (originalPort.giveComport || originalPort.IsParameterListLoading || originalPort.IsLogDownloadActive)
+                        throw new InvalidOperationException("連線正在處理其他作業，已停止操作。");
+                    return await FmtPageParameterRefresh.WriteReadAsync(
+                        () => originalPort.setParamCheckedAsync(systemId, componentId, def.Name, value, false, current),
+                        async () => (double)await originalPort.GetParamAsync(systemId, componentId, def.Name).ConfigureAwait(false),
+                        current, cancellation.Token);
                 });
                 if (IsDisposed || !active) return;
-                if (!SameTarget()) throw new InvalidOperationException("目標飛控已變更；請重新讀取原飛控確認結果。");
+                cancellation.Token.ThrowIfCancellationRequested();
+                if (!current()) throw new InvalidOperationException("目標飛控或安全狀態已變更；請重新讀取原飛控確認結果。");
                 LoadValues();
                 status.Text = writing
                     ? (Math.Abs(actual - value) <= Math.Max(0.0001, Math.Abs(value) * 0.000001)
@@ -350,8 +394,23 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                         : def.Name + " 讀回值不同：" + actual + "；未確認成功，請重新檢查。")
                     : def.Name + " 已從飛控讀取：" + actual;
             }
-            catch (Exception ex) { if (!IsDisposed) status.Text = "操作未確認成功：" + ex.Message; }
-            finally { busy = false; if (!IsDisposed) UpdateButtons(); }
+            catch (OperationCanceledException)
+            {
+                if (!IsDisposed && active) status.Text = "操作已停止；若已送出寫入，請重新讀取確認結果。";
+            }
+            catch (Exception ex)
+            {
+                FMT.FmtCrashDiagnostics.Record("ICE parameter " + def.Name, ex);
+                if (!IsDisposed && active) status.Text = "操作未確認成功：" + ex.Message;
+            }
+            finally
+            {
+                operationCancellation = null;
+                cancellation.Dispose();
+                lease.Dispose();
+                busy = false;
+                if (!IsDisposed) UpdateButtons();
+            }
         }
     }
 }

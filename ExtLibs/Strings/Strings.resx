@@ -352,7 +352,7 @@ Timeout in {0}</value>
 Do you wish to continue?</value>
   </data>
   <data name="EppromFormatChanged" xml:space="preserve">
-    <value>Epprom format changed ({0) vs {1})</value>
+    <value>Epprom format changed ({0} vs {1})</value>
   </data>
   <data name="FailedDownload" xml:space="preserve">
     <value>Failed download</value>

@@ -155,10 +155,10 @@
     <value>GPS: 3D DGPS</value>
   </data>
   <data name="GPS5" xml:space="preserve">
-    <value>GPS: rtk Float</value>
+    <value>GPS：RTK 浮點解</value>
   </data>
   <data name="GPS6" xml:space="preserve">
-    <value>GPS: rtk Fixed</value>
+    <value>GPS：RTK 固定解</value>
   </data>
   <data name="GS" xml:space="preserve">
     <value>地速 </value>

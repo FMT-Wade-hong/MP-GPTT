@@ -363,7 +363,7 @@
     <value>自動檢測</value>
   </data>
   <data name="CHK_elevons.Text" xml:space="preserve">
-    <value>Elevons</value>
+    <value>升降副翼</value>
   </data>
   <data name="CMB_CH1.Items" xml:space="preserve">
     <value>RZ</value>
@@ -516,13 +516,13 @@
     <value>遙桿</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
-    <value>Expo</value>
+    <value>指數曲線</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>Output</value>
+    <value>輸出</value>
   </data>
   <data name="label8.Text" xml:space="preserve">
-    <value>Controller Axis</value>
+    <value>控制器軸向</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
     <value>反向</value>

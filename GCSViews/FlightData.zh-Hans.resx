@@ -122,37 +122,37 @@
     <value>168, 22</value>
   </data>
   <data name="recordHudToAVIToolStripMenuItem.Text" xml:space="preserve">
-    <value>錄製為AVI</value>
+    <value>將 HUD 錄製為 AVI</value>
   </data>
   <data name="stopRecordToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>168, 22</value>
   </data>
   <data name="stopRecordToolStripMenuItem.Text" xml:space="preserve">
-    <value>停止記錄</value>
+    <value>停止錄影</value>
   </data>
   <data name="setMJPEGSourceToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>168, 22</value>
   </data>
   <data name="setMJPEGSourceToolStripMenuItem.Text" xml:space="preserve">
-    <value>設定MJPEG源</value>
+    <value>設定 MJPEG 來源</value>
   </data>
   <data name="setAspectRatioToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>168, 22</value>
   </data>
   <data name="setAspectRatioToolStripMenuItem.Text" xml:space="preserve">
-    <value>設定寬高比</value>
+    <value>設定畫面比例</value>
   </data>
   <data name="userItemsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>168, 22</value>
   </data>
   <data name="userItemsToolStripMenuItem.Text" xml:space="preserve">
-    <value>使用項目</value>
+    <value>自訂顯示項目</value>
   </data>
   <data name="russianHudToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>168, 22</value>
   </data>
   <data name="russianHudToolStripMenuItem.Text" xml:space="preserve">
-    <value>俄國Hud</value>
+    <value>俄式 HUD</value>
   </data>
   <data name="swapWithMapToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>168, 22</value>
@@ -257,7 +257,7 @@
     <value>更改為左側的模式</value>
   </data>
   <data name="BUT_clear_track.Text" xml:space="preserve">
-    <value>清除軌跡</value>
+    <value>清除航跡</value>
   </data>
   <data name="BUT_clear_track.ToolTip" xml:space="preserve">
     <value>清空地圖上記錄的路徑</value>
@@ -317,7 +317,7 @@
     <value>起飛前檢查</value>
   </data>
   <data name="Gspeed.ToolTip" xml:space="preserve">
-    <value>雙擊我改變最大值</value>
+    <value>按兩下以變更最大值</value>
   </data>
   <data name="tabGauges.Size" type="System.Drawing.Size, System.Drawing">
     <value>350, 163</value>
@@ -466,13 +466,13 @@
     <value>172, 22</value>
   </data>
   <data name="goHereToolStripMenuItem.Text" xml:space="preserve">
-    <value>飛到航點</value>
+    <value>飛到此處</value>
   </data>
   <data name="flyToHereAltToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>172, 22</value>
   </data>
   <data name="flyToHereAltToolStripMenuItem.Text" xml:space="preserve">
-    <value>飛行至此高度</value>
+    <value>以指定高度飛到此處</value>
   </data>
   <data name="addPoiToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>172, 22</value>
@@ -481,25 +481,25 @@
     <value>172, 22</value>
   </data>
   <data name="pointCameraHereToolStripMenuItem.Text" xml:space="preserve">
-    <value>在此放置相機</value>
+    <value>鏡頭指向此處</value>
   </data>
   <data name="triggerCameraToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>172, 22</value>
   </data>
   <data name="triggerCameraToolStripMenuItem.Text" xml:space="preserve">
-    <value>現在按下相機快門</value>
+    <value>立即觸發拍照</value>
   </data>
   <data name="flightPlannerToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>172, 22</value>
   </data>
   <data name="flightPlannerToolStripMenuItem.Text" xml:space="preserve">
-    <value>飛行計畫</value>
+    <value>任務規劃</value>
   </data>
   <data name="setHomeHereToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>172, 22</value>
   </data>
   <data name="setHomeHereToolStripMenuItem.Text" xml:space="preserve">
-    <value>設定家在此</value>
+    <value>將此處設為 HOME</value>
   </data>
   <data name="takeOffToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>172, 22</value>

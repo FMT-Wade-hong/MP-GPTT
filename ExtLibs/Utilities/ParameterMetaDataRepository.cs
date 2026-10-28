@@ -12,11 +12,44 @@ namespace MissionPlanner.Utilities
 {
     public static class ParameterMetaDataRepository
     {
-        private static MemoryCache _cache =
+        // Installed by the host; utilities remain independent of the UI assembly.
+        public static Func<string, string> VehicleTypeResolver { get; set; }
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> FirmwareKeys =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, string>();
+
+        public static string GetFirmwareKey(string firmware, string versionText)
+        {
+            if (string.IsNullOrEmpty(firmware) || string.IsNullOrWhiteSpace(versionText)) return firmware;
+            return FirmwareKeys.GetOrAdd(firmware + "|" + versionText, _ => ResolveFirmwareKey(firmware, versionText));
+        }
+
+        private static string ResolveFirmwareKey(string firmware, string versionText)
+        {
+            string family;
+            switch (firmware)
+            {
+                case "ArduCopter2": case "ArduCopter": case "Heli": family = "Copter"; break;
+                case "ArduPlane": family = "Plane"; break;
+                case "ArduRover": case "Rover": family = "Rover"; break;
+                case "ArduSub": family = "Sub"; break;
+                case "ArduTracker": case "AntennaTracker": family = "Tracker"; break;
+                default: return firmware;
+            }
+            if (VersionDetection.TryGetVersion(versionText, out var version) &&
+                version.Major == 4 && version.Minor >= 5 && version.Minor <= 7 && version.Build >= 0)
+            {
+                var key = family + version.ToString(3);
+                return firmware == "Heli" && VersionedParameterMetadata.ContainsVersion(key)
+                    ? "Heli" + version.ToString(3) : key;
+            }
+            return firmware;
+        }
+
+        private static readonly Lazy<MemoryCache> _cache = new Lazy<MemoryCache>(() =>
             new MemoryCache(new MemoryCacheOptions()
             {
                 /*SizeLimit = 1024 * 1024 * 500*/
-            });
+            }));
 
         /// <summary>
         /// Gets the parameter meta data.
@@ -26,12 +59,17 @@ namespace MissionPlanner.Utilities
         /// <returns></returns>
         public static string GetParameterMetaData(string nodeKey, string metaKey, string vechileType)
         {
+            vechileType = VehicleTypeResolver?.Invoke(vechileType) ?? vechileType;
             // An explicit firmware snapshot must never fall back to another release's units/ranges.
-            if (System.Text.RegularExpressions.Regex.IsMatch(vechileType ?? "", @"^(Copter|Plane|Rover|Sub|Tracker)\d+\.\d+\.\d+$"))
+            if (System.Text.RegularExpressions.Regex.IsMatch(vechileType ?? "", @"^(Copter|Heli|Plane|Rover|Sub|Tracker)\d+\.\d+\.\d+$"))
+            {
+                if (VersionedParameterMetadata.TryGet(vechileType, nodeKey, metaKey, out var snapshotValue))
+                    return snapshotValue;
                 return ParameterMetaDataRepositoryAPMpdef.GetParameterMetaData(nodeKey, metaKey, vechileType);
+            }
             lock (_cache)
             {
-                var ans = _cache.Get(nodeKey + metaKey + vechileType) as string;
+                var ans = _cache.Value.Get(nodeKey + metaKey + vechileType) as string;
                 if (ans != null)
                     return ans;
             }
@@ -58,7 +96,7 @@ namespace MissionPlanner.Utilities
                 {
                     try
                     {
-                        var ci = _cache.CreateEntry(nodeKey + metaKey + vechileType);
+                        var ci = _cache.Value.CreateEntry(nodeKey + metaKey + vechileType);
                         ci.Value = answer;
                         ci.Size = ((string)ci.Value).Length;
                         // evict after no access

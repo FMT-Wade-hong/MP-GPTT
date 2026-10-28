@@ -184,7 +184,7 @@
     <value>當 USB 連接時重置 APM</value>
   </data>
   <data name="CHK_mavdebug.Text" xml:space="preserve">
-    <value>Mavlink Message Debug</value>
+    <value>MAVLink 訊息除錯</value>
   </data>
   <data name="label107.Text" xml:space="preserve">
     <value>遙控</value>
@@ -352,7 +352,7 @@
     <value>電源警報</value>
   </data>
   <data name="CHK_speechcustom.Text" xml:space="preserve">
-    <value>30s Interval</value>
+    <value>間隔 30 秒</value>
   </data>
   <data name="CHK_speechmode.Text" xml:space="preserve">
     <value>模式</value>
@@ -376,7 +376,7 @@
     <value>影像擷取卡</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>Map Follow</value>
+    <value>地圖跟隨</value>
   </data>
   <data name="CHK_maprotation.Text" xml:space="preserve">
     <value>地圖隨機頭方向旋轉</value>
@@ -418,7 +418,7 @@
     <value>爬升率音調</value>
   </data>
   <data name="chk_analytics.Text" xml:space="preserve">
-    <value>OptOut Anon Stats</value>
+    <value>停用匿名統計</value>
   </data>
   <data name="CHK_beta.Text" xml:space="preserve">
     <value>測試版更新</value>

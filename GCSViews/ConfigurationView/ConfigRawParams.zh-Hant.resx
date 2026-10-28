@@ -256,7 +256,7 @@
     <value>True</value>
   </data>
   <data name="Desc.HeaderText" xml:space="preserve">
-    <value>Desc</value>
+    <value>說明</value>
   </data>
   <data name="Params.Location" type="System.Drawing.Point, System.Drawing">
     <value>14, 3</value>

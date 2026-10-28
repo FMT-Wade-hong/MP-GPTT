@@ -151,7 +151,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     float.TryParse(increment, NumberStyles.Float, CultureInfo.InvariantCulture, out incrementf);
 
                 var RNG = new RangeControl(item.paramname, item.desc, item.title, incrementf, 1, item.min, item.max,
-                    value.ToString());
+                    value.ToString("R"), MainV2.comPort.MAV.param[item.paramname].TypeAP != MAVLink.MAV_PARAM_TYPE.REAL32 &&
+                    MainV2.comPort.MAV.param[item.paramname].TypeAP != MAVLink.MAV_PARAM_TYPE.REAL64);
                 RNG.Tag = item;
 
                 RNG.Location = new Point(10, y);

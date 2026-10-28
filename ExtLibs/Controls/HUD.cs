@@ -291,36 +291,81 @@ namespace MissionPlanner.Controls
             objBitmap.MakeTransparent();
 
             graphicsObject = this;
-            graphicsObjectGDIP = new GdiGraphics(Graphics.FromImage(objBitmap));
+            bitmapGraphics = Graphics.FromImage(objBitmap);
+            graphicsObjectGDIP = new GdiGraphics(bitmapGraphics);
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && warningPulseTimer != null)
+            lock (paintlock)
             {
-                warningPulseTimer.Dispose();
-                warningPulseTimer = null;
+                if (disposing && !drawingResourcesDisposed)
+                {
+                    drawingResourcesDisposed = true;
+                    warningPulseTimer?.Dispose();
+                    warningPulseTimer = null;
+                    ClearDrawingCache();
+                    bitmapGraphics?.Dispose();
+                    bitmapGraphics = null;
+                    graphicsObjectGDIP = null;
+                    objBitmap?.Dispose();
+                    foreach (var resource in new IDisposable[] { _whitePen, _whiteBrush, _redBrush,
+                        _orangeBrush, _blackPen, _greenPen, _orangePen, _redPen, font, _p, pth })
+                        resource.Dispose();
+                }
+                base.Dispose(disposing);
             }
-            log.Info("HUD Dispose");
+        }
 
-            if (opengl)
+        // GdiGraphics borrows Graphics and does not dispose it. The HUD owns both.
+        private Graphics bitmapGraphics;
+        private bool drawingResourcesDisposed;
+
+        private void ReplaceDrawingBitmap(Bitmap next)
+        {
+            Graphics nextGraphics;
+            try { nextGraphics = Graphics.FromImage(next); }
+            catch { next.Dispose(); throw; }
+            bitmapGraphics?.Dispose();
+            objBitmap?.Dispose();
+            objBitmap = next;
+            bitmapGraphics = nextGraphics;
+            graphicsObjectGDIP = new GdiGraphics(bitmapGraphics);
+        }
+
+        public Bitmap GetSnapshot()
+        {
+            lock (paintlock)
             {
-                foreach (character texid in _texture)
-                {
-                    if (texid != null && texid.gltextureid != 0)
-                        GL.DeleteTexture(texid.gltextureid);
-                }
+                if (drawingResourcesDisposed) throw new ObjectDisposedException(nameof(HUD));
+                return (Bitmap)objBitmap.Clone();
+            }
+        }
 
-                this._texture = new character[_texture.Length];
-
-                foreach (character texid in charDict.Values)
-                {
-                    if (texid.gltextureid != 0)
-                        GL.DeleteTexture(texid.gltextureid);
-                }
+        private void ClearDrawingCache()
+        {
+            bool canDeleteTextures = false;
+            if (opengl && IsHandleCreated)
+            {
+                try { MakeCurrent(); canDeleteTextures = Context != null && Context.IsCurrent; }
+                catch (Exception ex) { log.Debug("HUD context unavailable during cleanup", ex); }
             }
 
-            base.Dispose(disposing);
+            var entries = new HashSet<character>(charDict.Values);
+            foreach (var item in _texture) if (item != null) entries.Add(item);
+            var deletedTextures = new HashSet<int>();
+            foreach (var item in entries)
+            {
+                item.bitmap?.Dispose();
+                item.pth?.Dispose();
+                if (canDeleteTextures && item.gltextureid != 0 && deletedTextures.Add(item.gltextureid))
+                {
+                    try { GL.DeleteTexture(item.gltextureid); }
+                    catch (Exception ex) { log.Debug("HUD texture cleanup failed", ex); }
+                }
+            }
+            charDict.Clear();
+            _texture = new character[_texture.Length];
         }
 
         private float _roll = 0;
@@ -1088,7 +1133,7 @@ namespace MissionPlanner.Controls
             set
             {
                 _hudcolor = value;
-                this._whitePen = new Pen(value, 2);
+                this._whitePen.Color = value;
             }
         }
 
@@ -1382,6 +1427,15 @@ namespace MissionPlanner.Controls
 
 
         protected override void OnPaint(PaintEventArgs e)
+        {
+            lock (paintlock)
+            {
+                if (drawingResourcesDisposed || Width <= 0 || Height <= 0) return;
+                PaintFrame(e);
+            }
+        }
+
+        private void PaintFrame(PaintEventArgs e)
         {
             //GL.Enable(EnableCap.AlphaTest)
 
@@ -2075,15 +2129,22 @@ namespace MissionPlanner.Controls
 
         internal void doPaint()
         {
+            lock (paintlock)
+            {
+                if (drawingResourcesDisposed || Width <= 0 || Height <= 0) return;
+                DrawFrame();
+            }
+        }
+
+        private void DrawFrame()
+        {
             bool isNaN = false;
             try
             {
                 if (graphicsObjectGDIP == null || !opengl &&
                     (objBitmap.Width != this.Width || objBitmap.Height != this.Height))
                 {
-                    objBitmap = new Bitmap(this.Width, this.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                    objBitmap.MakeTransparent();
-                    graphicsObjectGDIP = new GdiGraphics(Graphics.FromImage(objBitmap));
+                    ReplaceDrawingBitmap(new Bitmap(this.Width, this.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb));
 
                     graphicsObjectGDIP.SmoothingMode = SmoothingMode.HighSpeed;
                     graphicsObjectGDIP.InterpolationMode = InterpolationMode.NearestNeighbor;
@@ -2632,7 +2693,8 @@ namespace MissionPlanner.Controls
                     arrow[4] = new Point(0, arrowHalf + (int)(fontsize * 1.25f));
 
                     graphicsObject.DrawPolygon(this._blackPen, arrow);
-                    graphicsObject.FillPolygon(new SolidBrush(Color.FromArgb(150, 0, 0, 0)), arrow);
+                    using (var arrowBrush = new SolidBrush(Color.FromArgb(150, 0, 0, 0)))
+                        graphicsObject.FillPolygon(arrowBrush, arrow);
 
                     drawstring(HUDT.AS + (speed).ToString("0") + speedunit, font, (fontsize * 0.75f), (SolidBrush) airspeedBrush, notchIndent / 3f, ((fontsize * 0.8f) / -2f) - 2);
 
@@ -3489,11 +3551,6 @@ namespace MissionPlanner.Controls
                 graphicsObject.FillPolygon(SlightlyTransparentBrush, polyM);
                 graphicsObject.DrawPolygon(_whitePen, polyM);
 
-                var modeBrush = new SolidBrush(Color.White);
-                if (_modechanged.AddSeconds(2) > datetime)
-                {
-                    modeBrush = _redBrush;
-                }
                 drawstring(_mode, font, fontsize, _whiteBrush, mode_x, graphicsObject.Height - (fontsize * 1.5f), true);
 
                 OnCustomPaint?.Invoke(this);
@@ -3510,11 +3567,14 @@ namespace MissionPlanner.Controls
                     {
                         if (opengl)
                         {
-                            objBitmap = GrabScreenshot();
+                            ReplaceDrawingBitmap(GrabScreenshot());
                         }
 
-                        streamjpg = new MemoryStream();
-                        objBitmap.Save(streamjpg, ici, eps);
+                        var nextStream = new MemoryStream();
+                        try { objBitmap.Save(nextStream, ici, eps); }
+                        catch { nextStream.Dispose(); throw; }
+                        // Readers may retain the old managed stream. Publish after encoding.
+                        streamjpg = nextStream;
                         //objBitmap.Save(streamjpg,ImageFormat.Bmp);
                     }
                 }
@@ -4027,6 +4087,15 @@ namespace MissionPlanner.Controls
 
         protected override void OnResize(EventArgs e)
         {
+            lock (paintlock)
+            {
+                if (drawingResourcesDisposed || Width <= 0 || Height <= 0) return;
+                ResizeFrame(e);
+            }
+        }
+
+        private void ResizeFrame(EventArgs e)
+        {
             log.Info("OnResize start");
 
             if (DesignMode || !IsHandleCreated || !started)
@@ -4056,43 +4125,7 @@ namespace MissionPlanner.Controls
                 }
             }
 
-            graphicsObjectGDIP = new GdiGraphics(Graphics.FromImage(objBitmap));
-
-            try
-            {
-                foreach (character texid in charDict.Values)
-                {
-                    try
-                    {
-                        texid.bitmap.Dispose();
-                    }
-                    catch
-                    {
-                    }
-                }
-
-                if (opengl)
-                {
-                    foreach (character texid in _texture)
-                    {
-                        if (texid != null && texid.gltextureid != 0)
-                            GL.DeleteTexture(texid.gltextureid);
-                    }
-
-                    this._texture = new character[_texture.Length];
-
-                    foreach (character texid in charDict.Values)
-                    {
-                        if (texid.gltextureid != 0)
-                            GL.DeleteTexture(texid.gltextureid);
-                    }
-                }
-
-                charDict.Clear();
-            }
-            catch
-            {
-            }
+            ClearDrawingCache();
 
             try
             {

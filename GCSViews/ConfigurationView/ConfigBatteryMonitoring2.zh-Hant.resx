@@ -373,7 +373,7 @@
     <value>33</value>
   </data>
   <data name="label35.Text" xml:space="preserve">
-    <value>6. Amperes per volt:</value>
+    <value>6. 每伏特對應電流（A/V）：</value>
   </data>
   <data name="TXT_divider.Location" type="System.Drawing.Point, System.Drawing">
     <value>157, 56</value>

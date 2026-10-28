@@ -228,7 +228,7 @@
     <value>10</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>Trim</value>
+    <value>微調</value>
   </data>
   <data name="label4.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -273,7 +273,7 @@
     <value>16</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
-    <value>Trim</value>
+    <value>微調</value>
   </data>
   <data name="TXT_tiltrange.Location" type="System.Drawing.Point, System.Drawing">
     <value>83, 177</value>
@@ -309,7 +309,7 @@
     <value>18</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>Pan</value>
+    <value>水平轉向</value>
   </data>
   <data name="label7.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -324,7 +324,7 @@
     <value>19</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>Tilt</value>
+    <value>俯仰轉向</value>
   </data>
   <data name="CHK_revpan.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -510,7 +510,7 @@
     <value>31</value>
   </data>
   <data name="BUT_find.Text" xml:space="preserve">
-    <value>Find Trim Pan (Sik Radio)</value>
+    <value>尋找水平微調值（SiK 電台）</value>
   </data>
   <data name="BUT_find.Visible" type="System.Boolean, mscorlib">
     <value>False</value>
@@ -556,7 +556,7 @@
     <value>32</value>
   </data>
   <data name="label13.Text" xml:space="preserve">
-    <value>Center PWM</value>
+    <value>中立 PWM</value>
   </data>
   <data name="label14.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -574,7 +574,7 @@
     <value>33</value>
   </data>
   <data name="label14.Text" xml:space="preserve">
-    <value>Center PWM</value>
+    <value>中立 PWM</value>
   </data>
   <data name="$this.Localizable" type="System.Boolean, mscorlib">
     <value>True</value>

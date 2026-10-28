@@ -24,12 +24,18 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private void ApplyFmtTraditionalChineseLayout()
         {
-            groupBox3.Text = "地面站失控保護（GCS）";
+            groupBox2.Text = "遙控失效保護";
+            groupBox4.Text = "電池失效保護";
+            groupBox3.Text = "地面站／固定翼失效保護";
+            label3.Text = "失效保護 PWM 門檻";
+            label6.Text = "低電壓延遲";
+            if (lbl_armed.Text == "關閉" || lbl_armed.Text == "Dissarmed")
+                lbl_armed.Text = "已上鎖";
 
             mavlinkCheckBoxFS_GCS_ENABLE.Text = "啟用地面站斷線保護";
             mavlinkCheckBoxgcs_fs.Text = "地面站斷線保護";
-            mavlinkCheckBoxshort_fs.Text = "短時間失聯動作（1 秒）";
-            mavlinkCheckBoxlong_fs.Text = "長時間失聯動作（20 秒）";
+            mavlinkCheckBoxshort_fs.Text = "短時失效動作（0／1）";
+            mavlinkCheckBoxlong_fs.Text = "長時失效動作（0／1）";
 
             var gcsOptions = new[]
             {
@@ -54,9 +60,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             toolTip1.SetToolTip(mavlinkCheckBoxgcs_fs,
                 "固定翼地面站連線失效保護；實際動作依飛控韌體與其他失控保護參數決定。");
             toolTip1.SetToolTip(mavlinkCheckBoxshort_fs,
-                "地面站短時間失聯達 1 秒時，啟用短時間失聯動作。");
+                "固定翼短時失效動作 FS_SHORT_ACTN，可能由遙控訊號遺失或油門失效觸發。此開關僅切換 0／1；0 不代表全面停用，實際動作依飛行模式而異。其他選項請使用完整參數頁。");
             toolTip1.SetToolTip(mavlinkCheckBoxlong_fs,
-                "地面站長時間失聯達 20 秒時，啟用長時間失聯動作。");
+                "固定翼長時失效動作 FS_LONG_ACTN，逾時由 FS_LONG_TIMEOUT 設定。此開關僅切換 0／1；0 不代表全面停用，實際動作依飛行模式而異。其他選項請使用完整參數頁。");
         }
 
         public void Activate()
@@ -166,11 +172,13 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             lbl_armed.SuspendLayout();
             if (lbl_armed.Text == "True")
             {
-                lbl_armed.Text = "Armed";
+                lbl_armed.Text = System.Globalization.CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
+                    ? "已解鎖" : "Armed";
             }
             else if (lbl_armed.Text == "False")
             {
-                lbl_armed.Text = "Disarmed";
+                lbl_armed.Text = System.Globalization.CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
+                    ? "已上鎖" : "Disarmed";
             }
             lbl_armed.ResumeLayout();
         }
@@ -187,24 +195,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             {
                 return;
             }
-            var gps = "";
-
-            if (_gpsfix == 0)
-            {
-                gps = ("GPS: No GPS");
-            }
-            else if (_gpsfix == 1)
-            {
-                gps = ("GPS: No Fix");
-            }
-            else if (_gpsfix == 2)
-            {
-                gps = ("GPS: 3D Fix");
-            }
-            else if (_gpsfix == 3)
-            {
-                gps = ("GPS: 3D Fix");
-            }
+            bool chinese = System.Globalization.CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+            var gps = "GPS: " + MainV2.GetFmtGpsFixLabel(_gpsfix, chinese);
             lbl_gpslock.SuspendLayout();
             lbl_gpslock.Text = gps;
             lbl_gpslock.ResumeLayout();

@@ -57,6 +57,7 @@ namespace MissionPlanner.Utilities
             {
                 try
                 {
+                    if (VersionedParameterMetadata.ContainsVersion(a + version.ToString())) return;
                     var newurl = String.Format(urlversioned, a, version.ToString());
                     var file = Path.Combine(Settings.GetDataDirectory(), a + version.ToString() + ".apm.pdef.xml");
                     if (File.Exists(file))
@@ -76,10 +77,8 @@ namespace MissionPlanner.Utilities
                 {
                     Reload(a + version.ToString());
 
-                    var veh = vehicles.First(b => b.Contains(a));
-
-                    if(_parameterMetaDataXML.ContainsKey(a + version.ToString()))
-                        _parameterMetaDataXML[veh] = _parameterMetaDataXML[a + version.ToString()];
+                    // Keep releases under their own key. Replacing a generic
+                    // vehicle's document leaks this version to other connections.
                 }
                 catch (Exception ex) { log.Error(ex); }
             });

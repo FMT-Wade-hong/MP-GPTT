@@ -263,10 +263,10 @@
     <value>失控保護</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>Radio IN</value>
+    <value>遙控輸入</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>Servo/Motor OUT</value>
+    <value>伺服／馬達輸出</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
     <value>失控保護的  Pwm</value>
@@ -275,7 +275,7 @@
     <value>電池低電壓</value>
   </data>
   <data name="label5.Text" xml:space="preserve">
-    <value>Reserved MAH</value>
+    <value>保留電量（mAh）</value>
   </data>
   <data name="lbl_armed.Text" xml:space="preserve">
     <value>關閉</value>
@@ -284,7 +284,7 @@
     <value>手動</value>
   </data>
   <data name="lbl_gpslock.Text" xml:space="preserve">
-    <value>No Lock</value>
+    <value>未定位</value>
   </data>
   <data name="LNK_wiki.Text" xml:space="preserve">
     <value>Wiki</value>
@@ -299,16 +299,16 @@
     <value>當沒有地面站訊號時觸發失控保護</value>
   </data>
   <data name="mavlinkCheckBoxlong_fs.Text" xml:space="preserve">
-    <value>FailSafe Long (20 sec)</value>
+    <value>長時間失效保護（20 秒）</value>
   </data>
   <data name="mavlinkCheckBoxlong_fs.ToolTip" xml:space="preserve">
-    <value>Off, no Action, On, RTL</value>
+    <value>關閉：不執行動作；開啟：返航（RTL）</value>
   </data>
   <data name="mavlinkCheckBoxshort_fs.Text" xml:space="preserve">
-    <value>FailSafe Short (1 sec)</value>
+    <value>短時間失效保護（1 秒）</value>
   </data>
   <data name="mavlinkCheckBoxshort_fs.ToolTip" xml:space="preserve">
-    <value>Off, no Action, On, RTL</value>
+    <value>關閉：不執行動作；開啟：返航（RTL）</value>
   </data>
   <data name="mavlinkCheckBoxthr_fs.Text" xml:space="preserve">
     <value>油門失控保護</value>
@@ -320,8 +320,8 @@
     <value>油門失控保護動作</value>
   </data>
   <data name="mavlinkCheckBoxthr_fs_action.ToolTip" xml:space="preserve">
-    <value>Arducopter Auto: Off, no Action, On, RTL
-Arducopter Other: if have gps, RTL, Otherwise Land</value>
+    <value>ArduCopter AUTO：關閉時不執行動作；開啟時返航（RTL）。
+其他模式：有 GPS 時返航，否則降落。</value>
   </data>
   <data name="mavlinkComboBox_fs_thr_enable.ToolTip" xml:space="preserve">
     <value>較低 Pwm要時的失控保護</value>

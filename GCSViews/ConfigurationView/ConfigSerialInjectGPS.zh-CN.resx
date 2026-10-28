@@ -125,13 +125,12 @@
     <value>注入訊息類型</value>
   </data>
   <data name="lbl_svin.ToolTip" xml:space="preserve">
-    <value>Survey in information
-Valid: is the survey in valid
-InProgress: are we currently surveying in our position
-Duration: the number of seconds we have surveyed in
-Obs: number of obsivation used in our survey in
-Acc: current accuracy of our survey in point
-</value>
+    <value>基站定位測量資訊
+Valid：定位測量結果是否有效
+InProgress：是否正在進行定位測量
+Duration：已測量的秒數
+Obs：定位測量使用的觀測次數
+Acc：目前測量位置的精度</value>
   </data>
   <data name="chk_autoconfig.Size" type="System.Drawing.Size, System.Drawing">
     <value>108, 16</value>
@@ -159,44 +158,40 @@ Acc: current accuracy of our survey in point
     <value>NoControl</value>
   </data>
   <data name="label1.ToolTip" xml:space="preserve">
-    <value>Both accuracy and duration must be meet in order for the survey in to complete
-ie less than 2 m accuracy, and Greater than 60 seconds of observations</value>
+    <value>基站定位測量必須同時符合精度與持續時間條件才會完成。
+例如：誤差小於 2 公尺，且觀測時間超過 60 秒。</value>
   </data>
   <data name="label10.ToolTip" xml:space="preserve">
-    <value>Survey in information
-Valid: is the survey in valid
-InProgress: are we currently surveying in our position
-Duration: the number of seconds we have surveyed in
-Obs: number of obsivation used in our survey in
-Acc: current accuracy of our survey in point
-</value>
+    <value>基站定位測量資訊
+Valid：定位測量結果是否有效
+InProgress：是否正在進行定位測量
+Duration：已測量的秒數
+Obs：定位測量使用的觀測次數
+Acc：目前測量位置的精度</value>
   </data>
   <data name="label7.ToolTip" xml:space="preserve">
-    <value>Survey in information
-Valid: is the survey in valid
-InProgress: are we currently surveying in our position
-Duration: the number of seconds we have surveyed in
-Obs: number of obsivation used in our survey in
-Acc: current accuracy of our survey in point
-</value>
+    <value>基站定位測量資訊
+Valid：定位測量結果是否有效
+InProgress：是否正在進行定位測量
+Duration：已測量的秒數
+Obs：定位測量使用的觀測次數
+Acc：目前測量位置的精度</value>
   </data>
   <data name="label9.ToolTip" xml:space="preserve">
-    <value>Survey in information
-Valid: is the survey in valid
-InProgress: are we currently surveying in our position
-Duration: the number of seconds we have surveyed in
-Obs: number of obsivation used in our survey in
-Acc: current accuracy of our survey in point
-</value>
+    <value>基站定位測量資訊
+Valid：定位測量結果是否有效
+InProgress：是否正在進行定位測量
+Duration：已測量的秒數
+Obs：定位測量使用的觀測次數
+Acc：目前測量位置的精度</value>
   </data>
   <data name="label8.ToolTip" xml:space="preserve">
-    <value>Survey in information
-Valid: is the survey in valid
-InProgress: are we currently surveying in our position
-Duration: the number of seconds we have surveyed in
-Obs: number of obsivation used in our survey in
-Acc: current accuracy of our survey in point
-</value>
+    <value>基站定位測量資訊
+Valid：定位測量結果是否有效
+InProgress：是否正在進行定位測量
+Duration：已測量的秒數
+Obs：定位測量使用的觀測次數
+Acc：目前測量位置的精度</value>
   </data>
   <data name="chk_sendgga.Size" type="System.Drawing.Size, System.Drawing">
     <value>180, 16</value>

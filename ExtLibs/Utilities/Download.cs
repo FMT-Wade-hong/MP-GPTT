@@ -330,12 +330,24 @@ namespace MissionPlanner.Utilities
         /// <summary>
         /// Perform a GET request and return the content and status code
         /// </summary>
-        public static async Task<HTTPResult> GetAsyncWithStatus(string uri)
+        public static Task<HTTPResult> GetAsyncWithStatus(string uri)
         {
-            var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync(uri);
-            var content = await response.Content.ReadAsStringAsync();
-            return await Task.Run(() => (new HTTPResult() { content = content, status = response.StatusCode }));
+            return GetAsyncWithStatus(uri, null);
+        }
+
+        public static async Task<HTTPResult> GetAsyncWithStatus(string uri, string userAgent)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                if (!string.IsNullOrWhiteSpace(userAgent))
+                    httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
+
+                using (var response = await httpClient.GetAsync(uri).ConfigureAwait(false))
+                {
+                    var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    return new HTTPResult() { content = content, status = response.StatusCode };
+                }
+            }
         }
 
         public static event EventHandler<HttpRequestMessage> RequestModification;

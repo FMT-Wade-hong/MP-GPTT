@@ -124,6 +124,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private Dictionary<string, string> _params = new Dictionary<string, string>();
         private readonly Dictionary<string, string> _params_changed = new Dictionary<string, string>();
+        private MAVState boundParameterVehicle;
+        private string boundMetadataKey;
 
         #endregion
 
@@ -279,6 +281,16 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         /// </summary>
         private void BindParamList()
         {
+            var vehicle = MainV2.comPort.MAV;
+            var metadataKey = MainV2.GetCurrentFirmwareMetadataKey();
+            if (!ReferenceEquals(boundParameterVehicle, vehicle) || boundMetadataKey != metadataKey)
+            {
+                foreach (Control control in flowLayoutPanel1.Controls.Cast<Control>().ToArray()) control.Dispose();
+                flowLayoutPanel1.Controls.Clear();
+                _params_changed.Clear();
+                boundParameterVehicle = vehicle;
+                boundMetadataKey = metadataKey;
+            }
             Console.WriteLine("BindParamList " + DateTime.Now.ToString("ss.fff"));
 
             try
@@ -327,7 +339,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 {
                     var controlAdded = false;
 
-                    var value = (MainV2.comPort.MAV.param[x.Key].Value).ToString("0.###");
+                    var parameter = MainV2.comPort.MAV.param[x.Key];
+                    var integerOnly = parameter.TypeAP != MAVLink.MAV_PARAM_TYPE.REAL32 && parameter.TypeAP != MAVLink.MAV_PARAM_TYPE.REAL64;
+                    var value = integerOnly ? parameter.Value.ToString("R") : ((float)parameter.Value).ToString("R");
 
                     var items = flowLayoutPanel1.Controls.Find(x.Key, false);
                     if (items.Length > 0)
@@ -409,7 +423,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                             var desc = FitDescriptionText(units, description, flowLayoutPanel1.Width);
 
                             var rangeControl = new RangeControl(x.Key, desc, displayName, increment, displayscale,
-                                lowerRange, upperRange, value);
+                                lowerRange, upperRange, value, integerOnly);
 
                             rangeControl.Width = flowLayoutPanel1.Width - 50;
 

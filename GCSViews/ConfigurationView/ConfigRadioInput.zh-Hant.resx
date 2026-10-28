@@ -263,16 +263,16 @@
     <value>遙控器校準</value>
   </data>
   <data name="CHK_elevonch1rev.Text" xml:space="preserve">
-    <value>Elevons CH1 Rev</value>
+    <value>升降副翼通道 1 反向</value>
   </data>
   <data name="CHK_elevonch2rev.Text" xml:space="preserve">
-    <value>Elevons CH2 Rev</value>
+    <value>升降副翼通道 2 反向</value>
   </data>
   <data name="CHK_elevonrev.Text" xml:space="preserve">
-    <value>Elevons Rev</value>
+    <value>升降副翼反向</value>
   </data>
   <data name="CHK_mixmode.Text" xml:space="preserve">
-    <value>Elevons</value>
+    <value>升降副翼</value>
   </data>
   <data name="CHK_revch1.Text" xml:space="preserve">
     <value>反向</value>
@@ -287,6 +287,6 @@
     <value>反向</value>
   </data>
   <data name="groupBoxElevons.Text" xml:space="preserve">
-    <value>Elevon Config</value>
+    <value>升降副翼設定</value>
   </data>
 </root>

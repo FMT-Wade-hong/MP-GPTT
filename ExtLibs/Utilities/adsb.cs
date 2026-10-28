@@ -11,7 +11,6 @@ using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using static MissionPlanner.Utilities.rtcm3;
-using Flurl.Http;
 using System.Diagnostics;
 
 namespace MissionPlanner.Utilities
@@ -47,11 +46,6 @@ namespace MissionPlanner.Utilities
         /// </summary>
         public static int serverport = 0;
         /// <summary>
-        /// Radius in nm to request planes from the API
-        /// </summary>
-        private static int httpRequestRadius = 100;
-
-        /// <summary>
         /// Multiplication constant to convert knots to cm/s
         /// </summary>
         private const double KNOTS_TO_CMS = 51.444;
@@ -72,7 +66,7 @@ namespace MissionPlanner.Utilities
         /// <summary>
         /// Loop delay in milliseconds for ADS-B connections to HTTP API endpoints.
         /// </summary>
-        private const int API_LOOP_DELAY_MILLISECONDS = 1000;
+        private const int API_LOOP_DELAY_MILLISECONDS = AdsbTaiwanCoverage.PollIntervalMilliseconds;
 
         /// <summary>
         /// Maximum loop delay in milliseconds for ADS-B connections to HTTP API endpoints.
@@ -138,23 +132,27 @@ namespace MissionPlanner.Utilities
                 // HTTP API
                 try
                 {
-                    if (!String.IsNullOrEmpty(server) && server.StartsWith("http", StringComparison.InvariantCultureIgnoreCase) && CurrentPosition != PointLatLngAlt.Zero)
+                    if (!String.IsNullOrEmpty(server) && server.StartsWith("http", StringComparison.InvariantCultureIgnoreCase))
                     {
-                        // ADSB Exchange API format - see https://api.adsb.lol/docs
-                        string url = "{0}/v2/point/{1}/{2}/{3}";
-                        Download.RequestModification += (u, request) => {
-                            // for future use if necessary: request.Headers.Add("X-API-Auth", "example");
-                            request.SetHeader("User-Agent", "Mission-Planner/" + ApplicationVersion);
-                        };
+                        // The API requires an identifiable client with contact information.
+                        // RequestModification applies to file downloads, not GetAsyncWithStatus.
+                        var userAgent = "FMTPlanner/" + (ApplicationVersion ?? "unknown") +
+                            " (+https://github.com/FMT-Wade-hong/MP-GPTT)";
                         var delay = API_LOOP_DELAY_MILLISECONDS;
 
-                        while (true)
+                        while (run)
                         {
+                            var formattedUrl = AdsbTaiwanCoverage.CreateQueryUrl(server, CurrentPosition);
+                            if (formattedUrl == null)
+                            {
+                                Thread.Sleep(API_LOOP_DELAY_MILLISECONDS);
+                                continue;
+                            }
+
                             // Store start time
                             var timer = Stopwatch.StartNew();
 
-                            string formattedUrl = string.Format(CultureInfo.InvariantCulture, url, server, CurrentPosition.Lat, CurrentPosition.Lng, httpRequestRadius);
-                            var t = Download.GetAsyncWithStatus(formattedUrl);
+                            var t = Download.GetAsyncWithStatus(formattedUrl, userAgent);
                             t.Wait();
 
                             // Check for long running requests
@@ -166,13 +164,14 @@ namespace MissionPlanner.Utilities
                             if (!t.IsFaulted && t.Result.status == System.Net.HttpStatusCode.OK)
                             {
                                 var result = JsonConvert.DeserializeObject<RootObject>(t.Result.content);
-
-                                // Increase range if we don't see many planes
-                                if (result.ac.Count < 10)
-                                    httpRequestRadius = Math.Min(httpRequestRadius + 10, 250);
+                                delay = API_LOOP_DELAY_MILLISECONDS;
 
                                 foreach (var ac in result.ac)
                                 {
+                                    // Filter before creating objects/events or touching the map cache.
+                                    if (ac == null || !AdsbTaiwanCoverage.Contains(ac.lat, ac.lon))
+                                        continue;
+
                                     // The API sometimes sets this value to either the string "ground" or a JSON Number. This handles that.
                                     int alt = 0;
                                     if (ac.alt_baro is long intValue)
@@ -187,6 +186,7 @@ namespace MissionPlanner.Utilities
                                         ac.hex.Trim().ToUpper(),
                                         DateTime.Now)
                                     {
+                                        DataSource = AdsbApi.IsAdsbFi(formattedUrl) ? AdsbApi.AdsbFiAttribution : null,
                                         VerticalSpeed = ac.baro_rate * FTM_TO_CMS,
                                         CallSign = (ac.flight ?? "").Trim().ToUpper(),
                                         Squawk = Convert.ToUInt16(ac.squawk, 16) // Convert the hex value back to a raw uint16
@@ -1305,6 +1305,8 @@ namespace MissionPlanner.Utilities
             public bool DisplayICAO { get; set; }
 
             public string CallSign { get; set; } = "";
+
+            public string DataSource { get; set; }
 
             public ushort Squawk { get; set; }
 

@@ -177,7 +177,7 @@ namespace MissionPlanner.Controls
             // redraw
             hud1.Refresh();
             // clone current screen with trans
-            return (Bitmap)hud1.objBitmap.Clone();
+            return hud1.GetSnapshot();
         }
 
         private void StartCapture()
@@ -746,7 +746,7 @@ namespace MissionPlanner.Controls
 
                 Console.WriteLine("1d " + DateTime.Now.Millisecond);
 
-                Bitmap bmp = (Bitmap)hud1.objBitmap.Clone();
+                Bitmap bmp = hud1.GetSnapshot();
 
                 //  bmp.Save(framecount+".bmp");
 

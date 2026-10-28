@@ -27,6 +27,9 @@
 
   <ItemGroup>
     <Compile Remove="Capture.cs" />
+    <EmbeddedResource Include="ParameterMetadata\*.apm.pdef.xml.gz">
+      <LogicalName>MissionPlanner.ParameterMetadata.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

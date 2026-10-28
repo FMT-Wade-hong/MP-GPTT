@@ -139,7 +139,7 @@
     <value>ATT 訊息誤差</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>Dir fov</value>
+    <value>縱向視角</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
     <value>高度</value>
@@ -148,7 +148,7 @@
     <value>頭</value>
   </data>
   <data name="label8.Text" xml:space="preserve">
-    <value>Cross fov</value>
+    <value>橫向視角</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
     <value>旋轉</value>

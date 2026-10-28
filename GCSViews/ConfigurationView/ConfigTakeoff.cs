@@ -81,11 +81,14 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         internal static readonly Definition[] CopterDefinitions =
         {
             new Definition("PILOT_TKOFF_ALT", "搖桿觸發起飛高度", "cm", "0–1000", 0, 1000, false,
-                "高度控制模式以油門搖桿觸發起飛時的爬升高度，不是 AUTO 任務起飛高度。", "依淨空及定位狀態設定；100 cm = 1 m。較新韌體若改名／改單位，勿直接複製數值；未回傳時請使用對應版本完整參數。"),
+                "高度控制模式以油門搖桿觸發起飛時的爬升高度，不是 AUTO 任務起飛高度。", "依淨空及定位狀態設定；依本列顯示的單位輸入，100 cm = 1 m。")
+                .WithMetricVersion("PILOT_TKO_ALT_M", "m"),
             new Definition("PILOT_SPEED_UP", "搖桿最大爬升速度", "cm/s", "50–500", 50, 500, false,
-                "飛手控制高度時可要求的最大向上速度。", "依推力裕度及飛行測試設定；不是馬達油門漸增速率，也不是任務高度。"),
+                "飛手控制高度時可要求的最大向上速度。", "依推力裕度及飛行測試設定；不是馬達油門漸增速率，也不是任務高度。")
+                .WithMetricVersion("PILOT_SPD_UP", "m/s"),
             new Definition("PILOT_ACCEL_Z", "搖桿垂直加速度", "cm/s²", "50–500", 50, 500, false,
                 "飛手控制高度時的垂直加速度。", "與爬升速度一併評估；不要用極低加速度掩蓋動力或控制問題。")
+                .WithMetricVersion("PILOT_ACC_Z", "m/s²")
         };
         internal static readonly Definition[] HeliDefinitions = CopterDefinitions.Concat(new[]
         {
@@ -97,11 +100,14 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         internal static readonly Definition[] VtolDefinitions =
         {
             new Definition("Q_VELZ_MAX", "VTOL 搖桿最大爬升速度", "cm/s", "50–500", 50, 500, false,
-                "VTOL 高度控制模式中，飛手可要求的最大向上速度。", "依懸停推力裕度設定；不等同固定翼爬升或轉換速度。"),
+                "VTOL 高度控制模式中，飛手可要求的最大向上速度。", "依懸停推力裕度設定；不等同固定翼爬升或轉換速度。")
+                .WithMetricVersion("Q_PILOT_SPD_UP", "m/s"),
             new Definition("Q_ACCEL_Z", "VTOL 搖桿垂直加速度", "cm/s²", "50–500", 50, 500, false,
-                "VTOL 飛手控制高度時的垂直加速度。", "先驗證懸停再調整，不自動套用固定翼設定。"),
+                "VTOL 飛手控制高度時的垂直加速度。", "先驗證懸停再調整，不自動套用固定翼設定。")
+                .WithMetricVersion("Q_PILOT_ACCEL_Z", "m/s²"),
             new Definition("Q_WP_SPEED_UP", "VTOL 任務爬升速度", "cm/s", "10–1000", 10, 1000, false,
-                "VTOL 航點任務爬升的目標速度。", "依推力、負載及淨空設定，與搖桿爬升限制分開核對。"),
+                "VTOL 航點任務爬升的目標速度。", "依推力、負載及淨空設定，與搖桿爬升限制分開核對。")
+                .WithMetricVersion("Q_WP_SPD_UP", "m/s"),
             new Definition("Q_NAVALT_MIN", "VTOL 起飛導航起始高度", "m", "0–5；0 停用", 0, 5, false,
                 "自動起飛低於此高度時，目標 Roll／Pitch 為零；超過後開始導航。", "依地面淨空及偏移風險評估；不是最終起飛高度，也不保證低空定點。")
         };

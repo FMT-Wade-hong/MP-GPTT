@@ -155,7 +155,7 @@
     <value>解鎖/ 上鎖</value>
   </data>
   <data name="BUT_clear_track.Text" xml:space="preserve">
-    <value>清除軌跡</value>
+    <value>清除航跡</value>
   </data>
   <data name="BUT_joystick.Text" xml:space="preserve">
     <value>遙桿</value>
@@ -188,13 +188,13 @@
     <value>家高度=0</value>
   </data>
   <data name="deleteToolStripMenuItem.Text" xml:space="preserve">
-    <value>刪除</value>
+    <value>刪除興趣點</value>
   </data>
   <data name="flightPlannerToolStripMenuItem.Text" xml:space="preserve">
-    <value>飛行計畫</value>
+    <value>任務規劃</value>
   </data>
   <data name="goHereToolStripMenuItem.Text" xml:space="preserve">
-    <value>飛到航點</value>
+    <value>飛到此處</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
     <value>速度</value>
@@ -206,10 +206,10 @@
     <value>自動</value>
   </data>
   <data name="saveFileToolStripMenuItem.Text" xml:space="preserve">
-    <value>儲存檔案</value>
+    <value>儲存興趣點檔案</value>
   </data>
   <data name="stopRecordToolStripMenuItem.Text" xml:space="preserve">
-    <value>停止記錄</value>
+    <value>停止錄影</value>
   </data>
   <data name="tabActions.Text" xml:space="preserve">
     <value>執行</value>

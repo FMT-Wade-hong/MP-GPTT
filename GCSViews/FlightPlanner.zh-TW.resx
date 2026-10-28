@@ -161,22 +161,22 @@
     <value>高度</value>
   </data>
   <data name="Delete.HeaderText" xml:space="preserve">
-    <value>删除</value>
+    <value>刪除</value>
   </data>
   <data name="Delete.ToolTipText" xml:space="preserve">
-    <value>删除行</value>
+    <value>刪除此列</value>
   </data>
   <data name="Up.HeaderText" xml:space="preserve">
     <value>上移</value>
   </data>
   <data name="Up.ToolTipText" xml:space="preserve">
-    <value>向上移动本行</value>
+    <value>將此列上移</value>
   </data>
   <data name="Down.HeaderText" xml:space="preserve">
     <value>下移</value>
   </data>
   <data name="Down.ToolTipText" xml:space="preserve">
-    <value>向下移動本行</value>
+    <value>將此列下移</value>
   </data>
   <data name="Commands.ToolTip" xml:space="preserve">
     <value />
@@ -227,7 +227,7 @@
     <value>55, 13</value>
   </data>
   <data name="LBL_defalutalt.Text" xml:space="preserve">
-    <value>默認高度</value>
+    <value>預設高度</value>
   </data>
   <data name="LBL_defalutalt.ToolTip" xml:space="preserve">
     <value />
@@ -254,13 +254,13 @@
     <value />
   </data>
   <data name="BUT_write.Text" xml:space="preserve">
-    <value>寫入航路</value>
+    <value>寫入航點</value>
   </data>
   <data name="BUT_write.ToolTip" xml:space="preserve">
     <value />
   </data>
   <data name="BUT_read.Text" xml:space="preserve">
-    <value>讀取航路</value>
+    <value>讀取航點</value>
   </data>
   <data name="BUT_read.ToolTip" xml:space="preserve">
     <value />
@@ -440,7 +440,7 @@
     <value />
   </data>
   <data name="comboBoxMapType.ToolTip" xml:space="preserve">
-    <value>更改當前地圖類型</value>
+    <value>變更目前地圖類型</value>
   </data>
   <data name="lbl_status.Font" type="System.Drawing.Font, System.Drawing">
     <value>Microsoft Sans Serif, 8.25pt</value>
@@ -542,25 +542,25 @@
     <value>122, 22</value>
   </data>
   <data name="deleteWPToolStripMenuItem.Text" xml:space="preserve">
-    <value>删除航點</value>
+    <value>刪除航點</value>
   </data>
   <data name="loiterForeverToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>98, 22</value>
   </data>
   <data name="loiterForeverToolStripMenuItem.Text" xml:space="preserve">
-    <value>永久</value>
+    <value>持續盤旋</value>
   </data>
   <data name="loitertimeToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>98, 22</value>
   </data>
   <data name="loitertimeToolStripMenuItem.Text" xml:space="preserve">
-    <value>時間</value>
+    <value>依時間盤旋</value>
   </data>
   <data name="loitercirclesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>98, 22</value>
   </data>
   <data name="loitercirclesToolStripMenuItem.Text" xml:space="preserve">
-    <value>圈數</value>
+    <value>依圈數盤旋</value>
   </data>
   <data name="loiterToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>122, 22</value>
@@ -581,7 +581,7 @@
     <value>122, 22</value>
   </data>
   <data name="ContextMeasure.Text" xml:space="preserve">
-    <value>測距</value>
+    <value>測量距離</value>
   </data>
   <data name="rotateMapToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>122, 22</value>
@@ -593,19 +593,19 @@
     <value>122, 22</value>
   </data>
   <data name="addPolygonPointToolStripMenuItem.Text" xml:space="preserve">
-    <value>增加頂點</value>
+    <value>繪製多邊形</value>
   </data>
   <data name="clearPolygonToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>122, 22</value>
   </data>
   <data name="clearPolygonToolStripMenuItem.Text" xml:space="preserve">
-    <value>清除區域</value>
+    <value>清除多邊形</value>
   </data>
   <data name="clearMissionToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>122, 22</value>
   </data>
   <data name="clearMissionToolStripMenuItem.Text" xml:space="preserve">
-    <value>清空任務</value>
+    <value>清除任務</value>
   </data>
   <data name="contextMenuStrip1.Size" type="System.Drawing.Size, System.Drawing">
     <value>123, 164</value>

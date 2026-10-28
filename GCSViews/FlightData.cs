@@ -5235,6 +5235,10 @@ namespace MissionPlanner.GCSViews
                             // filter out OA_DB adsb
                             var adsbitems = MainV2.instance.adsbPlanes.Values.Where(a =>
                             {
+                                // Apply the same Taiwan boundary to receiver/MAVLink traffic on the map.
+                                if (!AdsbTaiwanCoverage.Contains(a.Lat, a.Lng))
+                                    return false;
+
                                 if (a.Raw != null)
                                 {
                                     var msg = ((MAVLink.mavlink_adsb_vehicle_t) a.Raw);
@@ -5246,7 +5250,7 @@ namespace MissionPlanner.GCSViews
                                 }
 
                                 return true;
-                            });
+                            }).ToArray();
 
                             //draw ADSB
                             updateMarkersAsNeeded<adsb.PointLatLngAltHdg, GMapMarkerADSBPlane>(adsbitems, adsbais,
@@ -5273,6 +5277,8 @@ namespace MissionPlanner.GCSViews
                                                             "Speed: " + (pllau.Speed / 100 /* cm to m */ * CurrentState.multiplierspeed).ToString("0") + " " + CurrentState.SpeedUnit + "\n" +
                                                             "VSpeed: " + (pllau.VerticalSpeed / 100 /* cm to m */ * CurrentState.multiplierspeed).ToString("F1") + " " + CurrentState.SpeedUnit + "\n" +
                                                             "Heading: " + pllau.Heading.ToString("0") + "°";
+                                    if (!string.IsNullOrEmpty(pllau.DataSource))
+                                        adsbplane.ToolTipText += "\nSource: " + pllau.DataSource;
                                     // Add distance
                                     if (MainV2.comPort.MAV.cs.Location.Lat != 0 && MainV2.comPort.MAV.cs.Location.Lng != 0)
                                         adsbplane.ToolTipText += "\n" + "Distance: " + (pllau.GetDistance(MainV2.comPort.MAV.cs.Location) * CurrentState.multiplierdist).ToString("0") + " " + CurrentState.DistanceUnit;
@@ -7288,12 +7294,14 @@ namespace MissionPlanner.GCSViews
             string CellCount = "4";
             int iCellCount;
 
-            if (DialogResult.Cancel == InputBox.Show("Battery Cell Count", "Cell Count", ref CellCount))
+            bool chinese = System.Globalization.CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+            if (DialogResult.Cancel == InputBox.Show(chinese ? "電池節數" : "Battery Cell Count",
+                    chinese ? "串聯電池節數（用於計算平均單節電壓）" : "Series cell count (for average cell voltage)", ref CellCount))
                 return;
 
             if (!int.TryParse(CellCount, out iCellCount))
             {
-                CustomMessageBox.Show("Bad Radius");
+                CustomMessageBox.Show(chinese ? "電池節數必須是整數。" : "Cell count must be an integer.");
                 return;
             }
             Settings.Instance["HUD_batterycellcount"] = iCellCount.ToString();

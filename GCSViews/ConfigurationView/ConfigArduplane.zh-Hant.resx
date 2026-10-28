@@ -130,58 +130,58 @@
     <value>空速 m/s</value>
   </data>
   <data name="groupBox10.Text" xml:space="preserve">
-    <value>Servo Yaw</value>
+    <value>偏航伺服</value>
   </data>
   <data name="groupBox12.Text" xml:space="preserve">
-    <value>Nav Pitch AS Pid</value>
+    <value>導航俯仰／空速 PID</value>
   </data>
   <data name="groupBox13.Text" xml:space="preserve">
-    <value>Nav Pitch Alt Pid</value>
+    <value>導航俯仰／高度 PID</value>
   </data>
   <data name="groupBox14.Text" xml:space="preserve">
-    <value>Energy/Alt Pid</value>
+    <value>能量／高度 PID</value>
   </data>
   <data name="groupBox16.Text" xml:space="preserve">
-    <value>Other Mix's</value>
+    <value>其他混控</value>
   </data>
   <data name="groupBox2.Text" xml:space="preserve">
-    <value>Navigation Angles</value>
+    <value>導航角度</value>
   </data>
   <data name="groupBox3.Text" xml:space="preserve">
     <value>油門 0-100%</value>
   </data>
   <data name="groupBox4.Text" xml:space="preserve">
-    <value>L1 Control - Turn Control</value>
+    <value>L1 控制－轉彎控制</value>
   </data>
   <data name="groupBox5.Text" xml:space="preserve">
     <value>TECS</value>
   </data>
   <data name="groupBox8.Text" xml:space="preserve">
-    <value>Servo Roll Pid</value>
+    <value>橫滾伺服 PID</value>
   </data>
   <data name="groupBox9.Text" xml:space="preserve">
-    <value>Servo Pitch Pid</value>
+    <value>俯仰伺服 PID</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>Ratio</value>
+    <value>比例</value>
   </data>
   <data name="label10.Text" xml:space="preserve">
-    <value>Period</value>
+    <value>週期</value>
   </data>
   <data name="label11.Text" xml:space="preserve">
-    <value>Sink Min (m/s)</value>
+    <value>最小下降率（m/s）</value>
   </data>
   <data name="label12.Text" xml:space="preserve">
-    <value>Climb Max (m/s)</value>
+    <value>最大爬升率（m/s）</value>
   </data>
   <data name="label13.Text" xml:space="preserve">
-    <value>Pitch Dampening</value>
+    <value>俯仰阻尼</value>
   </data>
   <data name="label14.Text" xml:space="preserve">
-    <value>Time Const</value>
+    <value>時間常數</value>
   </data>
   <data name="label15.Text" xml:space="preserve">
-    <value>Sink Max (m/s)</value>
+    <value>最大下降率（m/s）</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
     <value>FBW max</value>
@@ -190,13 +190,13 @@
     <value>FBW min</value>
   </data>
   <data name="label37.Text" xml:space="preserve">
-    <value>Bank Max</value>
+    <value>最大傾斜角</value>
   </data>
   <data name="label38.Text" xml:space="preserve">
-    <value>Pitch Max</value>
+    <value>最大俯仰角</value>
   </data>
   <data name="label39.Text" xml:space="preserve">
-    <value>Pitch Min</value>
+    <value>最小俯仰角</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
     <value>Cruise</value>
@@ -205,7 +205,7 @@
     <value>INT_MAX</value>
   </data>
   <data name="label5.Text" xml:space="preserve">
-    <value>SlewRate</value>
+    <value>變化速率</value>
   </data>
   <data name="label50.Text" xml:space="preserve">
     <value>D</value>
@@ -229,19 +229,19 @@
     <value>P</value>
   </data>
   <data name="label57.Text" xml:space="preserve">
-    <value>Intergrator Max</value>
+    <value>積分上限</value>
   </data>
   <data name="label58.Text" xml:space="preserve">
-    <value>Dampening</value>
+    <value>阻尼</value>
   </data>
   <data name="label59.Text" xml:space="preserve">
-    <value>Integral</value>
+    <value>積分</value>
   </data>
   <data name="label6.Text" xml:space="preserve">
-    <value>Max</value>
+    <value>最大</value>
   </data>
   <data name="label60.Text" xml:space="preserve">
-    <value>Yaw 2 roll</value>
+    <value>偏航轉橫滾</value>
   </data>
   <data name="label65.Text" xml:space="preserve">
     <value>INT_MAX</value>
@@ -259,7 +259,7 @@
     <value>INT_MAX</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>Min</value>
+    <value>最小</value>
   </data>
   <data name="label70.Text" xml:space="preserve">
     <value>D</value>
@@ -283,7 +283,7 @@
     <value>P</value>
   </data>
   <data name="label78.Text" xml:space="preserve">
-    <value>Rudder Mix</value>
+    <value>方向舵混控</value>
   </data>
   <data name="label8.Text" xml:space="preserve">
     <value>Cruise</value>
@@ -292,6 +292,6 @@
     <value>P to T</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
-    <value>Damping</value>
+    <value>阻尼</value>
   </data>
 </root>

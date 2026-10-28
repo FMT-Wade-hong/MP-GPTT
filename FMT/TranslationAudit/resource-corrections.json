@@ -1,0 +1,3692 @@
+[
+  {
+    "File": "Antenna/TrackerUI.zh-Hant.resx",
+    "Key": "label3.Text",
+    "Before": "Trim",
+    "After": "微調"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-Hant.resx",
+    "Key": "label6.Text",
+    "Before": "Trim",
+    "After": "微調"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-Hant.resx",
+    "Key": "label2.Text",
+    "Before": "Pan",
+    "After": "水平轉向"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-Hant.resx",
+    "Key": "label7.Text",
+    "Before": "Tilt",
+    "After": "俯仰轉向"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-Hant.resx",
+    "Key": "BUT_find.Text",
+    "Before": "Find Trim Pan (Sik Radio)",
+    "After": "尋找水平微調值（SiK 電台）"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-Hant.resx",
+    "Key": "label13.Text",
+    "Before": "Center PWM",
+    "After": "中立 PWM"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-Hant.resx",
+    "Key": "label14.Text",
+    "Before": "Center PWM",
+    "After": "中立 PWM"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-TW.resx",
+    "Key": "label3.Text",
+    "Before": "Trim",
+    "After": "微調"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-TW.resx",
+    "Key": "label6.Text",
+    "Before": "Trim",
+    "After": "微調"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-TW.resx",
+    "Key": "label2.Text",
+    "Before": "Pan",
+    "After": "水平轉向"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-TW.resx",
+    "Key": "label7.Text",
+    "Before": "Tilt",
+    "After": "俯仰轉向"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-TW.resx",
+    "Key": "BUT_find.Text",
+    "Before": "Find Trim Pan (Sik Radio)",
+    "After": "尋找水平微調值（SiK 電台）"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-TW.resx",
+    "Key": "label13.Text",
+    "Before": "Center PWM",
+    "After": "中立 PWM"
+  },
+  {
+    "File": "Antenna/TrackerUI.zh-TW.resx",
+    "Key": "label14.Text",
+    "Before": "Center PWM",
+    "After": "中立 PWM"
+  },
+  {
+    "File": "Controls/DroneCANParams.zh-Hant.resx",
+    "Key": "Desc.HeaderText",
+    "Before": "Desc",
+    "After": "說明"
+  },
+  {
+    "File": "Controls/DroneCANParams.zh-TW.resx",
+    "Key": "Desc.HeaderText",
+    "Before": "Desc",
+    "After": "說明"
+  },
+  {
+    "File": "ExtLibs/Controls/HUDT.zh-Hans.resx",
+    "Key": "GPS5",
+    "Before": "GPS: rtk Float",
+    "After": "GPS：RTK 浮點解"
+  },
+  {
+    "File": "ExtLibs/Controls/HUDT.zh-Hans.resx",
+    "Key": "GPS6",
+    "Before": "GPS: rtk Fixed",
+    "After": "GPS：RTK 固定解"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "CHK_lockrollpitch.Text",
+    "Before": "Lock Pitch and Roll Values",
+    "After": "鎖定俯仰與橫滾設定值"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "groupBox23.Text",
+    "Before": "Rate Yaw",
+    "After": "偏航角速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "groupBox24.Text",
+    "Before": "Rate Pitch",
+    "After": "俯仰角速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "groupBox25.Text",
+    "Before": "Rate Roll",
+    "After": "橫滾角速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "groupBox4.Text",
+    "Before": "WPNav (cm's)",
+    "After": "航點導航（cm）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "label13.Text",
+    "Before": "Speed Dn",
+    "After": "下降速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "label15.Text",
+    "Before": "Radius",
+    "After": "半徑"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "label16.Text",
+    "Before": "Speed ",
+    "After": "速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "label27.Text",
+    "Before": "Speed Up",
+    "After": "上升速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "label9.Text",
+    "Before": "Loiter Speed",
+    "After": "盤旋速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "myLabel1.Text",
+    "Before": "RC7 Opt",
+    "After": "RC7 選項"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "myLabel3.Text",
+    "Before": "Min",
+    "After": "最小"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-Hant.resx",
+    "Key": "myLabel4.Text",
+    "Before": "RC8 Opt",
+    "After": "RC8 選項"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "CHK_lockrollpitch.Text",
+    "Before": "Lock Pitch and Roll Values",
+    "After": "鎖定俯仰與橫滾設定值"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "groupBox23.Text",
+    "Before": "Rate Yaw",
+    "After": "偏航角速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "groupBox24.Text",
+    "Before": "Rate Pitch",
+    "After": "俯仰角速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "groupBox25.Text",
+    "Before": "Rate Roll",
+    "After": "橫滾角速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "groupBox4.Text",
+    "Before": "WPNav (cm's)",
+    "After": "航點導航（cm）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "label13.Text",
+    "Before": "Speed Dn",
+    "After": "下降速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "label15.Text",
+    "Before": "Radius",
+    "After": "半徑"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "label16.Text",
+    "Before": "Speed ",
+    "After": "速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "label27.Text",
+    "Before": "Speed Up",
+    "After": "上升速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "label9.Text",
+    "Before": "Loiter Speed",
+    "After": "盤旋速度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "myLabel1.Text",
+    "Before": "RC7 Opt",
+    "After": "RC7 選項"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "myLabel3.Text",
+    "Before": "Min",
+    "After": "最小"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArducopter.zh-TW.resx",
+    "Key": "myLabel4.Text",
+    "Before": "RC8 Opt",
+    "After": "RC8 選項"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "groupBox10.Text",
+    "Before": "Servo Yaw",
+    "After": "偏航伺服"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "groupBox12.Text",
+    "Before": "Nav Pitch AS Pid",
+    "After": "導航俯仰／空速 PID"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "groupBox13.Text",
+    "Before": "Nav Pitch Alt Pid",
+    "After": "導航俯仰／高度 PID"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "groupBox14.Text",
+    "Before": "Energy/Alt Pid",
+    "After": "能量／高度 PID"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "groupBox16.Text",
+    "Before": "Other Mix's",
+    "After": "其他混控"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "groupBox2.Text",
+    "Before": "Navigation Angles",
+    "After": "導航角度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "groupBox4.Text",
+    "Before": "L1 Control - Turn Control",
+    "After": "L1 控制－轉彎控制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "groupBox8.Text",
+    "Before": "Servo Roll Pid",
+    "After": "橫滾伺服 PID"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "groupBox9.Text",
+    "Before": "Servo Pitch Pid",
+    "After": "俯仰伺服 PID"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label1.Text",
+    "Before": "Ratio",
+    "After": "比例"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label10.Text",
+    "Before": "Period",
+    "After": "週期"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label11.Text",
+    "Before": "Sink Min (m/s)",
+    "After": "最小下降率（m/s）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label12.Text",
+    "Before": "Climb Max (m/s)",
+    "After": "最大爬升率（m/s）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label13.Text",
+    "Before": "Pitch Dampening",
+    "After": "俯仰阻尼"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label14.Text",
+    "Before": "Time Const",
+    "After": "時間常數"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label15.Text",
+    "Before": "Sink Max (m/s)",
+    "After": "最大下降率（m/s）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label37.Text",
+    "Before": "Bank Max",
+    "After": "最大傾斜角"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label38.Text",
+    "Before": "Pitch Max",
+    "After": "最大俯仰角"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label39.Text",
+    "Before": "Pitch Min",
+    "After": "最小俯仰角"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label5.Text",
+    "Before": "SlewRate",
+    "After": "變化速率"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label57.Text",
+    "Before": "Intergrator Max",
+    "After": "積分上限"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label58.Text",
+    "Before": "Dampening",
+    "After": "阻尼"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label59.Text",
+    "Before": "Integral",
+    "After": "積分"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label6.Text",
+    "Before": "Max",
+    "After": "最大"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label60.Text",
+    "Before": "Yaw 2 roll",
+    "After": "偏航轉橫滾"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label7.Text",
+    "Before": "Min",
+    "After": "最小"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label78.Text",
+    "Before": "Rudder Mix",
+    "After": "方向舵混控"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-Hant.resx",
+    "Key": "label9.Text",
+    "Before": "Damping",
+    "After": "阻尼"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "groupBox10.Text",
+    "Before": "Servo Yaw",
+    "After": "偏航伺服"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "groupBox12.Text",
+    "Before": "Nav Pitch AS Pid",
+    "After": "導航俯仰／空速 PID"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "groupBox13.Text",
+    "Before": "Nav Pitch Alt Pid",
+    "After": "導航俯仰／高度 PID"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "groupBox14.Text",
+    "Before": "Energy/Alt Pid",
+    "After": "能量／高度 PID"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "groupBox16.Text",
+    "Before": "Other Mix's",
+    "After": "其他混控"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "groupBox2.Text",
+    "Before": "Navigation Angles",
+    "After": "導航角度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "groupBox4.Text",
+    "Before": "L1 Control - Turn Control",
+    "After": "L1 控制－轉彎控制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "groupBox8.Text",
+    "Before": "Servo Roll Pid",
+    "After": "橫滾伺服 PID"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "groupBox9.Text",
+    "Before": "Servo Pitch Pid",
+    "After": "俯仰伺服 PID"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label1.Text",
+    "Before": "Ratio",
+    "After": "比例"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label10.Text",
+    "Before": "Period",
+    "After": "週期"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label11.Text",
+    "Before": "Sink Min (m/s)",
+    "After": "最小下降率（m/s）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label12.Text",
+    "Before": "Climb Max (m/s)",
+    "After": "最大爬升率（m/s）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label13.Text",
+    "Before": "Pitch Dampening",
+    "After": "俯仰阻尼"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label14.Text",
+    "Before": "Time Const",
+    "After": "時間常數"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label15.Text",
+    "Before": "Sink Max (m/s)",
+    "After": "最大下降率（m/s）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label37.Text",
+    "Before": "Bank Max",
+    "After": "最大傾斜角"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label38.Text",
+    "Before": "Pitch Max",
+    "After": "最大俯仰角"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label39.Text",
+    "Before": "Pitch Min",
+    "After": "最小俯仰角"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label5.Text",
+    "Before": "SlewRate",
+    "After": "變化速率"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label57.Text",
+    "Before": "Intergrator Max",
+    "After": "積分上限"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label58.Text",
+    "Before": "Dampening",
+    "After": "阻尼"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label59.Text",
+    "Before": "Integral",
+    "After": "積分"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label6.Text",
+    "Before": "Max",
+    "After": "最大"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label60.Text",
+    "Before": "Yaw 2 roll",
+    "After": "偏航轉橫滾"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label7.Text",
+    "Before": "Min",
+    "After": "最小"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label78.Text",
+    "Before": "Rudder Mix",
+    "After": "方向舵混控"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigArduplane.zh-TW.resx",
+    "Key": "label9.Text",
+    "Before": "Damping",
+    "After": "阻尼"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label12.Text",
+    "Before": "Effort Lim",
+    "After": "控制輸出限制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label49.Text",
+    "Before": "Effort Lim",
+    "After": "控制輸出限制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label16.Text",
+    "Before": "Int Lim",
+    "After": "積分限制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label11.Text",
+    "Before": "Int Lim",
+    "After": "積分限制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label17.Text",
+    "Before": "Effort Lim",
+    "After": "控制輸出限制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label21.Text",
+    "Before": "Int Lim",
+    "After": "積分限制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label22.Text",
+    "Before": "Effort Lim",
+    "After": "控制輸出限制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label2.Text",
+    "Before": "Int Lim",
+    "After": "積分限制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label3.Text",
+    "Before": "Effort Lim",
+    "After": "控制輸出限制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label1.Text",
+    "Before": "Int Lim",
+    "After": "積分限制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "groupBox7.Text",
+    "Before": "Track and Orbit",
+    "After": "追蹤與環繞"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label7.Text",
+    "Before": "Min",
+    "After": "最小"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "groupBox4.Text",
+    "Before": "Heading to Roll",
+    "After": "航向轉橫滾"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "groupBox2.Text",
+    "Before": "Energy Height",
+    "After": "能量高度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "groupBox13.Text",
+    "Before": "Roll to Elev",
+    "After": "橫滾轉升降舵"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigAteryx.zh-Hans.resx",
+    "Key": "label38.Text",
+    "Before": "Field Elev",
+    "After": "場地海拔高度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigBatteryMonitoring.zh-Hant.resx",
+    "Key": "label35.Text",
+    "Before": "6. Amperes per volt:",
+    "After": "6. 每伏特對應電流（A/V）："
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigBatteryMonitoring.zh-TW.resx",
+    "Key": "label35.Text",
+    "Before": "6. Amperes per volt:",
+    "After": "6. 每伏特對應電流（A/V）："
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigBatteryMonitoring2.zh-Hant.resx",
+    "Key": "label35.Text",
+    "Before": "6. Amperes per volt:",
+    "After": "6. 每伏特對應電流（A/V）："
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigBatteryMonitoring2.zh-TW.resx",
+    "Key": "label35.Text",
+    "Before": "6. Amperes per volt:",
+    "After": "6. 每伏特對應電流（A/V）："
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-Hant.resx",
+    "Key": "label1.Text",
+    "Before": "Radio IN",
+    "After": "遙控輸入"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-Hant.resx",
+    "Key": "label2.Text",
+    "Before": "Servo/Motor OUT",
+    "After": "伺服／馬達輸出"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-Hant.resx",
+    "Key": "label5.Text",
+    "Before": "Reserved MAH",
+    "After": "保留電量（mAh）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-Hant.resx",
+    "Key": "lbl_gpslock.Text",
+    "Before": "No Lock",
+    "After": "未定位"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-Hant.resx",
+    "Key": "mavlinkCheckBoxlong_fs.Text",
+    "Before": "FailSafe Long (20 sec)",
+    "After": "長時間失效保護（20 秒）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-Hant.resx",
+    "Key": "mavlinkCheckBoxshort_fs.Text",
+    "Before": "FailSafe Short (1 sec)",
+    "After": "短時間失效保護（1 秒）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-TW.resx",
+    "Key": "label1.Text",
+    "Before": "Radio IN",
+    "After": "遙控輸入"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-TW.resx",
+    "Key": "label2.Text",
+    "Before": "Servo/Motor OUT",
+    "After": "伺服／馬達輸出"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-TW.resx",
+    "Key": "label5.Text",
+    "Before": "Reserved MAH",
+    "After": "保留電量（mAh）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-TW.resx",
+    "Key": "lbl_gpslock.Text",
+    "Before": "No Lock",
+    "After": "未定位"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-TW.resx",
+    "Key": "mavlinkCheckBoxlong_fs.Text",
+    "Before": "FailSafe Long (20 sec)",
+    "After": "長時間失效保護（20 秒）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-TW.resx",
+    "Key": "mavlinkCheckBoxshort_fs.Text",
+    "Before": "FailSafe Short (1 sec)",
+    "After": "短時間失效保護（1 秒）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-Hant.resx",
+    "Key": "chk_ss1.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-Hant.resx",
+    "Key": "chk_ss2.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-Hant.resx",
+    "Key": "chk_ss3.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-Hant.resx",
+    "Key": "chk_ss4.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-Hant.resx",
+    "Key": "chk_ss5.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-Hant.resx",
+    "Key": "chk_ss6.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-Hant.resx",
+    "Key": "lbl_currentmode.Text",
+    "Before": "Manual",
+    "After": "手動"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-TW.resx",
+    "Key": "chk_ss1.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-TW.resx",
+    "Key": "chk_ss2.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-TW.resx",
+    "Key": "chk_ss3.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-TW.resx",
+    "Key": "chk_ss4.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-TW.resx",
+    "Key": "chk_ss5.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-TW.resx",
+    "Key": "chk_ss6.Text",
+    "Before": "Super Simple Mode",
+    "After": "超級簡單模式"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFlightModes.zh-TW.resx",
+    "Key": "lbl_currentmode.Text",
+    "Before": "Manual",
+    "After": "手動"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFrameClassType.zh-Hant.resx",
+    "Key": "label2.Text",
+    "Before": "'Plus'",
+    "After": "十字型（+）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFrameClassType.zh-Hant.resx",
+    "Key": "label7.Text",
+    "Before": "NOTE: This is the Y6B and prop rotation changes from the old Y6A",
+    "After": "注意：此為 Y6B，螺旋槳旋轉方向與舊版 Y6A 不同。"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFrameClassType.zh-TW.resx",
+    "Key": "label2.Text",
+    "Before": "'Plus'",
+    "After": "十字型（+）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFrameClassType.zh-TW.resx",
+    "Key": "label7.Text",
+    "Before": "NOTE: This is the Y6B and prop rotation changes from the old Y6A",
+    "After": "注意：此為 Y6B，螺旋槳旋轉方向與舊版 Y6A 不同。"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFrameType.zh-Hant.resx",
+    "Key": "label2.Text",
+    "Before": "'Plus'",
+    "After": "十字型（+）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFrameType.zh-Hant.resx",
+    "Key": "label7.Text",
+    "Before": "NOTE: This is the Y6B and prop rotation changes from the old Y6A",
+    "After": "注意：此為 Y6B，螺旋槳旋轉方向與舊版 Y6A 不同。"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFrameType.zh-TW.resx",
+    "Key": "label2.Text",
+    "Before": "'Plus'",
+    "After": "十字型（+）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFrameType.zh-TW.resx",
+    "Key": "label7.Text",
+    "Before": "NOTE: This is the Y6B and prop rotation changes from the old Y6A",
+    "After": "注意：此為 Y6B，螺旋槳旋轉方向與舊版 Y6A 不同。"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigPlanner.zh-Hant.resx",
+    "Key": "CHK_mavdebug.Text",
+    "Before": "Mavlink Message Debug",
+    "After": "MAVLink 訊息除錯"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigPlanner.zh-Hant.resx",
+    "Key": "CHK_speechcustom.Text",
+    "Before": "30s Interval",
+    "After": "間隔 30 秒"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigPlanner.zh-Hant.resx",
+    "Key": "label1.Text",
+    "Before": "Map Follow",
+    "After": "地圖跟隨"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigPlanner.zh-Hant.resx",
+    "Key": "chk_analytics.Text",
+    "Before": "OptOut Anon Stats",
+    "After": "停用匿名統計"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigPlanner.zh-TW.resx",
+    "Key": "chk_analytics.Text",
+    "Before": "OptOut Anon Stats",
+    "After": "停用匿名統計"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigPlanner.zh-TW.resx",
+    "Key": "CHK_mavdebug.Text",
+    "Before": "Mavlink Message Debug",
+    "After": "MAVLink 訊息除錯"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigPlanner.zh-TW.resx",
+    "Key": "CHK_speechcustom.Text",
+    "Before": "30s Interval",
+    "After": "間隔 30 秒"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigPlanner.zh-TW.resx",
+    "Key": "label1.Text",
+    "Before": "Map Follow",
+    "After": "地圖跟隨"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRadioInput.zh-Hant.resx",
+    "Key": "CHK_elevonch1rev.Text",
+    "Before": "Elevons CH1 Rev",
+    "After": "升降副翼通道 1 反向"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRadioInput.zh-Hant.resx",
+    "Key": "CHK_elevonch2rev.Text",
+    "Before": "Elevons CH2 Rev",
+    "After": "升降副翼通道 2 反向"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRadioInput.zh-Hant.resx",
+    "Key": "CHK_elevonrev.Text",
+    "Before": "Elevons Rev",
+    "After": "升降副翼反向"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRadioInput.zh-Hant.resx",
+    "Key": "CHK_mixmode.Text",
+    "Before": "Elevons",
+    "After": "升降副翼"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRadioInput.zh-Hant.resx",
+    "Key": "groupBoxElevons.Text",
+    "Before": "Elevon Config",
+    "After": "升降副翼設定"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRadioInput.zh-TW.resx",
+    "Key": "CHK_elevonch1rev.Text",
+    "Before": "Elevons CH1 Rev",
+    "After": "升降副翼通道 1 反向"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRadioInput.zh-TW.resx",
+    "Key": "CHK_elevonch2rev.Text",
+    "Before": "Elevons CH2 Rev",
+    "After": "升降副翼通道 2 反向"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRadioInput.zh-TW.resx",
+    "Key": "CHK_elevonrev.Text",
+    "Before": "Elevons Rev",
+    "After": "升降副翼反向"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRadioInput.zh-TW.resx",
+    "Key": "CHK_mixmode.Text",
+    "Before": "Elevons",
+    "After": "升降副翼"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRadioInput.zh-TW.resx",
+    "Key": "groupBoxElevons.Text",
+    "Before": "Elevon Config",
+    "After": "升降副翼設定"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRawParams.zh-Hant.resx",
+    "Key": "Desc.HeaderText",
+    "Before": "Desc",
+    "After": "說明"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigRawParams.zh-TW.resx",
+    "Key": "Desc.HeaderText",
+    "Before": "Desc",
+    "After": "說明"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigSerialInjectGPS.zh-CN.resx",
+    "Key": "label1.ToolTip",
+    "Before": "Both accuracy and duration must be meet in order for the survey in to complete\nie less than 2 m accuracy, and Greater than 60 seconds of observations",
+    "After": "基站定位測量必須同時符合精度與持續時間條件才會完成。\n例如：誤差小於 2 公尺，且觀測時間超過 60 秒。"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "BUT_HS4save.Text",
+    "Before": "Manual",
+    "After": "手動"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "BUT_swash_manual.Text",
+    "Before": "Manual",
+    "After": "手動"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "fbl_modeFBL.Text",
+    "Before": "Flybarless",
+    "After": "無平衡翼"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "groupBox3.Text",
+    "Before": "Tail Type",
+    "After": "尾旋翼類型"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "groupBox5.Text",
+    "Before": "Swash Type",
+    "After": "斜盤類型"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "groupBox7.Text",
+    "Before": "RSC Ramp Rate",
+    "After": "旋翼轉速控制漸增率"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "groupBox8.Text",
+    "Before": "Mode 1 Setpoint",
+    "After": "模式 1 目標值"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "groupBox9.Text",
+    "Before": "Rotor Speed Control",
+    "After": "主旋翼轉速控制"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label1.Text",
+    "Before": "Min",
+    "After": "最小"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label17.Text",
+    "Before": "Swash-Servo position",
+    "After": "斜盤伺服位置"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label2.Text",
+    "Before": "Max",
+    "After": "最大"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label21.Text",
+    "Before": "Top",
+    "After": "頂部"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label23.Text",
+    "Before": "Rudder Travel",
+    "After": "方向舵行程"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label24.Text",
+    "Before": "Max",
+    "After": "最大"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label26.Text",
+    "Before": "Pitch Max",
+    "After": "最大俯仰角"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label36.Text",
+    "Before": "Servo",
+    "After": "伺服機"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label37.Text",
+    "Before": "Position",
+    "After": "位置"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label38.Text",
+    "Before": "Rev",
+    "After": "反向"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label39.Text",
+    "Before": "Trim",
+    "After": "微調"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label40.Text",
+    "Before": "Min",
+    "After": "最小"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label41.Text",
+    "Before": "Bottom",
+    "After": "底部"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label43.Text",
+    "Before": "Rev",
+    "After": "反向"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label44.Text",
+    "Before": "Trim",
+    "After": "微調"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label46.Text",
+    "Before": "Gain",
+    "After": "增益"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label5.Text",
+    "Before": "Rate(Sec)",
+    "After": "速率（秒）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label6.Text",
+    "Before": "Tail Speed",
+    "After": "尾旋翼轉速"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigTradHeli.zh-TW.resx",
+    "Key": "label7.Text",
+    "Before": "Runup(Sec)",
+    "After": "加速時間（秒）"
+  },
+  {
+    "File": "GCSViews/InitialSetup.zh-Hant.resx",
+    "Key": "backstageViewPagetradheli.Text",
+    "Before": "Heli Setup",
+    "After": "直升機設定"
+  },
+  {
+    "File": "GCSViews/InitialSetup.zh-TW.resx",
+    "Key": "backstageViewPagetradheli.Text",
+    "Before": "Heli Setup",
+    "After": "直升機設定"
+  },
+  {
+    "File": "GeoRef/Georefimage.zh-Hans.resx",
+    "Key": "label7.Text",
+    "Before": "Dir fov",
+    "After": "縱向視角"
+  },
+  {
+    "File": "GeoRef/Georefimage.zh-Hans.resx",
+    "Key": "label8.Text",
+    "Before": "Cross fov",
+    "After": "橫向視角"
+  },
+  {
+    "File": "GeoRef/georefimage.zh-Hant.resx",
+    "Key": "label9.Text",
+    "Before": "Rotation",
+    "After": "旋轉"
+  },
+  {
+    "File": "GeoRef/georefimage.zh-Hant.resx",
+    "Key": "label8.Text",
+    "Before": "Cross fov",
+    "After": "橫向視角"
+  },
+  {
+    "File": "GeoRef/georefimage.zh-Hant.resx",
+    "Key": "label7.Text",
+    "Before": "Dir fov",
+    "After": "縱向視角"
+  },
+  {
+    "File": "GeoRef/georefimage.zh-TW.resx",
+    "Key": "label9.Text",
+    "Before": "Rotation",
+    "After": "旋轉"
+  },
+  {
+    "File": "GeoRef/georefimage.zh-TW.resx",
+    "Key": "label8.Text",
+    "Before": "Cross fov",
+    "After": "橫向視角"
+  },
+  {
+    "File": "GeoRef/georefimage.zh-TW.resx",
+    "Key": "label7.Text",
+    "Before": "Dir fov",
+    "After": "縱向視角"
+  },
+  {
+    "File": "Joystick/JoystickSetup.zh-Hant.resx",
+    "Key": "CHK_elevons.Text",
+    "Before": "Elevons",
+    "After": "升降副翼"
+  },
+  {
+    "File": "Joystick/JoystickSetup.zh-Hant.resx",
+    "Key": "label6.Text",
+    "Before": "Expo",
+    "After": "指數曲線"
+  },
+  {
+    "File": "Joystick/JoystickSetup.zh-Hant.resx",
+    "Key": "label7.Text",
+    "Before": "Output",
+    "After": "輸出"
+  },
+  {
+    "File": "Joystick/JoystickSetup.zh-Hant.resx",
+    "Key": "label8.Text",
+    "Before": "Controller Axis",
+    "After": "控制器軸向"
+  },
+  {
+    "File": "Joystick/JoystickSetup.zh-TW.resx",
+    "Key": "CHK_elevons.Text",
+    "Before": "Elevons",
+    "After": "升降副翼"
+  },
+  {
+    "File": "Joystick/JoystickSetup.zh-TW.resx",
+    "Key": "label6.Text",
+    "Before": "Expo",
+    "After": "指數曲線"
+  },
+  {
+    "File": "Joystick/JoystickSetup.zh-TW.resx",
+    "Key": "label7.Text",
+    "Before": "Output",
+    "After": "輸出"
+  },
+  {
+    "File": "Joystick/JoystickSetup.zh-TW.resx",
+    "Key": "label8.Text",
+    "Before": "Controller Axis",
+    "After": "控制器軸向"
+  },
+  {
+    "File": "resedit.zh-Hant.resx",
+    "Key": "colInternal.HeaderText",
+    "Before": "Internal",
+    "After": "內部"
+  },
+  {
+    "File": "resedit.zh-TW.resx",
+    "Key": "colInternal.HeaderText",
+    "Before": "Internal",
+    "After": "內部"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "Delete.ToolTipText",
+    "Before": "刪除行",
+    "After": "刪除此列"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "Up.ToolTipText",
+    "Before": "將此行上移",
+    "After": "將此列上移"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "Down.ToolTipText",
+    "Before": "將此行下移",
+    "After": "將此列下移"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "comboBoxMapType.ToolTip",
+    "Before": "改變當前地圖類型",
+    "After": "變更目前地圖類型"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "loiterForeverToolStripMenuItem.Text",
+    "Before": "永遠",
+    "After": "持續盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "loitertimeToolStripMenuItem.Text",
+    "Before": "時間",
+    "After": "依時間盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "loitercirclesToolStripMenuItem.Text",
+    "Before": "繞圈",
+    "After": "依圈數盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "loiterToolStripMenuItem.Text",
+    "Before": "懸停",
+    "After": "盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "jumpstartToolStripMenuItem.Text",
+    "Before": "開始",
+    "After": "跳轉至起點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "jumpwPToolStripMenuItem.Text",
+    "Before": "航點編號",
+    "After": "跳轉至航點編號"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "rTLToolStripMenuItem.Text",
+    "Before": "返航",
+    "After": "返航（RTL）"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "setROIToolStripMenuItem.Text",
+    "Before": "設定ROI",
+    "After": "設定關注區域（ROI）"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "addPolygonPointToolStripMenuItem.Text",
+    "Before": "新增多邊形點",
+    "After": "繪製多邊形"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "loadPolygonToolStripMenuItem.Text",
+    "Before": "下載",
+    "After": "載入多邊形"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "fromSHPToolStripMenuItem.Text",
+    "Before": "來自SHP",
+    "After": "從 SHP 建立"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "polygonToolStripMenuItem.Text",
+    "Before": "繪製多邊形",
+    "After": "多邊形"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "setRallyPointToolStripMenuItem.Text",
+    "Before": "設定拉伸點",
+    "After": "設定集合點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "getRallyPointsToolStripMenuItem.Text",
+    "Before": "下載",
+    "After": "從飛控下載"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "saveRallyPointsToolStripMenuItem.Text",
+    "Before": "上傳",
+    "After": "上傳至飛控"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "clearRallyPointsToolStripMenuItem.Text",
+    "Before": "清除集結點",
+    "After": "清除集合點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "saveToFileToolStripMenuItem1.Text",
+    "Before": "儲存集結點至檔案",
+    "After": "儲存集合點檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "loadFromFileToolStripMenuItem1.Text",
+    "Before": "下載檔案",
+    "After": "載入集合點檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "rallyPointsToolStripMenuItem.Text",
+    "Before": "拉伸點",
+    "After": "集合點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "toolStripMenuItem1.Text",
+    "Before": "複雜",
+    "After": "進階"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "GeoFenceuploadToolStripMenuItem.Text",
+    "Before": "上載",
+    "After": "上傳至飛控"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "GeoFencedownloadToolStripMenuItem.Text",
+    "Before": "下載",
+    "After": "從飛控下載"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "setReturnLocationToolStripMenuItem.Text",
+    "Before": "設定返回位置",
+    "After": "設定圍籬返航位置"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "saveToFileToolStripMenuItem.Text",
+    "Before": "儲存到檔案",
+    "After": "儲存至檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "geoFenceToolStripMenuItem.Text",
+    "Before": "極限範圍",
+    "After": "地理圍籬"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "createWpCircleToolStripMenuItem.Text",
+    "Before": "建立航點圈",
+    "After": "建立航點圓形路線"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "areaToolStripMenuItem.Text",
+    "Before": "區域",
+    "After": "計算面積"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "createSplineCircleToolStripMenuItem.Text",
+    "Before": "建立曲線圈",
+    "After": "建立曲線圓形路線"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "autoWPToolStripMenuItem.Text",
+    "Before": "自動航點",
+    "After": "自動建立航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "zoomToToolStripMenuItem.Text",
+    "Before": "放大至",
+    "After": "縮放至"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "prefetchToolStripMenuItem.Text",
+    "Before": "讀取",
+    "After": "預先下載目前地圖"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "prefetchWPPathToolStripMenuItem.Text",
+    "Before": "預讀取航點路徑",
+    "After": "預先下載航點路徑地圖"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "kMLOverlayToolStripMenuItem.Text",
+    "Before": "KML覆蓋",
+    "After": "載入 KML 圖層"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "elevationGraphToolStripMenuItem.Text",
+    "Before": "高度曲線",
+    "After": "高度與地形曲線"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "reverseWPsToolStripMenuItem.Text",
+    "Before": "反轉航點",
+    "After": "反轉航點順序"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "loadAndAppendToolStripMenuItem.Text",
+    "Before": "下載與附加",
+    "After": "載入並附加航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "loadKMLFileToolStripMenuItem.Text",
+    "Before": "載入KML檔案",
+    "After": "載入 KML 檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "loadSHPFileToolStripMenuItem.Text",
+    "Before": "載入SHP檔案",
+    "After": "載入 SHP 檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "fileLoadSaveToolStripMenuItem.Text",
+    "Before": "檔案下載/儲存",
+    "After": "任務檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "pOIToolStripMenuItem.Text",
+    "Before": "興趣點",
+    "After": "興趣點（POI）"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "trackerHomeToolStripMenuItem.Text",
+    "Before": "追蹤起始點",
+    "After": "追蹤器 HOME"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "flyToHereToolStripMenuItem.Text",
+    "Before": "飛到這裡",
+    "After": "飛到此處"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "modifyAltToolStripMenuItem.Text",
+    "Before": "修改高度",
+    "After": "批次修改高度"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "enterUTMCoordToolStripMenuItem.Text",
+    "Before": "進入UTM坐標",
+    "After": "輸入 UTM 座標"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hans.resx",
+    "Key": "switchDockingToolStripMenuItem.Text",
+    "Before": "交換停靠選單",
+    "After": "切換停駐版面"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "recordHudToAVIToolStripMenuItem.Text",
+    "Before": "錄製為AVI",
+    "After": "將 HUD 錄製為 AVI"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "stopRecordToolStripMenuItem.Text",
+    "Before": "停止記錄",
+    "After": "停止錄影"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "setMJPEGSourceToolStripMenuItem.Text",
+    "Before": "設定MJPEG源",
+    "After": "設定 MJPEG 來源"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "setAspectRatioToolStripMenuItem.Text",
+    "Before": "設定寬高比",
+    "After": "設定畫面比例"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "userItemsToolStripMenuItem.Text",
+    "Before": "使用項目",
+    "After": "自訂顯示項目"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "russianHudToolStripMenuItem.Text",
+    "Before": "俄國Hud",
+    "After": "俄式 HUD"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "BUT_clear_track.Text",
+    "Before": "清除軌跡",
+    "After": "清除航跡"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "Gspeed.ToolTip",
+    "Before": "雙擊我改變最大值",
+    "After": "按兩下以變更最大值"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "goHereToolStripMenuItem.Text",
+    "Before": "飛到航點",
+    "After": "飛到此處"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "flyToHereAltToolStripMenuItem.Text",
+    "Before": "飛行至此高度",
+    "After": "以指定高度飛到此處"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "pointCameraHereToolStripMenuItem.Text",
+    "Before": "在此放置相機",
+    "After": "鏡頭指向此處"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "triggerCameraToolStripMenuItem.Text",
+    "Before": "現在按下相機快門",
+    "After": "立即觸發拍照"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "flightPlannerToolStripMenuItem.Text",
+    "Before": "飛行計畫",
+    "After": "任務規劃"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hans.resx",
+    "Key": "setHomeHereToolStripMenuItem.Text",
+    "Before": "設定家在此",
+    "After": "將此處設為 HOME"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "elevationGraphToolStripMenuItem.Text",
+    "Before": "高度曲线",
+    "After": "高度與地形曲線"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "flyToHereToolStripMenuItem.Text",
+    "Before": "飞到这里",
+    "After": "飛到此處"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "CHK_geheight.Text",
+    "Before": "验证高度",
+    "After": "驗證高度"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "trackerHomeToolStripMenuItem.Text",
+    "Before": "追踪起始点",
+    "After": "追蹤器 HOME"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "GeoFencedownloadToolStripMenuItem.Text",
+    "Before": "下载",
+    "After": "從飛控下載"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "loadFromFileToolStripMenuItem1.Text",
+    "Before": "下载档案",
+    "After": "載入集合點檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "label16.Text",
+    "Before": "MGRS（测试中）",
+    "After": "MGRS（測試中）"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "loadAndAppendToolStripMenuItem.Text",
+    "Before": "下载与附加",
+    "After": "載入並附加航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "comboBoxMapType.ToolTip",
+    "Before": "改变当前地图类型",
+    "After": "變更目前地圖類型"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "loitertimeToolStripMenuItem.Text",
+    "Before": "时间",
+    "After": "依時間盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "LBL_defalutalt.Text",
+    "Before": "默认高度",
+    "After": "預設高度"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "rotateMapToolStripMenuItem.Text",
+    "Before": "旋转地图",
+    "After": "旋轉地圖"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "kMLOverlayToolStripMenuItem.Text",
+    "Before": "KML覆盖",
+    "After": "載入 KML 圖層"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "autoWPToolStripMenuItem.Text",
+    "Before": "自动航点",
+    "After": "自動建立航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "mapToolToolStripMenuItem.Text",
+    "Before": "地图工具",
+    "After": "地圖工具"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "saveRallyPointsToolStripMenuItem.Text",
+    "Before": "上传",
+    "After": "上傳至飛控"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "loiterForeverToolStripMenuItem.Text",
+    "Before": "永远",
+    "After": "持續盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "setROIToolStripMenuItem.Text",
+    "Before": "设定ROI",
+    "After": "設定關注區域（ROI）"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "label7.Text",
+    "Before": "鼠标位置",
+    "After": "滑鼠位置"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "loadWPFileToolStripMenuItem.Text",
+    "Before": "加载航点文件",
+    "After": "載入航點檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "jumpstartToolStripMenuItem.Text",
+    "Before": "开始",
+    "After": "跳轉至起點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "BUT_read.Text",
+    "Before": "读取航点",
+    "After": "讀取航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "loadPolygonToolStripMenuItem.Text",
+    "Before": "下载",
+    "After": "載入多邊形"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "prefetchToolStripMenuItem.Text",
+    "Before": "读取",
+    "After": "預先下載目前地圖"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "GeoFenceuploadToolStripMenuItem.Text",
+    "Before": "上载",
+    "After": "上傳至飛控"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "zoomToToolStripMenuItem.Text",
+    "Before": "放大至",
+    "After": "縮放至"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "saveToFileToolStripMenuItem1.Text",
+    "Before": "保存集结点至文件",
+    "After": "儲存集合點檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "lbl_status.Text",
+    "Before": "状态",
+    "After": "狀態"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "setReturnLocationToolStripMenuItem.Text",
+    "Before": "设置返回位置",
+    "After": "設定圍籬返航位置"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "clearPolygonToolStripMenuItem.Text",
+    "Before": "清除多边形",
+    "After": "清除多邊形"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "loadKMLFileToolStripMenuItem.Text",
+    "Before": "加载KML文件",
+    "After": "載入 KML 檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "Delete.ToolTipText",
+    "Before": "删除行",
+    "After": "刪除此列"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "prefetchWPPathToolStripMenuItem.Text",
+    "Before": "预读取航点路径",
+    "After": "預先下載航點路徑地圖"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "takeoffToolStripMenuItem.Text",
+    "Before": "起飞",
+    "After": "起飛"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "addPolygonPointToolStripMenuItem.Text",
+    "Before": "添加多边形点",
+    "After": "繪製多邊形"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "loiterToolStripMenuItem.Text",
+    "Before": "悬停",
+    "After": "盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "setRallyPointToolStripMenuItem.Text",
+    "Before": "设定拉伸点",
+    "After": "設定集合點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "rallyPointsToolStripMenuItem.Text",
+    "Before": "拉伸点",
+    "After": "集合點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "areaToolStripMenuItem.Text",
+    "Before": "区域",
+    "After": "計算面積"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "Down.ToolTipText",
+    "Before": "将此行下移",
+    "After": "將此列下移"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "BUT_write.Text",
+    "Before": "写入航点",
+    "After": "寫入航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "modifyAltToolStripMenuItem.Text",
+    "Before": "修改高度",
+    "After": "批次修改高度"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "polygonToolStripMenuItem.Text",
+    "Before": "绘制多边形",
+    "After": "多邊形"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "jumpToolStripMenuItem.Text",
+    "Before": "跳转",
+    "After": "跳轉"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "fileLoadSaveToolStripMenuItem.Text",
+    "Before": "档案下载/保存",
+    "After": "任務檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "geoFenceToolStripMenuItem.Text",
+    "Before": "极限范围",
+    "After": "地理圍籬"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "saveWPFileToolStripMenuItem.Text",
+    "Before": "保存航点文件",
+    "After": "儲存航點檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "saveToFileToolStripMenuItem.Text",
+    "Before": "保存到文件",
+    "After": "儲存至檔案"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "insertWpToolStripMenuItem.Text",
+    "Before": "插入航点",
+    "After": "插入航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "Up.ToolTipText",
+    "Before": "将此行上移",
+    "After": "將此列上移"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "Delete.HeaderText",
+    "Before": "删除",
+    "After": "刪除"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "loitercirclesToolStripMenuItem.Text",
+    "Before": "绕圈",
+    "After": "依圈數盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "jumpwPToolStripMenuItem.Text",
+    "Before": "WP＃",
+    "After": "跳轉至航點編號"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "deleteWPToolStripMenuItem.Text",
+    "Before": "删除航点",
+    "After": "刪除航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "getRallyPointsToolStripMenuItem.Text",
+    "Before": "下载",
+    "After": "從飛控下載"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "splineToolStripMenuItem.Text",
+    "Before": "视图曲线化",
+    "After": "曲線航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "loadFromFileToolStripMenuItem.Text",
+    "Before": "从文件加载",
+    "After": "從檔案載入"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "rTLToolStripMenuItem.Text",
+    "Before": "返航",
+    "After": "返航（RTL）"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "clearMissionToolStripMenuItem.Text",
+    "Before": "清除任务",
+    "After": "清除任務"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "clearRallyPointsToolStripMenuItem.Text",
+    "Before": "清除集结点",
+    "After": "清除集合點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "toolStripMenuItem1.Text",
+    "Before": "复杂",
+    "After": "進階"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "savePolygonToolStripMenuItem.Text",
+    "Before": "保存多边形",
+    "After": "儲存多邊形"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "createWpCircleToolStripMenuItem.Text",
+    "Before": "创建航点圈",
+    "After": "建立航點圓形路線"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "ContextMeasure.Text",
+    "Before": "测量距离",
+    "After": "測量距離"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-Hant.resx",
+    "Key": "reverseWPsToolStripMenuItem.Text",
+    "Before": "反转航点",
+    "After": "反轉航點順序"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hant.resx",
+    "Key": "BUT_clear_track.Text",
+    "Before": "清除軌跡",
+    "After": "清除航跡"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hant.resx",
+    "Key": "deleteToolStripMenuItem.Text",
+    "Before": "刪除",
+    "After": "刪除興趣點"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hant.resx",
+    "Key": "flightPlannerToolStripMenuItem.Text",
+    "Before": "飛行計畫",
+    "After": "任務規劃"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hant.resx",
+    "Key": "goHereToolStripMenuItem.Text",
+    "Before": "飛到航點",
+    "After": "飛到此處"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hant.resx",
+    "Key": "saveFileToolStripMenuItem.Text",
+    "Before": "儲存檔案",
+    "After": "儲存興趣點檔案"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-Hant.resx",
+    "Key": "stopRecordToolStripMenuItem.Text",
+    "Before": "停止記錄",
+    "After": "停止錄影"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "Delete.HeaderText",
+    "Before": "删除",
+    "After": "刪除"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "Delete.ToolTipText",
+    "Before": "删除行",
+    "After": "刪除此列"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "Up.ToolTipText",
+    "Before": "向上移动本行",
+    "After": "將此列上移"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "Down.ToolTipText",
+    "Before": "向下移動本行",
+    "After": "將此列下移"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "LBL_defalutalt.Text",
+    "Before": "默認高度",
+    "After": "預設高度"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "BUT_write.Text",
+    "Before": "寫入航路",
+    "After": "寫入航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "BUT_read.Text",
+    "Before": "讀取航路",
+    "After": "讀取航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "comboBoxMapType.ToolTip",
+    "Before": "更改當前地圖類型",
+    "After": "變更目前地圖類型"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "deleteWPToolStripMenuItem.Text",
+    "Before": "删除航點",
+    "After": "刪除航點"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "loiterForeverToolStripMenuItem.Text",
+    "Before": "永久",
+    "After": "持續盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "loitertimeToolStripMenuItem.Text",
+    "Before": "時間",
+    "After": "依時間盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "loitercirclesToolStripMenuItem.Text",
+    "Before": "圈數",
+    "After": "依圈數盤旋"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "ContextMeasure.Text",
+    "Before": "測距",
+    "After": "測量距離"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "addPolygonPointToolStripMenuItem.Text",
+    "Before": "增加頂點",
+    "After": "繪製多邊形"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "clearPolygonToolStripMenuItem.Text",
+    "Before": "清除區域",
+    "After": "清除多邊形"
+  },
+  {
+    "File": "GCSViews/FlightPlanner.zh-TW.resx",
+    "Key": "clearMissionToolStripMenuItem.Text",
+    "Before": "清空任務",
+    "After": "清除任務"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-TW.resx",
+    "Key": "goHereToolStripMenuItem.Text",
+    "Before": "飛到這里",
+    "After": "飛到此處"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-TW.resx",
+    "Key": "BUT_clear_track.Text",
+    "Before": "清除路徑",
+    "After": "清除航跡"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-TW.resx",
+    "Key": "Gspeed.ToolTip",
+    "Before": "",
+    "After": "按兩下以變更最大值"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-TW.resx",
+    "Key": "recordHudToAVIToolStripMenuItem.Text",
+    "Before": "錄製為AVI",
+    "After": "將 HUD 錄製為 AVI"
+  },
+  {
+    "File": "GCSViews/FlightData.zh-TW.resx",
+    "Key": "stopRecordToolStripMenuItem.Text",
+    "Before": "停止錄製",
+    "After": "停止錄影"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigESCCalibration.zh-Hans.resx",
+    "Key": "label2.Text",
+    "Before": "介紹：\n1. 完成遙控器校準\n2. 從載具上移除螺旋槳，拔下電池\n3. 點按這個按鈕來啟用電調校準并重啟控制板\n4. 插上電池\n5. 按下安全開關（如果存在）并等待電調的聲音\n6. 拔下并再次插上電池\n7. 解鎖并測試電機旋轉\n8. 拔下電池，重新裝上螺旋槳",
+    "After": "請先拆下螺旋槳！\n按下此按鈕後：\n－拔除 USB 與電池\n－接上電池\n－LED 閃爍時，按下安全開關（若有安裝）\n－電調校準時應發出提示音\n－完成後以正常方式重新啟動飛控"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "BadCoords",
+    "Before": "有問題的經度/緯度",
+    "After": "無效的緯度／經度"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "CannotGraphField",
+    "Before": "不能繪製這一區域",
+    "After": "無法繪製此欄位的曲線"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "InvalidBaudRate",
+    "Before": "無效的波特率",
+    "After": "無效的鮑率"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "InvalidField",
+    "Before": "無效的 Field",
+    "After": "無效的欄位"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "InvalidPanRange",
+    "Before": "無效的 Pan 範圍",
+    "After": "無效的水平轉向範圍"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "InvalidPortName",
+    "Before": "無效的串口名",
+    "After": "無效的連接埠名稱"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "InvalidTiltRange",
+    "Before": "無效的傾斜範圍",
+    "After": "無效的俯仰轉向範圍"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "InvalidUpdateRate",
+    "Before": "無效的刷新率",
+    "After": "無效的更新頻率"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "NoFMTMessage",
+    "Before": "沒有格式(FMT)資訊 for",
+    "After": "找不到下列項目的格式（FMT）訊息："
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "PleaseSelectCell",
+    "Before": "Please select a cell first",
+    "After": "請先選取一個儲存格"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "WarningUpdateParamList",
+    "Before": "更新參數\n如果您的載具在空中，請不要這么做！\n",
+    "After": "更新參數\n飛行中請勿執行此操作。\n"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "DownloadedFromInternet",
+    "Before": "下載完畢",
+    "After": "已從網際網路下載"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "AdvancedParams",
+    "Before": "高級參數",
+    "After": "進階參數"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "BasicTuning",
+    "Before": "基本調參",
+    "After": "基本調校"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "ExtendedTuning",
+    "Before": "擴展調參",
+    "After": "進階調校"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "GeoFence",
+    "Before": "地理圍欄",
+    "After": "電子圍籬"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "Only1Hb",
+    "Before": "只接收到一次Heartbeat",
+    "After": "僅收到 1 個心跳封包"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "Only1HbD",
+    "Before": "Only 1 Mavlink Heartbeat Packets was read from this port - Verify your hardware is setup correctly\nMission Planner waits for 2 valid heartbeat packets before connecting",
+    "After": "此連接埠僅收到 1 個 MAVLink 心跳封包，請檢查硬體設定。\nMission Planner 需收到 2 個有效的心跳封包才會建立連線。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "Trying",
+    "Before": "嘗試連線。\n在{0}秒后超時",
+    "After": "正在嘗試連線。\n將於 {0} 秒後逾時"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "PleaseConnectAndBackupConfig",
+    "Before": "請在配置選項卡連線并備份配置。",
+    "After": "請先連線，並在設定頁備份您的設定。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "UploadingBytesToBoard",
+    "Before": "正在上傳 {0}字節 到您的控制板",
+    "After": "正在上傳 {0} 位元組至控制板："
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "UploadSucceededButVerifyFailed",
+    "Before": "上傳成功，但是校驗失敗: 輸出 {0} 獲得 {1} 位於 ",
+    "After": "上傳成功，但驗證失敗：預期 {0}，實際 {1}，位置："
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "Warningrallypointdistance",
+    "Before": "警告，集結點放置在了比RALLY_LIMIT_KM還大的地方",
+    "After": "警告：集合點的距離超過 RALLY_LIMIT_KM。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "WarningAC31",
+    "Before": "警告，從AC 3.1起，電機將在解鎖后轉動，這可以通過MOT_SPIN_ARMED參數配置",
+    "After": "警告：自 AC 3.1 起，馬達在解鎖後會轉動，可透過 MOT_SPIN_ARMED 參數設定。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "MagCalibMsg",
+    "Before": "請單擊確認并且將自動駕駛儀繞所有軸做圓周運動",
+    "After": "請按下確定，並繞各軸旋轉飛控。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "MissingDataPoints",
+    "Before": "還缺少資料點。您無論如何也想結束校準嗎？",
+    "After": "資料點不足，仍要執行校準嗎？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "RunAnyway",
+    "Before": "非要運行",
+    "After": "仍要執行"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "UpdateFound",
+    "Before": "發現更新\n\n您希望現在更新嗎？ [link;",
+    "After": "發現更新\n\n要立即更新嗎？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "LinkStats",
+    "Before": "鏈接統計",
+    "After": "連線統計"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "Put_the_transmitter_in_bind_mode__Receiver_is_waiting",
+    "Before": "請將發射機置于對頻(bind)模式。接收機正在等待。",
+    "After": "請將發射機設為對頻（bind）模式，接收機正在等待。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "PleaseUnplugTheBoardAnd",
+    "Before": "請拔下控制板，點擊OK后再插入。\nMission Planner將會在30秒內尋找控制板。",
+    "After": "請拔除控制板連線，按下確定後再重新接上。\nMission Planner 會在 30 秒內搜尋控制板。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "ThisBoardHasBeenRetired",
+    "Before": "此控制板已經退出歷史舞臺了，Mission Planner將會上傳最後一個支持的版本到您控制板。",
+    "After": "此控制板已停止支援，Mission Planner 將上傳最後支援的版本（AC 3.2.1／AP 3.4.0）。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "PleaseWaitForTheMusicalTones",
+    "Before": "請在音樂播放完后再點擊OK。",
+    "After": "請等待提示音結束後再按下確定。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "TrackerHome",
+    "Before": "追蹤器的家",
+    "After": "追蹤器 HOME 位置"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "velocity_variance",
+    "Before": "velocity variance",
+    "After": "速度變異量"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "compass_variance",
+    "Before": "compass variance",
+    "After": "羅盤變異量"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "pos_horiz_variance",
+    "Before": "pos horiz variance",
+    "After": "水平位置變異量"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "pos_vert_variance",
+    "Before": "pos vert variance",
+    "After": "垂直位置變異量"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "terrain_alt_variance",
+    "Before": "地形高度差異",
+    "After": "地形高度變異量"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "Invalid_home_location",
+    "Before": "無效的家位置",
+    "After": "無效的 HOME 位置"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadCoords",
+    "Before": "Bad Lat/Lng",
+    "After": "無效的緯度／經度"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "CannotGraphField",
+    "Before": "Cannot graph this field",
+    "After": "無法繪製此欄位的曲線"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "CommandFailed",
+    "Before": "The Command failed to execute\n",
+    "After": "命令執行失敗\n"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ERROR",
+    "Before": "Error",
+    "After": "錯誤"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorClosingLogFile",
+    "Before": "Error closing log files",
+    "After": "關閉日誌檔案時錯誤"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorCommunicating",
+    "Before": "Error communicating with the autopilot",
+    "After": "與自動駕駛儀通訊時錯誤"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorConnecting",
+    "Before": "Error Connecting\n",
+    "After": "連線錯誤\n"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorFeatureNotEnabled",
+    "Before": "This feature is not enabled in your firmware.",
+    "After": "這個功能在您的韌體沒有啟用"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorFirmwareFile",
+    "Before": "Error loading firmware file",
+    "After": "載入韌體時錯誤"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorLogList",
+    "Before": "Error receiving log list",
+    "After": "接收日誌列表時錯誤"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorNoResponse",
+    "Before": "Error: no response from MAV",
+    "After": "錯誤: 沒有來自飛行器的響應"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorNotConnected",
+    "Before": "You are not connected.",
+    "After": "您還沒有連線。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorReceivingParams",
+    "Before": "Error receiving list\n",
+    "After": "接收列表時錯誤\n"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorRejectedByMAV",
+    "Before": "Error: command rejected by MAV",
+    "After": "錯誤: 飛行器拒絕了命令"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorRenameFile",
+    "Before": "Error renaming file",
+    "After": "重命名檔案時出錯"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorSettingParameter",
+    "Before": "Error setting parameter ",
+    "After": "設定參數時出錯"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorSetValueFailed",
+    "Before": "Set {0} Failed",
+    "After": "設定 {0} 失敗"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidAlt",
+    "Before": "Invalid Alt",
+    "After": "無效的高度"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidBaudRate",
+    "Before": "Invalid BaudRate",
+    "After": "無效的鮑率"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidField",
+    "Before": "Invalid Field",
+    "After": "無效的欄位"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidFileName",
+    "Before": "Invalid FileName",
+    "After": "無效的檔名"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidNumberEntered",
+    "Before": "Invalid number entered\n",
+    "After": "輸入的數字無效\n"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidPanRange",
+    "Before": "Invalid Pan Range",
+    "After": "無效的水平轉向範圍"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidPortName",
+    "Before": "Invalid PortName",
+    "After": "無效的連接埠名稱"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidTiltRange",
+    "Before": "Invalid Tilt Range",
+    "After": "無效的俯仰轉向範圍"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidUpdateRate",
+    "Before": "Invalid Update Rate",
+    "After": "無效的更新頻率"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "NoFMTMessage",
+    "Before": "No FMT message for ",
+    "After": "找不到下列項目的格式（FMT）訊息："
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "PleaseConnect",
+    "Before": "Please connect first",
+    "After": "請先連線"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "PleaseLoadValidFile",
+    "Before": "Please load a valid file",
+    "After": "請載入一個有效的檔案"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "PleaseSelectCell",
+    "Before": "Please select a cell first",
+    "After": "請先選取一個儲存格"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "SelectComport",
+    "Before": "Please select a comport",
+    "After": "請先選擇一個串口"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "WarningLogBrowseFMTMissing",
+    "Before": "Log Browse will not function correctly without FMT messages in your log.\nThese appear to be missing from your log.",
+    "After": "日誌瀏覽因您的日誌中沒有格式(FMT)資訊而不能正確工作。\n這些似乎是從您的日誌裡丟失的。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "WarningUpdateParamList",
+    "Before": "Update Params\nDON'T DO THIS IF YOU ARE IN THE AIR\n",
+    "After": "更新參數\n飛行中請勿執行此操作。\n"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Checking",
+    "Before": "Checking ",
+    "After": "正在檢查 "
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "DownloadedFromInternet",
+    "Before": "Downloaded from internet",
+    "After": "已從網際網路下載"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Getting",
+    "Before": "Getting ",
+    "After": "正在獲取 "
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "GettingUpdatedParams",
+    "Before": "Getting updated parameters",
+    "After": "正在獲取更新的參數列表"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "AdvancedParams",
+    "Before": "Advanced Params",
+    "After": "進階參數"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BasicTuning",
+    "Before": "Basic Tuning",
+    "After": "基本調校"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Desc",
+    "Before": "Description: ",
+    "After": "描述："
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ExtendedTuning",
+    "Before": "Extended Tuning",
+    "After": "進階調校"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "FlightModes",
+    "Before": "Flight Modes",
+    "After": "飛行模式"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "FullParameterList",
+    "Before": "Full Parameter List",
+    "After": "全部參數表"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "FullParameterTree",
+    "Before": "Full Parameter Tree",
+    "After": "全部參數樹"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "GeoFence",
+    "Before": "GeoFence",
+    "After": "電子圍籬"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "StandardParams",
+    "Before": "Standard Params",
+    "After": "標準參數"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Units",
+    "Before": "Units: {0}{1}",
+    "After": "單位：{0}{1}"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ProgrammedOK",
+    "Before": "Sucessfully programmed",
+    "After": "寫入成功"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "CONNECTc",
+    "Before": "CONNECT",
+    "After": "連線"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Disconnect",
+    "Before": "Disconnect",
+    "After": "斷開連線"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "DISCONNECTc",
+    "Before": "DISCONNECT",
+    "After": "斷開連線"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Failclog",
+    "Before": "Failed to create ground station log - wont log this session",
+    "After": "建立日誌失敗 - 將不會記錄本次會話"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "NewFirmware",
+    "Before": "New Firmware",
+    "After": "新韌體"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "NewFirmwareA",
+    "Before": "New firmware available\n",
+    "After": "有新韌體可用\n"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Pleaseup",
+    "Before": "\nPlease upgrade",
+    "After": "\n請升級"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Stillmoving",
+    "Before": "Your model is still moving are you sure you want to disconnect?",
+    "After": "您的模型仍然在移動，確認斷開連線？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Timeout",
+    "Before": "Timeout waiting for autoscan/no mavlink device connected",
+    "After": "自動掃描超時或者沒有mavlink設備"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ConnectFailed",
+    "Before": "Connect Failed",
+    "After": "連線失敗"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ConnectingMavlink",
+    "Before": "Connecting Mavlink",
+    "After": "正在連線Mavlink"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Done",
+    "Before": "Done",
+    "After": "完成"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "GettingParams",
+    "Before": "Getting Params",
+    "After": "正在獲取參數"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "GettingParamsD",
+    "Before": "Getting Params...",
+    "After": "正在獲取參數..."
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Gotparam",
+    "Before": "Got param ",
+    "After": "獲得參數 "
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "MavlinkConnecting",
+    "Before": "Mavlink Connecting...",
+    "After": "Mavlink 正在連線..."
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Only1Hb",
+    "Before": "Only 1 Heatbeat Received",
+    "After": "僅收到 1 個心跳封包"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Only1HbD",
+    "Before": "Only 1 Mavlink Heartbeat Packets was read from this port - Verify your hardware is setup correctly\nMission Planner waits for 2 valid heartbeat packets before connecting",
+    "After": "此連接埠僅收到 1 個 MAVLink 心跳封包，請檢查硬體設定。\nMission Planner 需收到 2 個有效的心跳封包才會建立連線。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Trying",
+    "Before": "Trying to connect.\nTimeout in {0}",
+    "After": "正在嘗試連線。\n將於 {0} 秒後逾時"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "CantDetectBoardVersion",
+    "Before": "Cant detect your Board version. Please check your cabling",
+    "After": "不能檢測到您控制板的版本。 請檢查連線"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "CheckPortSettingsOr",
+    "Before": "Check port settings or Port in use?",
+    "After": "檢查端口設定或者正在使用端口？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "CommunicationErrorNoConnection",
+    "Before": "Communication Error - no connection",
+    "After": "通信錯誤 - 沒有連線"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "DetectedA",
+    "Before": "Detected a ",
+    "After": "檢測到一個"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "DetectingBoardVersion",
+    "Before": "Detecting Board Version",
+    "After": "正在檢測控制板的版本"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "DownloadingFromInternet",
+    "Before": "Downloading from Internet",
+    "After": "正在下載"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "EppromChanged",
+    "Before": "Epprom changed, all your setting will be lost during the update,\nDo you wish to continue?",
+    "After": "Epprom更改了, 您所有的設定將在更新中丟失,\n您希望繼續嗎？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "EppromFormatChanged",
+    "Before": "Epprom format changed ({0) vs {1})",
+    "After": "Epprom格式已更改 ({0) vs {1})"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "FailedDownload",
+    "Before": "Failed download",
+    "After": "下載失敗"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "FailedReadHEX",
+    "Before": "Failed read HEX",
+    "After": "讀取十六進制檔案失敗"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "FailedToReadHex",
+    "Before": "Failed to read firmware.hex :",
+    "After": "讀取firmware.hex失敗 :"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "FailedUpload",
+    "Before": "Failed upload",
+    "After": "上傳失敗"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "GettingFWList",
+    "Before": "Getting FW List",
+    "After": "正在獲取韌體列表"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "GettingFWVersion",
+    "Before": "Getting FW Version",
+    "After": "正在獲取韌體版本"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidBoardType",
+    "Before": "Invalid Board Type",
+    "After": "無效的控制板類型"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "PleaseConnectAndBackupConfig",
+    "Before": "Please connect and backup your config in the configuration tab.",
+    "After": "請先連線，並在設定頁備份您的設定。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ReadingHexFile",
+    "Before": "Reading Hex File",
+    "After": "正在讀取十六進制檔案"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ReceivedList",
+    "Before": "Received List",
+    "After": "獲取列表完成"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "UploadComplete",
+    "Before": "Upload Complete",
+    "After": "上傳完成"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "UploadingBytesToBoard",
+    "Before": "Uploading {0} bytes to Board:",
+    "After": "正在上傳 {0} 位元組至控制板："
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "VerifyComplete",
+    "Before": "Verify Complete",
+    "After": "校驗完成"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "VerifyFirmware",
+    "Before": "Verify Firmware",
+    "After": "校驗韌體"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "UploadSucceededButVerifyFailed",
+    "Before": "Upload succeeded, but verify failed: exp {0} got {1} at ",
+    "After": "上傳成功，但驗證失敗：預期 {0}，實際 {1}，位置："
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ReadingHex",
+    "Before": "Reading Hex",
+    "After": "正在讀取十六進制檔案"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Warningrallypointdistance",
+    "Before": "Warning rally points are located greater than RALLY_LIMIT_KM",
+    "After": "警告：集合點的距離超過 RALLY_LIMIT_KM。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Warning",
+    "Before": "Warning",
+    "After": "警告"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "WarningAC32",
+    "Before": "Warning, if you are installing AC 3.2 for the first time you MUST redo a Compass calibration.",
+    "After": "警告，如果您是第一次安裝AC 3.2，您“必須”重做一次羅盤校準。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "WarningAC31",
+    "Before": "Warning, as of AC 3.1 motors will spin when armed, configurable through the MOT_SPIN_ARMED parameter",
+    "After": "警告：自 AC 3.1 起，馬達在解鎖後會轉動，可透過 MOT_SPIN_ARMED 參數設定。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "MagCalibMsg",
+    "Before": "Please click ok and move the autopilot around all axises in a circular motion",
+    "After": "請按下確定，並繞各軸旋轉飛控。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "MissingDataPoints",
+    "Before": "You are missing data points. do you want to run the calibration anyway?",
+    "After": "資料點不足，仍要執行校準嗎？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "RunAnyway",
+    "Before": "run anyway",
+    "After": "仍要執行"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "UpdateFound",
+    "Before": "Update Found\n\nDo you wish to update now? ",
+    "After": "發現更新\n\n要立即更新嗎？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "UpdateNow",
+    "Before": "Update Now",
+    "After": "現在更新"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "RawParamWarning",
+    "Before": "Raw Param Warning",
+    "After": "原始參數警告"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "RawParamWarningi",
+    "Before": "All values on this screen are not min/max checked. Please double check your input.\nPlease use Standard/Advanced Params for the safe settings",
+    "After": "本頁面所有的值都不會進行大小檢查。請再三檢查您輸入的值。\n如想安全地設定，請使用標準/高級參數"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ShowMeAgain",
+    "Before": "Show me again?",
+    "After": "再次顯示？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "OK",
+    "Before": "OK",
+    "After": "好的"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "LinkStats",
+    "Before": "Link Stats",
+    "After": "連線統計"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Stop",
+    "Before": "Stop",
+    "After": "停止"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Connect",
+    "Before": "Connect",
+    "After": "連線"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Start",
+    "Before": "Start",
+    "After": "開始"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "AreYouSureYouWantToUpload",
+    "Before": "Are you sure you want to upload ",
+    "After": "您確認要升級到"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Beta",
+    "Before": "Beta",
+    "After": "測試版"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BetaWarning",
+    "Before": "These are beta firmware, use at your own risk!!!",
+    "After": "這些是測試版韌體，請您自擔風險！！！"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "CanNotConnectToComPortAnd",
+    "Before": "Can not connect to com port and detect board type",
+    "After": "不能連線COM口檢測控制板類型"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Continue",
+    "Before": "Continue",
+    "After": "繼續"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ErrorUploadingFirmware",
+    "Before": "Error uploading firmware",
+    "After": "上載韌體錯誤"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "QuestionMark",
+    "Before": "?",
+    "After": "嗎？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Trunk",
+    "Before": "trunk",
+    "After": "主幹分支"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "TrunkWarning",
+    "Before": "These are the latest trunk firmware, use at your own risk!!!",
+    "After": "這些是最新的主幹分支（開發版）韌體，請您自擔風險！！！"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadGPSHealth",
+    "Before": "Unhealthy GPS Signal",
+    "After": "GPS 訊號異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadAirspeed",
+    "Before": "Unhealthy Airspeed",
+    "After": "空速感測器異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadGyroHealth",
+    "Before": "Bad Gyro Health",
+    "After": "陀螺儀異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadAccelHealth",
+    "Before": "Bad Accel Health",
+    "After": "加速度計異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadCompassHealth",
+    "Before": "Bad Compass Health",
+    "After": "羅盤異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadBaroHealth",
+    "Before": "Bad Baro Health",
+    "After": "氣壓計異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadLiDARHealth",
+    "Before": "Bad LiDAR Health",
+    "After": "光達異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadOptFlowHealth",
+    "Before": "Bad OptFlow Health",
+    "After": "光流感測器異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadorNoTerrainData",
+    "Before": "Bad or No Terrain Data",
+    "After": "地形資料異常或缺失"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "GeofenceBreach",
+    "Before": "Geofence Breach",
+    "After": "電子圍籬越界"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadAHRS",
+    "Before": "Unhealthy AHRS",
+    "After": "AHRS 姿態航向系統異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "NORCReceiver",
+    "Before": "NO RC Receiver",
+    "After": "未偵測到遙控接收機"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "AutoWP",
+    "Before": "Auto WP",
+    "After": "自動航點"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "EnsurePropsNotOn",
+    "Before": "Ensure your props are not on the Plane/Quad",
+    "After": "確保飛行器沒有安裝螺旋槳"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "FailSafe",
+    "Before": "FailSafe",
+    "After": "故障保護"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Error_binding",
+    "Before": "Error binding",
+    "After": "對頻錯誤"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Put_the_transmitter_in_bind_mode__Receiver_is_waiting",
+    "Before": "Put the transmitter in bind mode. Receiver is waiting.",
+    "After": "請將發射機設為對頻（bind）模式，接收機正在等待。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Completed",
+    "Before": "Completed",
+    "After": "完成"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Click_when_Done",
+    "Before": "Click when Done",
+    "After": "完成時點擊"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Saving",
+    "Before": "Saving",
+    "After": "儲存中"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "InvalidCert",
+    "Before": "Invalid Cert",
+    "After": "證書無效"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Note",
+    "Before": "Note",
+    "After": "注意"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "PleaseUnplugTheBoardAnd",
+    "Before": "Please unplug the board, and then press OK and plug back in.\nMission Planner will look for 30 seconds to find the board",
+    "After": "請拔除控制板連線，按下確定後再重新接上。\nMission Planner 會在 30 秒內搜尋控制板。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ThisBoardHasBeenRetired",
+    "Before": "This board has been retired, Mission Planner this will upload the last available version to your board (AC 3.2.1/AP 3.4.0)",
+    "After": "此控制板已停止支援，Mission Planner 將上傳最後支援的版本（AC 3.2.1／AP 3.4.0）。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "YouAreUsingUnsupportedHardware",
+    "Before": "You are using unsupported hardware.\nThis board does not contain a valid certificate of authenticity.\nPlease contact your hardware vendor about signing your hardware.",
+    "After": "您正在使用不受支持的硬體。\n此控制板沒有包含真偽性的有效證書。\n請就為您的硬體簽名聯繫您的硬體提供商。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "NoNeedToUpload",
+    "Before": "No need to upload. already on the board",
+    "After": "無需上傳。當前韌體已經安裝在控制板上。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "PleaseWaitForTheMusicalTones",
+    "Before": "Please wait for the musical tones to finish before clicking OK",
+    "After": "請等待提示音結束後再按下確定。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ObtainFromModule",
+    "Before": "Obtain From Module",
+    "After": "從模組獲取"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "SetHere",
+    "Before": "Set Here",
+    "After": "設定在這"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "TrackerHome",
+    "Before": "Tracker Home",
+    "After": "追蹤器 HOME 位置"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "velocity_variance",
+    "Before": "velocity variance",
+    "After": "速度變異量"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "compass_variance",
+    "Before": "compass variance",
+    "After": "羅盤變異量"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "pos_horiz_variance",
+    "Before": "pos horiz variance",
+    "After": "水平位置變異量"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "pos_vert_variance",
+    "Before": "pos vert variance",
+    "After": "垂直位置變異量"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "terrain_alt_variance",
+    "Before": "terrain alt variance",
+    "After": "地形高度變異量"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ChangeThrottle",
+    "Before": "Change Throttle",
+    "After": "更改油門"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Invalid_home_location",
+    "Before": "Invalid home location",
+    "After": "無效的 HOME 位置"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Converting_bin_to_log",
+    "Before": "Converting bin to log",
+    "After": "轉換bin檔案到log檔案"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "UpdateNotFound",
+    "Before": "No update available.",
+    "After": "沒有可用更新"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Failed_to_connect_to_SITL_instance",
+    "Before": "Failed to connect to SITL instance",
+    "After": "無法連線到SITL實例"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Scanning_File",
+    "Before": "Scanning File",
+    "After": "正在掃描檔案"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Zoom_to_the_center_or_the_loaded_file",
+    "Before": "Zoom to the center or the loaded file?",
+    "After": "要縮放至中心或已載入的檔案範圍？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Zoom_To",
+    "Before": "Zoom To",
+    "After": "縮放至"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Do_you_want_to_load_this_into_the_flight_data_screen",
+    "Before": "Do you want to load this into the flight data screen?",
+    "After": "要將此資料載入飛行資料畫面嗎？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Load_data",
+    "Before": "Load data",
+    "After": "載入資料"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Bad_KML_File",
+    "Before": "Bad KML File :",
+    "After": "無效的 KML 檔案："
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "No_valid_heartbeats_read_from_port",
+    "Before": "No valid heartbeats read from port",
+    "After": "未從連接埠收到有效的心跳封包"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Bad_Vision_Position",
+    "Before": "Bad Vision Position",
+    "After": "視覺定位異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "BadLogging",
+    "Before": "Bad Logging",
+    "After": "記錄功能異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ParamRefreshRequired",
+    "Before": "A Param refresh is required - Please press F5\nold #{0}  new #{1}",
+    "After": "需要重新讀取參數，請按 F5。\n原數量：{0}，新數量：{1}"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Failed_to_download_the_SITL_image",
+    "Before": "Failed to download the SITL image.",
+    "After": "無法下載 SITL 映像檔。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Not_available_when_used_as_a_windows_store_app",
+    "Before": "Not available when used as a windows store app",
+    "After": "Windows Store 應用程式版本無法使用此功能。"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "No_firmware_available_for_this_board",
+    "Before": "No firmware available for this board!",
+    "After": "此控制板沒有可用韌體！"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "OnboardOSD",
+    "Before": "Onboard OSD",
+    "After": "機載 OSD"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "User_Params",
+    "Before": "User Params",
+    "After": "使用者參數"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Planner",
+    "Before": "Planner",
+    "After": "規劃器"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Cancel",
+    "Before": "Cancel",
+    "After": "取消"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "No_valid_sik_radio",
+    "Before": "No valid sik radio",
+    "After": "未偵測到有效的 SiK 電台"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Bad_Battery",
+    "Before": "Bad Battery",
+    "After": "電池異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Bad_Proximity",
+    "Before": "Bad Proximity",
+    "After": "避障感測器異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Bad_SatCom",
+    "Before": "Bad SatCom",
+    "After": "衛星通訊異常"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Prearm_check_failed",
+    "Before": "Prearm check failed - check messages",
+    "After": "解鎖前檢查未通過，請查看訊息"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Invalid_Location",
+    "Before": "Invalid Location",
+    "After": "無效的位置"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "Loading",
+    "Before": "Loading",
+    "After": "載入中"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ZeroAltWarningCopter",
+    "Before": "WP# {0} has zero altitude, this means no altitude change! If you want zero altitude, change it to 0.01. Do you want to continue or cancel wp upload?",
+    "After": "航點 {0} 的高度為 0，代表不變更高度！若要指定零高度，請改為 0.01。要繼續還是取消上傳航點？"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ZeroAltWarningTitle",
+    "Before": "Zero Altitude Warning",
+    "After": "零高度警告"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "ZeroAltWarningPlane",
+    "Before": "WP# {0} has zero altitude. If you actually want zero altitude, change it to 0.01 instead for predictable behavior.\n\nOn ArduPlane, zero altitudes may interpreted in two different ways: actual zero altitude, or keep current altitude. WAYPOINT commands will generally honor a zero altitude and LOITER commands will generally interpret it as \"use current altitude\", but only if the altitude frame is \"relative\". There may be more exceptions and this could change in future versions.\n\nONLY SET TO ZERO IF YOU REALLY UNDERSTAND EXACTLY WHAT IS GOING TO HAPPEN IN YOUR CASE (use a simulator to be sure).[link;https://ardupilot.org/plane/docs/common-mavlink-mission-command-messages-mav_cmd.html;Command Documentation]",
+    "After": "航點 {0} 的高度為 0。若確實要指定零高度，請改為 0.01，以取得可預期的行為。\n\nArduPlane 可能將零高度解讀為實際高度 0，或保持目前高度。WAYPOINT 命令通常採用零高度；LOITER 命令在高度座標系為「相對高度」時，通常解讀為「保持目前高度」。其他情況可能有例外，未來版本也可能變更。\n\n請先透過模擬器確認實際行為，充分了解後才設定為 0。[link;https://ardupilot.org/plane/docs/common-mavlink-mission-command-messages-mav_cmd.html;命令說明文件]"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hans.resx",
+    "Key": "EppromFormatChanged",
+    "Before": "Epprom格式已更改 ({0) vs {1})",
+    "After": "EEPROM 格式已變更（{0} 與 {1}）"
+  },
+  {
+    "File": "ExtLibs/Strings/Strings.zh-Hant.resx",
+    "Key": "EppromFormatChanged",
+    "Before": "Epprom格式已更改 ({0) vs {1})",
+    "After": "EEPROM 格式已變更（{0} 與 {1}）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-Hant.resx",
+    "Key": "mavlinkCheckBoxlong_fs.ToolTip",
+    "Before": "Off, no Action, On, RTL",
+    "After": "關閉：不執行動作；開啟：返航（RTL）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-Hant.resx",
+    "Key": "mavlinkCheckBoxshort_fs.ToolTip",
+    "Before": "Off, no Action, On, RTL",
+    "After": "關閉：不執行動作；開啟：返航（RTL）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-Hant.resx",
+    "Key": "mavlinkCheckBoxthr_fs_action.ToolTip",
+    "Before": "Arducopter Auto: Off, no Action, On, RTL\nArducopter Other: if have gps, RTL, Otherwise Land",
+    "After": "ArduCopter AUTO：關閉時不執行動作；開啟時返航（RTL）。\n其他模式：有 GPS 時返航，否則降落。"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-TW.resx",
+    "Key": "mavlinkCheckBoxlong_fs.ToolTip",
+    "Before": "Off, no Action, On, RTL",
+    "After": "關閉：不執行動作；開啟：返航（RTL）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-TW.resx",
+    "Key": "mavlinkCheckBoxshort_fs.ToolTip",
+    "Before": "Off, no Action, On, RTL",
+    "After": "關閉：不執行動作；開啟：返航（RTL）"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigFailSafe.zh-TW.resx",
+    "Key": "mavlinkCheckBoxthr_fs_action.ToolTip",
+    "Before": "Arducopter Auto: Off, no Action, On, RTL\nArducopter Other: if have gps, RTL, Otherwise Land",
+    "After": "ArduCopter AUTO：關閉時不執行動作；開啟時返航（RTL）。\n其他模式：有 GPS 時返航，否則降落。"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigSerialInjectGPS.zh-CN.resx",
+    "Key": "lbl_svin.ToolTip",
+    "Before": "Survey in information\nValid: is the survey in valid\nInProgress: are we currently surveying in our position\nDuration: the number of seconds we have surveyed in\nObs: number of obsivation used in our survey in\nAcc: current accuracy of our survey in point\n",
+    "After": "基站定位測量資訊\nValid：定位測量結果是否有效\nInProgress：是否正在進行定位測量\nDuration：已測量的秒數\nObs：定位測量使用的觀測次數\nAcc：目前測量位置的精度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigSerialInjectGPS.zh-CN.resx",
+    "Key": "label10.ToolTip",
+    "Before": "Survey in information\nValid: is the survey in valid\nInProgress: are we currently surveying in our position\nDuration: the number of seconds we have surveyed in\nObs: number of obsivation used in our survey in\nAcc: current accuracy of our survey in point\n",
+    "After": "基站定位測量資訊\nValid：定位測量結果是否有效\nInProgress：是否正在進行定位測量\nDuration：已測量的秒數\nObs：定位測量使用的觀測次數\nAcc：目前測量位置的精度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigSerialInjectGPS.zh-CN.resx",
+    "Key": "label7.ToolTip",
+    "Before": "Survey in information\nValid: is the survey in valid\nInProgress: are we currently surveying in our position\nDuration: the number of seconds we have surveyed in\nObs: number of obsivation used in our survey in\nAcc: current accuracy of our survey in point\n",
+    "After": "基站定位測量資訊\nValid：定位測量結果是否有效\nInProgress：是否正在進行定位測量\nDuration：已測量的秒數\nObs：定位測量使用的觀測次數\nAcc：目前測量位置的精度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigSerialInjectGPS.zh-CN.resx",
+    "Key": "label9.ToolTip",
+    "Before": "Survey in information\nValid: is the survey in valid\nInProgress: are we currently surveying in our position\nDuration: the number of seconds we have surveyed in\nObs: number of obsivation used in our survey in\nAcc: current accuracy of our survey in point\n",
+    "After": "基站定位測量資訊\nValid：定位測量結果是否有效\nInProgress：是否正在進行定位測量\nDuration：已測量的秒數\nObs：定位測量使用的觀測次數\nAcc：目前測量位置的精度"
+  },
+  {
+    "File": "GCSViews/ConfigurationView/ConfigSerialInjectGPS.zh-CN.resx",
+    "Key": "label8.ToolTip",
+    "Before": "Survey in information\nValid: is the survey in valid\nInProgress: are we currently surveying in our position\nDuration: the number of seconds we have surveyed in\nObs: number of obsivation used in our survey in\nAcc: current accuracy of our survey in point\n",
+    "After": "基站定位測量資訊\nValid：定位測量結果是否有效\nInProgress：是否正在進行定位測量\nDuration：已測量的秒數\nObs：定位測量使用的觀測次數\nAcc：目前測量位置的精度"
+  }
+]

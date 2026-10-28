@@ -39,11 +39,13 @@ namespace MissionPlanner.Controls
             {
                 _increment = value;
                 numericUpDown1.Increment = (decimal) _increment;
-                numericUpDown1.DecimalPlaces = _increment.ToString().Length - 1;
+                var places = (decimal.GetBits((decimal)_increment)[3] >> 16) & 0xff;
+                numericUpDown1.DecimalPlaces = Math.Max(IntegerOnly ? 0 : 6, places);
             }
         }
 
         public float DisplayScale { get; set; }
+        public bool IntegerOnly { get; private set; }
 
         public float MinRange
         {
@@ -76,24 +78,28 @@ namespace MissionPlanner.Controls
 
         public string Value
         {
-            get { return ((float) numericUpDown1.Value*DisplayScale).ToString(CultureInfo.InvariantCulture); }
+            get { return ((float) numericUpDown1.Value*DisplayScale).ToString("R", CultureInfo.InvariantCulture); }
             set
             {
                 float back1 = _minrange;
                 float back2 = _maxrange;
 
-                MinRange = (float) Math.Min(MinRange, double.Parse(value));
-                MaxRange = (float) Math.Max(MaxRange, double.Parse(value));
+                var raw = decimal.Parse(value, NumberStyles.Float, CultureInfo.CurrentCulture);
+                MinRange = (float) Math.Min(MinRange, (double)raw);
+                MaxRange = (float) Math.Max(MaxRange, (double)raw);
 
                 _minrange = back1;
                 _maxrange = back2;
 
-                if (double.Parse(value) > _maxrange || double.Parse(value) < _minrange)
+                if ((double)raw > _maxrange || (double)raw < _minrange)
                 {
                     numericUpDown1.BackColor = Color.Orange;
                 }
 
-                numericUpDown1.Value = (decimal) ((float) decimal.Parse(value)/DisplayScale);
+                var displayed = raw / (decimal)DisplayScale;
+                var places = (decimal.GetBits(displayed)[3] >> 16) & 0xff;
+                numericUpDown1.DecimalPlaces = Math.Max(numericUpDown1.DecimalPlaces, places);
+                numericUpDown1.Value = displayed;
                 numericUpDown1_ValueChanged(null, null);
 
                 if (ValueChanged != null)
@@ -119,8 +125,15 @@ namespace MissionPlanner.Controls
 
         public RangeControl(string param, String Desc, string Label, float increment, float Displayscale, float minrange,
             float maxrange, string value)
+            : this(param, Desc, Label, increment, Displayscale, minrange, maxrange, value, false)
+        {
+        }
+
+        public RangeControl(string param, String Desc, string Label, float increment, float Displayscale, float minrange,
+            float maxrange, string value, bool integerOnly)
         {
             InitializeComponent();
+            IntegerOnly = integerOnly;
             setup(param, Desc, Label, increment, Displayscale, minrange, maxrange, value);
         }
 
@@ -202,23 +215,32 @@ namespace MissionPlanner.Controls
         {
             // update trackbar value
             if (!intrackbarchange)
-                trackBar1.Value =
-                    (int) map(numericUpDown1.Value, numericUpDown1.Minimum, numericUpDown1.Maximum, 0, 1000);
-
-            // if the increment is divisible by one, always round to an int
-            if ((Increment % 1) == 0)
             {
-                var round = Math.Round(numericUpDown1.Value, 0);
-                if(round > numericUpDown1.Minimum)
-                    numericUpDown1.Value = (int) round;
+                // Moving the indicator must not feed its 1/1000 resolution back
+                // into a precise typed number (or a value just read from the FC).
+                intrackbarchange = true;
+                try
+                {
+                    trackBar1.Value = numericUpDown1.Minimum == numericUpDown1.Maximum ? 0 :
+                        (int)map(numericUpDown1.Value, numericUpDown1.Minimum, numericUpDown1.Maximum, 0, 1000);
+                }
+                finally { intrackbarchange = false; }
+            }
+
+            // Increment is an arrow/slider step, not the parameter's wire type.
+            // Only integer parameters are rounded, in raw units before scaling.
+            if (IntegerOnly)
+            {
+                var round = Math.Round(numericUpDown1.Value * (decimal)DisplayScale, 0) / (decimal)DisplayScale;
+                numericUpDown1.Value = Math.Max(numericUpDown1.Minimum, Math.Min(numericUpDown1.Maximum, round));
             }
 
             numericUpDown1.BackColor = Color.Green;
 
-            if ((float) numericUpDown1.Value < (_minrange))
+            if ((float) numericUpDown1.Value * DisplayScale < (_minrange))
                 numericUpDown1.BackColor = Color.Orange;
 
-            if ((float) numericUpDown1.Value > (_maxrange))
+            if ((float) numericUpDown1.Value * DisplayScale > (_maxrange))
                 numericUpDown1.BackColor = Color.Orange;
 
             if (ValueChanged != null)
@@ -227,9 +249,10 @@ namespace MissionPlanner.Controls
 
         protected void trackBar1_ValueChanged(object sender, EventArgs e)
         {
+            if (intrackbarchange) return;
             intrackbarchange = true;
-            numericUpDown1.Value = map(trackBar1.Value, 0, 1000, numericUpDown1.Minimum, numericUpDown1.Maximum);
-            intrackbarchange = false;
+            try { numericUpDown1.Value = map(trackBar1.Value, 0, 1000, numericUpDown1.Minimum, numericUpDown1.Maximum); }
+            finally { intrackbarchange = false; }
         }
 
         #endregion

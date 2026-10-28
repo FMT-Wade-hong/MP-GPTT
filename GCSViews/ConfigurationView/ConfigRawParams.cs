@@ -48,23 +48,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         internal static string GetFmtMetadataVehicle(string firmware, string versionText)
         {
-            string family;
-            switch (firmware)
-            {
-                case "ArduCopter2": case "ArduCopter": family = "Copter"; break;
-                case "ArduPlane": family = "Plane"; break;
-                case "ArduRover": case "Rover": family = "Rover"; break;
-                case "ArduSub": family = "Sub"; break;
-                default: return firmware;
-            }
-            try
-            {
-                var version = VersionDetection.GetVersion(versionText);
-                if (version.Major == 4 && version.Minor >= 5 && version.Minor <= 7 && version.Build >= 0)
-                    return family + version.ToString(3);
-            }
-            catch { /* Unknown firmware version: keep the existing lookup path. */ }
-            return firmware;
+            return ParameterMetaDataRepository.GetFirmwareKey(firmware, versionText);
         }
 
         public ConfigRawParams()
@@ -159,7 +143,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         public void Activate()
         {
-            var metadataVehicle = GetFmtMetadataVehicle(MainV2.comPort.MAV.cs.firmware.ToString(), MainV2.comPort.MAV.VersionString);
+            var metadataVehicle = MainV2.GetCurrentFirmwareMetadataKey();
             if (fmtMetadataVehicle != metadataVehicle) startup = true;
             fmtMetadataVehicle = metadataVehicle;
             if ((rowlist.Count == 0) || (!Settings.Instance.GetBoolean("SlowMachine", false))) startup = true;

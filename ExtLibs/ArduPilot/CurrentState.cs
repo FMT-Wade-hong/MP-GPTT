@@ -450,6 +450,10 @@ namespace MissionPlanner
         [GroupText("Position")]
         public float gpshdop2 { get; set; }
 
+        [DisplayText("Gps VDOP2")]
+        [GroupText("Position")]
+        public float gpsvdop2 { get; set; }
+
         [DisplayText("Sat Count2")]
         [GroupText("Position")]
         public float satcount2 { get; set; }
@@ -3405,6 +3409,7 @@ namespace MissionPlanner
 
                             gpsstatus2 = gps.fix_type;
                             gpshdop2 = (float)Math.Round(gps.eph / 100.0, 2);
+                            gpsvdop2 = gps.epv == ushort.MaxValue ? 0 : (float)Math.Round(gps.epv / 100.0, 2);
 
                             satcount2 = gps.satellites_visible;
 

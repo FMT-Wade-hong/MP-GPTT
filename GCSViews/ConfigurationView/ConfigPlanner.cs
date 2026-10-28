@@ -1007,14 +1007,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             if (((CheckBox)sender).Checked)
             {
-                var server = "https://api.adsb.lol/"; // default to adsb.lol
-                if (Settings.Instance["adsbserver"] != null)
-                    server = Settings.Instance["adsbserver"];
-                if (DialogResult.Cancel == InputBox.Show("ADSB Server", "Server IP or API base URL (see https://ardupilot.org/planner/docs/common-adsb.html)", ref server))
+                var server = AdsbApi.GetConfiguredServer(Settings.Instance);
+                if (DialogResult.Cancel == InputBox.Show("ADSB Server",
+                    "Server IP or API base URL\nDefault: https://opendata.adsb.fi/api\nTaiwan ADIZ / 100 NM / 2 seconds\nData: adsb.fi (https://adsb.fi)", ref server))
                     return;
-                // Strip ending slash off server
-                if (server.EndsWith("/"))
-                    server = server.Substring(0, server.Length - 1);
+                server = AdsbApi.NormalizeServer(server);
                 Settings.Instance["adsbserver"] = server;
 
                 // if server isn't an HTTP(S) URL, assume TCP and ask for a port

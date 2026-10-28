@@ -131,15 +131,13 @@
     <value>340, 180</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>介紹：
-1. 完成遙控器校準
-2. 從載具上移除螺旋槳，拔下電池
-3. 點按這個按鈕來啟用電調校準并重啟控制板
-4. 插上電池
-5. 按下安全開關（如果存在）并等待電調的聲音
-6. 拔下并再次插上電池
-7. 解鎖并測試電機旋轉
-8. 拔下電池，重新裝上螺旋槳</value>
+    <value>請先拆下螺旋槳！
+按下此按鈕後：
+－拔除 USB 與電池
+－接上電池
+－LED 閃爍時，按下安全開關（若有安裝）
+－電調校準時應發出提示音
+－完成後以正常方式重新啟動飛控</value>
   </data>
   <data name="labelRC.Location" type="System.Drawing.Point, System.Drawing">
     <value>147, 57</value>

@@ -78,7 +78,10 @@ namespace MissionPlanner
 
             AppDomain.CurrentDomain.TypeResolve += CurrentDomain_TypeResolve;
 
-            AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
+            // Handled socket exceptions can occur thousands of times per minute.
+            // Full first-chance tracing is an explicit diagnostic option only.
+            if (Environment.GetEnvironmentVariable("FMT_TRACE_FIRST_CHANCE") == "1")
+                AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
 
             //AppDomain.CurrentDomain.AssemblyResolve += Resolver;
         }
@@ -122,6 +125,7 @@ namespace MissionPlanner
         public static void Start(string[] args)
         {
             Program.args = args;
+            FMT.FmtCrashDiagnostics.Record("session-start");
             Console.WriteLine(
                 "If your error is about Microsoft.DirectX.DirectInput, please install the latest directx redist from here http://www.microsoft.com/en-us/download/details.aspx?id=35 \n\n");
             Console.WriteLine("Debug under mono    MONO_LOG_LEVEL=debug mono MissionPlanner.exe");
@@ -471,7 +475,10 @@ namespace MissionPlanner
                 using (var login = new FMT.FmtLoginForm())
                 {
                     if (login.ShowDialog() != DialogResult.OK)
+                    {
+                        FMT.FmtCrashDiagnostics.Record("session-end: login cancelled");
                         return;
+                    }
                 }
                 Splash?.Show();
                 Console.WriteLine("Application.Run(new MainV2())");
@@ -479,9 +486,12 @@ namespace MissionPlanner
                 // Main-window close has completed (including config/log cleanup).
                 // Do not let foreground threads in drivers/plugins retain a headless GCS.
                 FMT.FmtRelayControlService.Shutdown();
+                FMT.FmtCrashDiagnostics.Record("session-end: main window closed");
             }
             catch (Exception ex)
             {
+                FMT.FmtCrashDiagnostics.Record("fatal: application loop", ex);
+                Environment.ExitCode = 1;
                 log.Fatal("Fatal app exception", ex);
                 Console.WriteLine(ex.ToString());
 
@@ -547,10 +557,15 @@ namespace MissionPlanner
             }
         }
 
+        [ThreadStatic] private static bool tracingFirstChance;
         private static void CurrentDomain_FirstChanceException(object sender,
             System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
-            log.Debug("FirstChanceException in: " + e.Exception.Source, e.Exception);
+            if (tracingFirstChance) return;
+            tracingFirstChance = true;
+            try { log.Debug("FirstChanceException in: " + e.Exception.Source, e.Exception); }
+            catch { }
+            finally { tracingFirstChance = false; }
         }
 
         private static Assembly CurrentDomain_TypeResolve(object sender, ResolveEventArgs args)
@@ -682,6 +697,14 @@ namespace MissionPlanner
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
+            var exception = e.ExceptionObject as Exception;
+            FMT.FmtCrashDiagnostics.Record(e.IsTerminating ? "fatal: unhandled exception" : "unhandled exception", exception);
+            if (e.IsTerminating)
+            {
+                Environment.ExitCode = 1;
+                // The runtime is shutting down. Avoid a modal UI on a worker thread.
+                return;
+            }
             try
             {
                 var list = AppDomain.CurrentDomain.ReflectionOnlyGetAssemblies();
@@ -693,7 +716,7 @@ namespace MissionPlanner
 
             }
 
-            handleException((Exception) e.ExceptionObject);
+            if (exception != null) handleException(exception);
         }
 
         static string GetStackTrace(Exception e)
@@ -814,6 +837,7 @@ namespace MissionPlanner
         static void Application_ThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)
         {
             Exception ex = e.Exception;
+            FMT.FmtCrashDiagnostics.Record("UI thread exception", ex);
 
             handleException(ex);
         }

@@ -51,6 +51,7 @@ obj3/
 /CLAUDE.md
 
 # Local companion projects, signing material and test/build scratch space.
+/FMT/FrameParams/H420-source-full.param
 /private-signing/
 /tmp/
 /.dotnet-home/

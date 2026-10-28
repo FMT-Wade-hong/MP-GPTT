@@ -1700,9 +1700,16 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
         /// </summary>
         /// <param name="paramname">name as a string</param>
         /// <param name="value"></param>
-        public async Task<bool> setParamAsync(byte sysid, byte compid, string paramname, double value,
+        public Task<bool> setParamAsync(byte sysid, byte compid, string paramname, double value,
             bool force = false)
         {
+            return setParamCheckedAsync(sysid, compid, paramname, value, force, null);
+        }
+
+        public async Task<bool> setParamCheckedAsync(byte sysid, byte compid, string paramname, double value,
+            bool force, Func<bool> canContinue)
+        {
+            if (canContinue != null && !canContinue()) throw new OperationCanceledException("Parameter write cancelled");
             if (!MAVlist[sysid, compid].param.ContainsKey(paramname))
             {
                 log.Warn("Trying to set Param that doesnt exist " + paramname + "=" + value);
@@ -1715,8 +1722,6 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                 log.Warn("setParam " + paramname + " not modified as same");
                 return true;
             }
-
-            giveComport = true;
 
             // param type is set here, however it is always sent over the air as a float 100int = 100f.
             var req = new mavlink_param_set_t
@@ -1804,6 +1809,8 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
             try
             {
+                if (canContinue != null && !canContinue()) throw new OperationCanceledException("Parameter write cancelled");
+                giveComport = true;
                 generatePacket((byte) MAVLINK_MSG_ID.PARAM_SET, req, sysid, compid);
 
                 log.InfoFormat("setParam '{0}' = '{1}' sysid {2} compid {3}", paramname, value, sysid,
@@ -1813,6 +1820,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                 int retrys = 3;
                 while (true)
                 {
+                    if (canContinue != null && !canContinue()) throw new OperationCanceledException("Parameter write cancelled");
                     if (complete)
                         return true;
 
@@ -1821,6 +1829,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                         if (retrys > 0)
                         {
                             log.Info("setParam Retry " + retrys);
+                            if (canContinue != null && !canContinue()) throw new OperationCanceledException("Parameter write cancelled");
                             generatePacket((byte) MAVLINK_MSG_ID.PARAM_SET, req, sysid, compid);
                             start = DateTime.Now;
                             retrys--;

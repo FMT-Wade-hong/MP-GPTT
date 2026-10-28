@@ -60,7 +60,7 @@ namespace MissionPlanner.FMT
                     ButtonBorderStyle.Solid);
                 TextRenderer.DrawText(e.Graphics, Text, Font, ClientRectangle, Color.White,
                     TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
-                    TextFormatFlags.WordBreak | TextFormatFlags.NoPadding);
+                    TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding);
 
                 if (Focused && ShowFocusCues)
                 {
@@ -91,6 +91,7 @@ namespace MissionPlanner.FMT
         private readonly Panel modesPanel;
         private bool arrangingModes;
         private Font scaledModeFont;
+        private Font scaledStatusFont;
         private float appliedScale;
         private readonly Dictionary<string, HighContrastModeButton> modeButtons =
             new Dictionary<string, HighContrastModeButton>(StringComparer.OrdinalIgnoreCase);
@@ -118,7 +119,7 @@ namespace MissionPlanner.FMT
             BackColor = Background;
             Padding = new Padding(5, 4, 5, 4);
             Dock = DockStyle.None;
-            MinimumSize = new Size(0, 92);
+            MinimumSize = Size.Empty;
 
             statusLabel = new Label
             {
@@ -127,7 +128,7 @@ namespace MissionPlanner.FMT
                 Height = 24,
                 ForeColor = Color.White,
                 BackColor = Background,
-                Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 9F, FontStyle.Bold),
+                Font = SystemFonts.MessageBoxFont,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Padding = new Padding(4, 0, 0, 0)
             };
@@ -137,7 +138,7 @@ namespace MissionPlanner.FMT
                 Name = "fmtFlightModeGroups",
                 Dock = DockStyle.Fill,
                 BackColor = PanelBackground,
-                AutoScroll = true,
+                AutoScroll = false,
                 Padding = new Padding(4, 3, 4, 3),
                 Margin = Padding.Empty
             };
@@ -284,62 +285,120 @@ namespace MissionPlanner.FMT
 
         private void RecalculateHeight()
         {
-            if (arrangingModes) return;
+            if (arrangingModes || IsDisposed || Disposing) return;
             arrangingModes = true;
             try
             {
-            if (visibleGroups.Count == 0)
-            {
-                Height = 92;
-                return;
-            }
+                var heightLimit = Math.Max(0, Math.Min(286, availableHeight / 2));
+                if (visibleGroups.Count == 0)
+                {
+                    Height = Math.Min(92, heightLimit);
+                    return;
+                }
 
-            var heightLimit = Math.Max(92, Math.Min(286, availableHeight / 2));
-            // Each group always occupies one fixed row. Scale the geometry together;
-            // never move buttons to another row when the window becomes narrower.
-            var baseWidth = visibleGroups.Max(group => group.Modes.Length) * 72 + 8;
-            var baseHeight = visibleGroups.Count * 76 + 8;
-            var scale = (float)Math.Max(0.85, Math.Min(1.0, Math.Min(
-                Math.Max(1, ClientSize.Width - Padding.Horizontal - SystemInformation.VerticalScrollBarWidth - 8) / (double)baseWidth,
-                Math.Max(1, heightLimit - statusLabel.Height - Padding.Vertical - SystemInformation.HorizontalScrollBarHeight) / (double)baseHeight)));
-            var oldFont = scaledModeFont;
-            if (scaledModeFont == null || Math.Abs(appliedScale - scale) > 0.001f)
-            {
-                scaledModeFont = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.25F * scale, FontStyle.Bold);
-                appliedScale = scale;
-            }
-            var nextHeight = Math.Max(92, Math.Min(heightLimit, statusLabel.Height + Padding.Vertical + (int)Math.Ceiling(baseHeight * scale)));
-            if (Height != nextHeight)
-                Height = nextHeight;
-            int groupIndex = -1, buttonIndex = 0;
-            modesPanel.SuspendLayout();
-            foreach (Control control in modesPanel.Controls)
-            {
-                control.Font = scaledModeFont;
-                var scroll = modesPanel.AutoScrollPosition;
-                if (control is Label)
+                // Fit complete fixed rows into the viewport. There is no minimum
+                // scale that could turn a narrow or short pane into a scroll page.
+                var innerWidth = Math.Max(0, ClientSize.Width - Padding.Horizontal);
+                var baseWidth = visibleGroups.Max(group => group.Modes.Length) * 72 + 8;
+                var baseHeight = 24 + visibleGroups.Count * 76 + 8;
+                var scale = (float)Math.Max(0, Math.Min(1.8, Math.Min(
+                    innerWidth / (double)baseWidth,
+                    Math.Max(0, heightLimit - Padding.Vertical) / (double)baseHeight)));
+                var oldFont = scaledModeFont;
+                var oldStatusFont = scaledStatusFont;
+                if (scaledStatusFont == null || Math.Abs(appliedScale - scale) > 0.001f)
                 {
-                    groupIndex++; buttonIndex = 0;
-                    control.SetBounds(4 + scroll.X, (int)((4 + groupIndex * 76) * scale) + scroll.Y,
-                        (int)((baseWidth - 8) * scale), (int)(20 * scale));
+                    var nextStatusFont = new Font(SystemFonts.MessageBoxFont.FontFamily,
+                        Math.Max(1F, 9F * scale), FontStyle.Bold);
+                    if (oldStatusFont != null && oldStatusFont.Equals(nextStatusFont))
+                    {
+                        nextStatusFont.Dispose();
+                        scaledStatusFont = oldStatusFont;
+                    }
+                    else scaledStatusFont = nextStatusFont;
+                    appliedScale = scale;
                 }
-                else
+                statusLabel.Font = scaledStatusFont;
+                statusLabel.Height = (int)Math.Round(24 * scale);
+                Height = Math.Min(heightLimit, Padding.Vertical + (int)Math.Ceiling(baseHeight * scale));
+
+                int groupIndex = -1, buttonIndex = 0, columns = 1;
+                var inset = (int)Math.Round(4 * scale);
+                var gap = (int)Math.Round(6 * scale);
+                modesPanel.SuspendLayout();
+                try
                 {
-                    control.SetBounds((int)((4 + buttonIndex++ * 72) * scale) + scroll.X,
-                        (int)((26 + groupIndex * 76) * scale) + scroll.Y, (int)(66 * scale), (int)(48 * scale));
+                    modesPanel.AutoScrollPosition = Point.Empty;
+                    modesPanel.AutoScrollMinSize = Size.Empty;
+                    foreach (Control control in modesPanel.Controls)
+                    {
+                        if (control is Label)
+                        {
+                            groupIndex++; buttonIndex = 0;
+                            columns = visibleGroups[groupIndex].Modes.Length;
+                            control.SetBounds(inset, (int)Math.Round((4 + groupIndex * 76) * scale),
+                                Math.Max(0, innerWidth - 2 * inset), (int)Math.Round(20 * scale));
+                        }
+                        else
+                        {
+                            // Round cell edges, not widths, so every last button fits.
+                            var rowWidth = Math.Max(0, innerWidth - 2 * inset + gap);
+                            var left = inset + (int)Math.Round(buttonIndex * rowWidth / (double)columns);
+                            var right = inset + (int)Math.Round(++buttonIndex * rowWidth / (double)columns) - gap;
+                            control.SetBounds(left, (int)Math.Round((26 + groupIndex * 76) * scale),
+                                Math.Max(0, right - left), (int)Math.Round(48 * scale));
+                        }
+                    }
+                    var nextModeFont = CreateFittedModeFont(Math.Max(1F, 8.25F * scale));
+                    // Control.Font retains its existing instance when values compare
+                    // equal. Reuse it too, rather than disposing a font still in use.
+                    if (oldFont != null && oldFont.Equals(nextModeFont))
+                    {
+                        nextModeFont.Dispose();
+                        scaledModeFont = oldFont;
+                    }
+                    else scaledModeFont = nextModeFont;
+                    foreach (Control control in modesPanel.Controls) control.Font = scaledModeFont;
                 }
-            }
-            modesPanel.AutoScrollMinSize = new Size((int)Math.Ceiling(baseWidth * scale), (int)Math.Ceiling(baseHeight * scale));
-            modesPanel.ResumeLayout();
-            if (oldFont != null && oldFont != scaledModeFont) oldFont.Dispose();
+                finally
+                {
+                    modesPanel.ResumeLayout();
+                    if (oldFont != null && oldFont != scaledModeFont) oldFont.Dispose();
+                    if (oldStatusFont != null && oldStatusFont != scaledStatusFont) oldStatusFont.Dispose();
+                }
             }
             finally { arrangingModes = false; }
+        }
+
+        private Font CreateFittedModeFont(float size)
+        {
+            // GDI rounds small fonts to whole pixels. Measuring the actual captions
+            // keeps long names such as STABILIZE inside even the narrowest buttons.
+            for (int attempt = 0; ; attempt++)
+            {
+                var font = new Font(SystemFonts.MessageBoxFont.FontFamily, size, FontStyle.Bold);
+                var fit = 1F;
+                foreach (var button in modeButtons.Values)
+                {
+                    var textSize = TextRenderer.MeasureText(button.Text, font, Size.Empty,
+                        TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding);
+                    fit = Math.Min(fit, Math.Min(Math.Max(1, button.Width - 4) / (float)Math.Max(1, textSize.Width),
+                        Math.Max(1, button.Height - 4) / (float)Math.Max(1, textSize.Height)));
+                }
+                if (fit >= 1 || size <= 1 || attempt >= 15) return font;
+                font.Dispose();
+                size = Math.Max(1F, size * Math.Min(0.95F, fit));
+            }
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            if (disposing) { scaledModeFont?.Dispose(); scaledModeFont = null; }
+            if (disposing)
+            {
+                scaledModeFont?.Dispose(); scaledModeFont = null;
+                scaledStatusFont?.Dispose(); scaledStatusFont = null;
+            }
         }
 
         private static List<ModeGroup> GetModeGroups(Firmwares firmware, bool isQuadPlane, bool isHelicopter)

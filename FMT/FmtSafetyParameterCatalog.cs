@@ -104,10 +104,10 @@ namespace MissionPlanner.FMT
             if (translations.TryGetValue(text.Trim(), out translated))
                 return translated;
 
-            translated = text;
-            foreach (var pair in translations.OrderByDescending(pair => pair.Key.Length))
-                translated = translated.Replace(pair.Key, pair.Value);
-            return translated;
+            // Firmware can introduce new meanings. Substring replacement would
+            // corrupt names such as SmartRTL and Landing or translate only half
+            // of a condition. Keep an unreviewed option exactly as supplied.
+            return text;
         }
     }
 }

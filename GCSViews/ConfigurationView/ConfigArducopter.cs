@@ -133,14 +133,10 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             TUNE_HIGH.setup(0, 10000, 1, 0.01f, new[] {"TUNE_HIGH", "TUNE_MAX"},
                 MainV2.comPort.MAV.param);
 
-            HLD_LAT_P.setup(0, 0, 1, 0.001f, new[] {"HLD_LAT_P", "POS_XY_P", "PSC_POSXY_P", "Q_P_POSXY_P"},
-                MainV2.comPort.MAV.param);
+            BindPositionControls(MainV2.comPort.MAV.param);
             LOITER_LAT_D.setup(0, 0, 1, 0.001f, new[] {"LOITER_LAT_D", "PSC_VELXY_D", "Q_P_VELXY_D", "PSC_NE_VEL_D", "Q_P_NE_VEL_D"},
                 MainV2.comPort.MAV.param);
             LOITER_LAT_I.setup(0, 0, 1, 0.001f, new[] {"LOITER_LAT_I", "VEL_XY_I", "PSC_VELXY_I", "Q_P_VELXY_I", "PSC_NE_VEL_I", "Q_P_NE_VEL_I"},
-                MainV2.comPort.MAV.param);
-            LOITER_LAT_IMAX.setup(0, 0, 10, 1f,
-                new[] {"LOITER_LAT_IMAX", "VEL_XY_IMAX", "PSC_VELXY_IMAX", "Q_P_VELXY_IMAX", "PSC_NE_VEL_IMAX", "Q_P_NE_VEL_IMAX"},
                 MainV2.comPort.MAV.param);
             LOITER_LAT_P.setup(0, 0, 1, 0.001f, new[] {"LOITER_LAT_P", "VEL_XY_P", "PSC_VELXY_P", "Q_P_VELXY_P", "PSC_NE_VEL_P", "Q_P_NE_VEL_P"},
                 MainV2.comPort.MAV.param);
@@ -202,8 +198,6 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             THR_ACCEL_I.setup(0, 0, 1, 0.001f, new[] { "THR_ACCEL_I", "ACCEL_Z_I", "PSC_ACCZ_I", "Q_P_ACCZ_I", "PSC_D_ACC_I", "Q_P_D_ACC_I" },
                 MainV2.comPort.MAV.param);
             THR_ACCEL_D.setup(0, 0, 1, 0.001f, new[] {"THR_ACCEL_D", "ACCEL_Z_D", "PSC_ACCZ_D", "Q_P_ACCZ_D", "PSC_D_ACC_D", "Q_P_D_ACC_D"},
-                MainV2.comPort.MAV.param);
-            THR_ACCEL_IMAX.setup(0, 0, 10, 1f, new[] {"THR_ACCEL_IMAX", "ACCEL_Z_IMAX", "PSC_ACCZ_IMAX", "Q_P_ACCZ_IMAX", "PSC_D_ACC_IMAX", "Q_P_D_ACC_IMAX"},
                 MainV2.comPort.MAV.param);
 
             THR_ALT_P.setup(0, 0, 1, 0.001f, new[] {"THR_ALT_P", "POS_Z_P", "PSC_POSZ_P", "Q_P_POSZ_P","PSC_D_POS_P","Q_P_D_POS_P"},
@@ -539,6 +533,39 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 foreach (var nested in GetBoundRefreshParameters(ctl)) names.Add(nested);
             }
             return names.ToArray();
+        }
+
+        internal void BindPositionControls(MAVLink.MAVLinkParamList parameters)
+        {
+            HLD_LAT_P.setup(0, 0, 1, 0.001f,
+                new[] { "PSC_NE_POS_P", "Q_P_NE_POS_P", "HLD_LAT_P", "POS_XY_P", "PSC_POSXY_P", "Q_P_POSXY_P" }, parameters);
+            SetupPositionImax(LOITER_LAT_IMAX, parameters,
+                new[] { "PSC_NE_VEL_IMAX", "Q_P_NE_VEL_IMAX" },
+                new[] { "LOITER_LAT_IMAX", "VEL_XY_IMAX", "PSC_VELXY_IMAX", "Q_P_VELXY_IMAX" }, 10);
+            SetupPositionImax(THR_ACCEL_IMAX, parameters,
+                new[] { "PSC_D_ACC_IMAX", "Q_P_D_ACC_IMAX" },
+                new[] { "THR_ACCEL_IMAX", "ACCEL_Z_IMAX", "PSC_ACCZ_IMAX", "Q_P_ACCZ_IMAX" }, 1);
+            toolTip1.SetToolTip(LOITER_LAT_IMAX, LOITER_LAT_IMAX.ParamName +
+                "：4.7 的 NE_VEL_IMAX 直接顯示 m/s²；舊版欄位保留原有顯示倍率。");
+            toolTip1.SetToolTip(THR_ACCEL_IMAX, THR_ACCEL_IMAX.ParamName +
+                "：4.7 的 D_ACC_IMAX 直接顯示 0–1 正規化推力（0.8 = 80%）；舊版欄位保留原有顯示倍率。");
+        }
+
+        private static void SetupPositionImax(MavlinkNumericUpDown editor, MAVLink.MAVLinkParamList parameters,
+            string[] currentNames, string[] legacyNames, float currentMaximum)
+        {
+            var currentName = currentNames.FirstOrDefault(parameters.ContainsKey);
+            // 4.7 already transmits SI/normalised values. Applying the legacy /10
+            // display scale here also makes a typed value stage a tenfold write.
+            if (currentName != null)
+            {
+                editor.setup(0, currentMaximum, 1, 0.01f, currentName, parameters);
+                // Metadata's arrow-key increment may be 1, but the wire value is
+                // still a float: typing 8.5 must not silently stage 9.
+                editor.DecimalPlaces = Math.Max(2, editor.DecimalPlaces);
+            }
+            else
+                editor.setup(0, 0, 10, 1f, legacyNames, parameters);
         }
 
         internal static void SetupWpNavMetric(MavlinkNumericUpDown editor, string[] aliases,

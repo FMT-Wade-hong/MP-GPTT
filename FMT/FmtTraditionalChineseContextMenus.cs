@@ -28,7 +28,7 @@ namespace MissionPlanner.FMT
                 {"russianHudToolStripMenuItem", "俄式 HUD"},
                 {"swapWithMapToolStripMenuItem", "與地圖交換位置"},
                 {"groundColorToolStripMenuItem", "地面顏色"},
-                {"setBatteryCellCountToolStripMenuItem", "設定電池單體電壓"},
+                {"setBatteryCellCountToolStripMenuItem", "設定電池節數／切換單節電壓顯示"},
                 {"showIconsToolStripMenuItem", "顯示圖示"},
                 {"customizeToolStripMenuItem", "自訂"},
                 {"multiLineToolStripMenuItem", "多行顯示"},

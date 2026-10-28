@@ -35,8 +35,10 @@ foreach($case in $cases) {
             $limit.Invoke($bar,@($paneHeight)) | Out-Null
             [Windows.Forms.Application]::DoEvents()
             $panel=$bar.Controls.Find('fmtFlightModeGroups',$true)[0]
+            if($panel.AutoScroll -or $panel.HorizontalScroll.Visible -or $panel.VerticalScroll.Visible) { throw 'Flight mode bar must fit without scrolling' }
             $y=$null; $right=-1
             foreach($control in $panel.Controls) {
+                if($control.Right -gt $panel.ClientSize.Width -or $control.Bottom -gt $panel.ClientSize.Height) { throw 'Mode control is clipped' }
                 if($control -is [Windows.Forms.Label]) { $y=$null; $right=-1; continue }
                 if($null -eq $y) { $y=$control.Top }
                 if($control.Top -ne $y -or $control.Left -lt $right) { $modeFindings+='overlap/wrap' }

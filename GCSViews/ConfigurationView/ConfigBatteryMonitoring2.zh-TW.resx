@@ -344,7 +344,7 @@
     <value>3. Voltage divider (計算):</value>
   </data>
   <data name="label35.Text" xml:space="preserve">
-    <value>6. Amperes per volt:</value>
+    <value>6. 每伏特對應電流（A/V）：</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
     <value>5. 電流 (計算)</value>

@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="goHereToolStripMenuItem.Text" xml:space="preserve">
-    <value>飛到這里</value>
+    <value>飛到此處</value>
   </data>
   <data name="BUT_joystick.Text" xml:space="preserve">
     <value>飛行摇桿</value>
@@ -154,7 +154,7 @@
     <value>更改為左侧的模式</value>
   </data>
   <data name="BUT_clear_track.Text" xml:space="preserve">
-    <value>清除路徑</value>
+    <value>清除航跡</value>
   </data>
   <data name="BUT_clear_track.ToolTip" xml:space="preserve">
     <value>清空地圖上記錄的路徑</value>
@@ -187,7 +187,7 @@
     <value>動作</value>
   </data>
   <data name="Gspeed.ToolTip" xml:space="preserve">
-    <value />
+    <value>按兩下以變更最大值</value>
   </data>
   <data name="tabGauges.Text" xml:space="preserve">
     <value>儀表</value>
@@ -251,10 +251,10 @@
     <value>估計的風速</value>
   </data>
   <data name="recordHudToAVIToolStripMenuItem.Text" xml:space="preserve">
-    <value>錄製為AVI</value>
+    <value>將 HUD 錄製為 AVI</value>
   </data>
   <data name="stopRecordToolStripMenuItem.Text" xml:space="preserve">
-    <value>停止錄製</value>
+    <value>停止錄影</value>
   </data>
   <data name="tabStatus.Text1" xml:space="preserve">
     <value>狀態</value>

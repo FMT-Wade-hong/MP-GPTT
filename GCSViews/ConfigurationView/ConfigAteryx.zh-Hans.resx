@@ -118,10 +118,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="label12.Text" xml:space="preserve">
-    <value>Effort Lim</value>
+    <value>控制輸出限制</value>
   </data>
   <data name="label49.Text" xml:space="preserve">
-    <value>Effort Lim</value>
+    <value>控制輸出限制</value>
   </data>
   <data name="label10.Text" xml:space="preserve">
     <value>P</value>
@@ -130,16 +130,16 @@
     <value>D</value>
   </data>
   <data name="label16.Text" xml:space="preserve">
-    <value>Int Lim</value>
+    <value>積分限制</value>
   </data>
   <data name="label11.Text" xml:space="preserve">
-    <value>Int Lim</value>
+    <value>積分限制</value>
   </data>
   <data name="label14.Text" xml:space="preserve">
     <value>I</value>
   </data>
   <data name="label17.Text" xml:space="preserve">
-    <value>Effort Lim</value>
+    <value>控制輸出限制</value>
   </data>
   <data name="label15.Text" xml:space="preserve">
     <value>P</value>
@@ -154,10 +154,10 @@
     <value>P</value>
   </data>
   <data name="label21.Text" xml:space="preserve">
-    <value>Int Lim</value>
+    <value>積分限制</value>
   </data>
   <data name="label22.Text" xml:space="preserve">
-    <value>Effort Lim</value>
+    <value>控制輸出限制</value>
   </data>
   <data name="label23.Text" xml:space="preserve">
     <value>D</value>
@@ -166,13 +166,13 @@
     <value>I</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
-    <value>Int Lim</value>
+    <value>積分限制</value>
   </data>
   <data name="label25.Text" xml:space="preserve">
     <value>P</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
-    <value>Effort Lim</value>
+    <value>控制輸出限制</value>
   </data>
   <data name="label26.Text" xml:space="preserve">
     <value>EH範圍</value>
@@ -190,7 +190,7 @@
     <value>P</value>
   </data>
   <data name="label1.Text" xml:space="preserve">
-    <value>Int Lim</value>
+    <value>積分限制</value>
   </data>
   <data name="label28.Text" xml:space="preserve">
     <value>預設半徑</value>
@@ -205,16 +205,16 @@
     <value>Orbit 增益</value>
   </data>
   <data name="groupBox7.Text" xml:space="preserve">
-    <value>Track and Orbit</value>
+    <value>追蹤與環繞</value>
   </data>
   <data name="label50.Text" xml:space="preserve">
     <value>D</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>Min</value>
+    <value>最小</value>
   </data>
   <data name="groupBox4.Text" xml:space="preserve">
-    <value>Heading to Roll</value>
+    <value>航向轉橫滾</value>
   </data>
   <data name="label4.Text" xml:space="preserve">
     <value>D</value>
@@ -226,7 +226,7 @@
     <value>FS 值</value>
   </data>
   <data name="groupBox2.Text" xml:space="preserve">
-    <value>Energy Height</value>
+    <value>能量高度</value>
   </data>
   <data name="label51.Text" xml:space="preserve">
     <value>I</value>
@@ -253,7 +253,7 @@
     <value>高度計設定</value>
   </data>
   <data name="groupBox13.Text" xml:space="preserve">
-    <value>Roll to Elev</value>
+    <value>橫滾轉升降舵</value>
   </data>
   <data name="label32.Text" xml:space="preserve">
     <value>輸入角度</value>
@@ -277,7 +277,7 @@
     <value>Bank 最小</value>
   </data>
   <data name="label38.Text" xml:space="preserve">
-    <value>Field Elev</value>
+    <value>場地海拔高度</value>
   </data>
   <data name="label37.Text" xml:space="preserve">
     <value>in Hg</value>

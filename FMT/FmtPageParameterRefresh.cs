@@ -15,6 +15,36 @@ namespace MissionPlanner
         private static readonly SemaphoreSlim Gate = new SemaphoreSlim(1, 1);
         internal const int IntervalMilliseconds = 300;
 
+        internal static bool IsBusy => Gate.CurrentCount == 0;
+
+        // ICE/Takeoff writes and page reads share the same transport lease.
+        internal static IDisposable TryBeginWrite() => Gate.Wait(0) ? new WriteLease() : null;
+
+        private sealed class WriteLease : IDisposable
+        {
+            private int released;
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref released, 1) == 0) Gate.Release();
+            }
+        }
+
+        internal static async Task<double> WriteReadAsync(Func<Task<bool>> write,
+            Func<Task<double>> read, Func<bool> current, CancellationToken cancellation)
+        {
+            Action check = () =>
+            {
+                cancellation.ThrowIfCancellationRequested();
+                if (!current()) throw new InvalidOperationException("連線、機體或安全狀態已變更，已停止操作。");
+            };
+            check();
+            if (!await write().ConfigureAwait(false)) throw new InvalidOperationException("飛控未接受寫入。");
+            check();
+            var actual = await read().ConfigureAwait(false);
+            check();
+            return actual;
+        }
+
         internal sealed class EditorLock : IDisposable
         {
             private readonly List<Action> restore = new List<Action>();

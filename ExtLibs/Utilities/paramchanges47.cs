@@ -14,9 +14,9 @@ namespace MissionPlanner.Utilities
             { "ARMING_SKIPCHK", "ARMING_CHECK → ARMING_SKIPCHK: select which checks to disable" },
             // ATC (Copter)
             { "ATC_ANGLE_MAX", "ANGLE_MAX → ATC_ANGLE_MAX: units changed from cd to deg" },
-            { "ATC_ACC_R_MAX", "ATC_ACCEL_R_MAX → ATC_ACC_R_MAX: units changed from cm/s/s to m/s/s" },
-            { "ATC_ACC_P_MAX", "ATC_ACCEL_P_MAX → ATC_ACC_P_MAX: units changed from cm/s/s to m/s/s" },
-            { "ATC_ACC_Y_MAX", "ATC_ACCEL_Y_MAX → ATC_ACC_Y_MAX: units changed from cm/s/s to m/s/s" },
+            { "ATC_ACC_R_MAX", "ATC_ACCEL_R_MAX → ATC_ACC_R_MAX: units changed from cdeg/s/s to deg/s/s" },
+            { "ATC_ACC_P_MAX", "ATC_ACCEL_P_MAX → ATC_ACC_P_MAX: units changed from cdeg/s/s to deg/s/s" },
+            { "ATC_ACC_Y_MAX", "ATC_ACCEL_Y_MAX → ATC_ACC_Y_MAX: units changed from cdeg/s/s to deg/s/s" },
             { "ATC_RATE_WPY_MAX", "ATC_SLEW_YAW → ATC_RATE_WPY_MAX: units changed from cdeg/s to deg/s" },
             // CIRCLE (Copter)
             { "CIRCLE_RADIUS_M", "CIRCLE_RADIUS → CIRCLE_RADIUS_M: units changed from cm to m" },
@@ -38,6 +38,7 @@ namespace MissionPlanner.Utilities
             { "PHLD_BRK_ANGLE", "PHLD_BRAKE_ANGLE → PHLD_BRK_ANGLE: units changed from cd to deg" },
             { "PHLD_BRK_RATE", "PHLD_BRAKE_RATE → PHLD_BRK_RATE: no scaling change, name only" },
             // PSC_VELXY → PSC_NE_VEL (Copter)
+            { "PSC_NE_POS_P", "PSC_POSXY_P → PSC_NE_POS_P: no scaling change, name only" },
             { "PSC_NE_VEL_P", "PSC_VELXY_P → PSC_NE_VEL_P: no scaling change, name only" },
             { "PSC_NE_VEL_I", "PSC_VELXY_I → PSC_NE_VEL_I: no scaling change, name only" },
             { "PSC_NE_VEL_D", "PSC_VELXY_D → PSC_NE_VEL_D: no scaling change, name only" },
@@ -59,7 +60,7 @@ namespace MissionPlanner.Utilities
             { "PSC_D_ACC_P", "PSC_ACCZ_P → PSC_D_ACC_P: value is now 10x smaller" },
             { "PSC_D_ACC_I", "PSC_ACCZ_I → PSC_D_ACC_I: value is now 10x smaller" },
             { "PSC_D_ACC_D", "PSC_ACCZ_D → PSC_D_ACC_D: value is now 10x smaller" },
-            { "PSC_D_ACC_IMAX", "PSC_ACCZ_IMAX → PSC_D_ACC_IMAX: no scaling change, name only" },
+            { "PSC_D_ACC_IMAX", "PSC_ACCZ_IMAX → PSC_D_ACC_IMAX: value is now 1000x smaller (0..1 normalised thrust)" },
             { "PSC_D_ACC_FILT", "PSC_ACCZ_FILT → PSC_D_ACC_FILT: no scaling change, name only" },
             { "PSC_D_ACC_FF", "PSC_ACCZ_FF → PSC_D_ACC_FF: no scaling change, name only" },
             { "PSC_D_ACC_FLTE", "PSC_ACCZ_FLTE → PSC_D_ACC_FLTE: no scaling change, name only" },
@@ -79,9 +80,9 @@ namespace MissionPlanner.Utilities
             { "WP_SPD_UP", "WPNAV_SPEED_UP → WP_SPD_UP: units changed from cm/s to m/s" },
             // Q_A (Plane QuadPlane)
             { "Q_A_ANGLE_MAX", "Q_ANGLE_MAX → Q_A_ANGLE_MAX: units changed from cd to deg" },
-            { "Q_A_ACC_R_MAX", "Q_A_ACCEL_R_MAX → Q_A_ACC_R_MAX: units changed from cm/s/s to m/s/s" },
-            { "Q_A_ACC_P_MAX", "Q_A_ACCEL_P_MAX → Q_A_ACC_P_MAX: units changed from cm/s/s to m/s/s" },
-            { "Q_A_ACC_Y_MAX", "Q_A_ACCEL_Y_MAX → Q_A_ACC_Y_MAX: units changed from cm/s/s to m/s/s" },
+            { "Q_A_ACC_R_MAX", "Q_A_ACCEL_R_MAX → Q_A_ACC_R_MAX: units changed from cdeg/s/s to deg/s/s" },
+            { "Q_A_ACC_P_MAX", "Q_A_ACCEL_P_MAX → Q_A_ACC_P_MAX: units changed from cdeg/s/s to deg/s/s" },
+            { "Q_A_ACC_Y_MAX", "Q_A_ACCEL_Y_MAX → Q_A_ACC_Y_MAX: units changed from cdeg/s/s to deg/s/s" },
             { "Q_A_RATE_WPY_MAX", "Q_A_SLEW_YAW → Q_A_RATE_WPY_MAX: units changed from cdeg/s to deg/s" },
             // Q_LOIT (Plane QuadPlane)
             { "Q_LOIT_SPEED_MS", "Q_LOIT_SPEED → Q_LOIT_SPEED_MS: units changed from cm/s to m/s" },
@@ -89,6 +90,7 @@ namespace MissionPlanner.Utilities
             { "Q_LOIT_BRK_ACC_M", "Q_LOIT_BRK_ACCEL → Q_LOIT_BRK_ACC_M: units changed from cm/s/s to m/s/s" },
             { "Q_LOIT_BRK_JRK_M", "Q_LOIT_BRK_JERK → Q_LOIT_BRK_JRK_M: units changed from cm/s/s/s to m/s/s/s" },
             // Q_P_VELXY → Q_P_NE_VEL (Plane QuadPlane)
+            { "Q_P_NE_POS_P", "Q_P_POSXY_P → Q_P_NE_POS_P: no scaling change, name only" },
             { "Q_P_NE_VEL_P", "Q_P_VELXY_P → Q_P_NE_VEL_P: no scaling change, name only" },
             { "Q_P_NE_VEL_I", "Q_P_VELXY_I → Q_P_NE_VEL_I: no scaling change, name only" },
             { "Q_P_NE_VEL_D", "Q_P_VELXY_D → Q_P_NE_VEL_D: no scaling change, name only" },
@@ -110,7 +112,7 @@ namespace MissionPlanner.Utilities
             { "Q_P_D_ACC_P", "Q_P_ACCZ_P → Q_P_D_ACC_P: value is now 10x smaller" },
             { "Q_P_D_ACC_I", "Q_P_ACCZ_I → Q_P_D_ACC_I: value is now 10x smaller" },
             { "Q_P_D_ACC_D", "Q_P_ACCZ_D → Q_P_D_ACC_D: value is now 10x smaller" },
-            { "Q_P_D_ACC_IMAX", "Q_P_ACCZ_IMAX → Q_P_D_ACC_IMAX: no scaling change, name only" },
+            { "Q_P_D_ACC_IMAX", "Q_P_ACCZ_IMAX → Q_P_D_ACC_IMAX: value is now 1000x smaller (0..1 normalised thrust)" },
             { "Q_P_D_ACC_FILT", "Q_P_ACCZ_FILT → Q_P_D_ACC_FILT: no scaling change, name only" },
             { "Q_P_D_ACC_FF", "Q_P_ACCZ_FF → Q_P_D_ACC_FF: no scaling change, name only" },
             { "Q_P_D_ACC_FLTE", "Q_P_ACCZ_FLTE → Q_P_D_ACC_FLTE: no scaling change, name only" },

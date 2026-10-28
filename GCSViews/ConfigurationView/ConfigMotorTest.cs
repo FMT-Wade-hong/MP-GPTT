@@ -9,14 +9,21 @@ using Newtonsoft.Json;
 using System.IO;
 using System.Drawing.Drawing2D;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using MissionPlanner.FMT;
 
 namespace MissionPlanner.GCSViews.ConfigurationView
 {
-    public partial class ConfigMotorTest : MyUserControl, IActivate
+    public partial class ConfigMotorTest : MyUserControl, IActivate, IDeactivate
     {
         private FlowLayoutPanel fmtMotorRows;
         private Panel fmtMotorDiagram;
         private TableLayoutPanel fmtMotorRoot;
+        private static readonly FmtMotorTestRunner MotorTests = new FmtMotorTestRunner();
+        private FmtMotorTestRunner.Operation fmtMotorOperation;
+        private MyButton fmtTestAllButton, fmtTestSequenceButton, fmtStopAllButton;
+        private readonly Timer fmtMotorAvailability = new Timer { Interval = 150 };
+        private bool fmtMotorPageActive;
 
         private sealed class DoubleBufferedPanel : Panel
         {
@@ -31,6 +38,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         {
             InitializeComponent();
             BuildFmtMotorLayout();
+            fmtMotorAvailability.Tick += (sender, args) => UpdateFmtMotorButtons();
+            Disposed += (sender, args) =>
+            {
+                fmtMotorOperation?.CancelPendingStarts();
+                fmtMotorAvailability.Dispose();
+            };
         }
 
         private int motormax = 0;
@@ -58,6 +71,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         public void Activate()
         {
+            fmtMotorPageActive = true;
             Enabled = true;
             motormax = this.get_motormax();
             fmtMotorRows.Controls.Clear();
@@ -67,6 +81,29 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             Utilities.ThemeManager.ApplyThemeTo(this);
             ApplyFmtMotorColors();
             fmtMotorDiagram.Invalidate();
+            UpdateFmtMotorButtons();
+            fmtMotorAvailability.Start();
+        }
+
+        public void Deactivate()
+        {
+            fmtMotorPageActive = false;
+            fmtMotorOperation?.CancelPendingStarts();
+            fmtMotorAvailability.Stop();
+        }
+
+        private void UpdateFmtMotorButtons()
+        {
+            if (IsDisposed || Disposing) return;
+            var busy = MotorTests.IsBusy;
+            foreach (Control row in fmtMotorRows.Controls)
+                foreach (Control control in row.Controls)
+                    if (control is MyButton) control.Enabled = !busy;
+            fmtTestAllButton.Enabled = fmtTestSequenceButton.Enabled = !busy;
+            NUM_thr_percent.Enabled = NUM_duration.Enabled = !busy;
+            but_mot_spin_arm.Enabled = but_mot_spin_min.Enabled = !busy;
+            fmtStopAllButton.Enabled = !MotorTests.StopRequested;
+            fmtStopAllButton.Text = MotorTests.StopRequested ? "停止待送／處理中" : "全部停止";
         }
 
         private void BuildFmtMotorLayout()
@@ -186,9 +223,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 WrapContents = false,
                 Padding = new Padding(0, 7, 0, 0)
             };
-            actions.Controls.Add(CreateFmtActionButton("全部測試", Color.FromArgb(255, 153, 45), but_TestAll));
-            actions.Controls.Add(CreateFmtActionButton("全部停止", Color.FromArgb(198, 48, 48), but_StopAll));
-            actions.Controls.Add(CreateFmtActionButton("依序測試", Color.FromArgb(45, 169, 220), but_TestAllSeq));
+            fmtTestAllButton = CreateFmtActionButton("全部測試", Color.FromArgb(255, 153, 45), but_TestAll);
+            fmtStopAllButton = CreateFmtActionButton("全部停止", Color.FromArgb(198, 48, 48), but_StopAll);
+            fmtTestSequenceButton = CreateFmtActionButton("依序測試", Color.FromArgb(45, 169, 220), but_TestAllSeq);
+            actions.Controls.Add(fmtTestAllButton);
+            actions.Controls.Add(fmtStopAllButton);
+            actions.Controls.Add(fmtTestSequenceButton);
             left.Controls.Add(actions, 0, 2);
 
             fmtMotorDiagram = new DoubleBufferedPanel
@@ -667,30 +707,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             }
         }
 
-        private void but_TestAll(object sender, EventArgs e)
-        {
-            if (!ConfirmBulkMotorTest("全部馬達將同時轉動。"))
-                return;
+        private async void but_TestAll(object sender, EventArgs e) => await RunMotorTestAsync("all");
 
-            int speed = (int)NUM_thr_percent.Value;
-            int time = (int)NUM_duration.Value;
-
-            for (int i = 1; i <= motormax; i++)
-            {
-                testMotor(i, speed, time);
-            }
-        }
-
-        private void but_TestAllSeq(object sender, EventArgs e)
-        {
-            if (!ConfirmBulkMotorTest("馬達將依 A、B、C…順序轉動。"))
-                return;
-
-            int speed = (int)NUM_thr_percent.Value;
-            int time = (int)NUM_duration.Value;
-
-            testMotor(1, speed, time, motormax);
-        }
+        private async void but_TestAllSeq(object sender, EventArgs e) => await RunMotorTestAsync("sequence");
 
         private bool ConfirmBulkMotorTest(string action)
         {
@@ -698,50 +717,99 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                        "FMT 馬達安全確認", MessageBoxButtons.YesNo) == (int)DialogResult.Yes;
         }
 
-        private void but_StopAll(object sender, EventArgs e)
+        private async void but_StopAll(object sender, EventArgs e)
         {
-            for (int i = 1; i <= motormax; i++)
+            if (MotorTests.RequestStop())
             {
-                testMotor(i, 0, 0);
+                UpdateFmtMotorButtons();
+                return;
             }
+            await RunMotorTestAsync("stop");
         }
 
-        private void but_Click(object sender, EventArgs e)
+        private async void but_Click(object sender, EventArgs e)
         {
-            int speed = (int)NUM_thr_percent.Value;
-            int time = (int)NUM_duration.Value;
+            if (sender is MyButton button && button.Tag is int motor)
+                await RunMotorTestAsync("single", motor);
+        }
+
+        private async Task RunMotorTestAsync(string mode, int motor = 1)
+        {
+            var operation = MotorTests.TryBegin();
+            if (operation == null) return;
+            fmtMotorOperation = operation;
+            var link = MainV2.comPort;
+            var target = link?.MAV;
+            var stream = link?.BaseStream;
+            var sysid = (byte)(link?.sysidcurrent ?? 0);
+            var compid = (byte)(link?.compidcurrent ?? 0);
+            var motorCount = motormax;
+            var speed = (int)NUM_thr_percent.Value;
+            var duration = (int)NUM_duration.Value;
+            var connectionLost = 0;
+            EventHandler disconnected = (s, e) =>
+            {
+                System.Threading.Interlocked.Exchange(ref connectionLost, 1);
+                operation.CancelPendingStarts();
+            };
+            if (link != null) link.CommsClose += disconnected;
+            UpdateFmtMotorButtons();
             try
             {
-                var motor = (int)((MyButton)sender).Tag;
-                this.testMotor(motor, speed, time);
+                Func<bool> sameTarget = () => ReferenceEquals(link, MainV2.comPort) && link != null &&
+                    System.Threading.Volatile.Read(ref connectionLost) == 0 &&
+                    ReferenceEquals(target, link.MAV) && ReferenceEquals(stream, link.BaseStream) &&
+                    stream?.IsOpen == true && link.sysidcurrent == sysid && link.compidcurrent == compid &&
+                    !link.ReadOnly && !link.logreadmode && FmtRelayControlService.CanLocalStationTransmitControl;
+                if (!sameTarget() || link.giveComport || link.IsParameterListLoading || link.IsLogDownloadActive)
+                    throw new InvalidOperationException("目前未連線、為唯讀，或有其他通訊作業進行中。");
+                // Motor testing itself sets ArduCopter's armed heartbeat flag.
+                // Leave arming eligibility to the existing firmware command checks.
+                if (motorCount <= 0) return;
+                if (mode == "all" && !ConfirmBulkMotorTest("全部馬達將同時轉動。")) return;
+                if (mode == "sequence" && !ConfirmBulkMotorTest("馬達將依 A、B、C…順序轉動。")) return;
+
+                var commands = new List<FmtMotorTestRunner.Command>();
+                if (mode == "stop") operation.RequestStop();
+                else if (mode == "all")
+                    for (var i = 1; i <= motorCount; i++) commands.Add(new FmtMotorTestRunner.Command(i, speed, duration));
+                else commands.Add(new FmtMotorTestRunner.Command(motor, speed, duration, mode == "sequence" ? motorCount : 0));
+
+                await FmtMotorTestRunner.ExecuteAsync(operation, commands, motorCount, command => Task.Run(async () =>
+                {
+                    if (!sameTarget() || link.giveComport || link.IsParameterListLoading || link.IsLogDownloadActive)
+                        throw new InvalidOperationException("通訊狀態已變更，未送出馬達命令。");
+                    if (command.Speed != 0 && (operation.Cancelled || operation.StopRequested))
+                        return true; // Cancel a start that has not reached the transport yet.
+                    try
+                    {
+                        return await link.doCommandAsync(sysid, compid, MAVLink.MAV_CMD.DO_MOTOR_TEST,
+                            command.Motor, (float)MAVLink.MOTOR_TEST_THROTTLE_TYPE.MOTOR_TEST_THROTTLE_PERCENT,
+                            command.Speed, command.Duration, command.Count, 0, 0, true, () =>
+                            {
+                                // Interrupt ACK waiting before another start retry.
+                                // The transport unwinds before the queued stop runs.
+                                if (!sameTarget() || (command.Speed != 0 &&
+                                    (operation.StopRequested || operation.Cancelled)))
+                                    throw new OperationCanceledException("已取消尚未完成的馬達測試命令。");
+                            }).ConfigureAwait(false);
+                    }
+                    finally { link.giveComport = false; }
+                }), sameTarget);
             }
             catch (Exception ex)
             {
-                CustomMessageBox.Show("Failed to test motor\n" + ex);
+                if (!IsDisposed && !Disposing && fmtMotorPageActive)
+                    CustomMessageBox.Show(ex is TimeoutException
+                        ? "飛控回覆逾時，請確認馬達狀態與連線；本次不再送出後續測試。"
+                        : ex.Message, "馬達測試");
             }
-        }
-
-        private void testMotor(int motor, int speed, int time, int motorcount = 0)
-        {
-            try
+            finally
             {
-                if (!MainV2.comPort.doCommand((byte)MainV2.comPort.sysidcurrent,
-                        (byte)MainV2.comPort.compidcurrent,
-                        MAVLink.MAV_CMD.DO_MOTOR_TEST,
-                        (float)motor,
-                        (float)(byte)MAVLink.MOTOR_TEST_THROTTLE_TYPE.MOTOR_TEST_THROTTLE_PERCENT,
-                        (float)speed,
-                        (float)time,
-                        (float)motorcount,
-                        0,
-                        0))
-                {
-                    CustomMessageBox.Show("Command was denied by the autopilot");
-                }
-            }
-            catch
-            {
-                CustomMessageBox.Show(Strings.ErrorCommunicating + "\nMotor: " + motor, Strings.ERROR);
+                if (link != null) link.CommsClose -= disconnected;
+                operation.Dispose();
+                fmtMotorOperation = null;
+                UpdateFmtMotorButtons();
             }
         }
 

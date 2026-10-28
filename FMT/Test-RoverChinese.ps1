@@ -1,6 +1,8 @@
 param([string]$Directory = 'bin/RoverChineseFix/net461')
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
+# Fail the offline test on UI painting errors rather than opening a desktop dialog.
+[Windows.Forms.Application]::SetUnhandledExceptionMode([Windows.Forms.UnhandledExceptionMode]::ThrowException)
 $binaryDirectory = (Resolve-Path $Directory).Path
 [Reflection.Assembly]::LoadFrom((Join-Path $binaryDirectory 'System.Resources.Extensions.dll')) | Out-Null
 Add-Type -TypeDefinition @'

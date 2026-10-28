@@ -384,12 +384,13 @@ namespace MissionPlanner
             {
                 if (value == true)
                 {
-                    _adsb = new Utilities.adsb();
-
-                    if (Settings.Instance["adsbserver"] != null)
-                        Utilities.adsb.server = Settings.Instance["adsbserver"];
+                    Utilities.adsb.server = AdsbApi.GetConfiguredServer(Settings.Instance);
                     if (Settings.Instance["adsbport"] != null)
                         Utilities.adsb.serverport = int.Parse(Settings.Instance["adsbport"].ToString());
+
+                    // Configure the selected provider before its background thread starts.
+                    if (_adsb == null)
+                        _adsb = new Utilities.adsb();
                 }
                 else
                 {
@@ -624,8 +625,7 @@ namespace MissionPlanner
         private DateTime FmtRelayParameterReadAfter = DateTime.MinValue;
         private List<FmtCriticalRcSwitch> FmtCriticalSwitchSnapshot = new List<FmtCriticalRcSwitch>();
         private ToolStripControlHost MenuFmtGpsStatus;
-        private Label FmtGpsPrimaryLabel;
-        private Label FmtGpsDopLabel;
+        private FmtGpsStatusControl FmtGpsStatus;
         private ToolStripControlHost MenuFmtFlightTime;
         private FmtMqttTrafficIndicator MenuFmtMqttTraffic;
         private Label FmtFlightTimeLabel;
@@ -707,6 +707,30 @@ namespace MissionPlanner
             }
         }
 
+
+        static MainV2()
+        {
+            ParameterMetaDataRepository.VehicleTypeResolver = requested =>
+            {
+                var mav = comPort?.MAV;
+                if (mav == null) return requested;
+                var current = mav.cs.firmware.ToString();
+                // Explicit version keys and other vehicle families are left intact.
+                var key = GetCurrentFirmwareMetadataKey();
+                var requestedKey = ParameterMetaDataRepository.GetFirmwareKey(requested, mav.VersionString);
+                return key != current && requestedKey != requested && requestedKey?.Replace("Heli", "Copter") == key.Replace("Heli", "Copter")
+                    ? key : requested;
+            };
+        }
+
+        internal static string GetCurrentFirmwareMetadataKey()
+        {
+            var mav = comPort.MAV;
+            var firmware = mav.cs.firmware.ToString();
+            if (firmware == "ArduCopter2" && mav.aptype == MAVLink.MAV_TYPE.HELICOPTER)
+                firmware = "Heli";
+            return ParameterMetaDataRepository.GetFirmwareKey(firmware, mav.VersionString);
+        }
 
         public MainV2()
         {
@@ -1285,6 +1309,7 @@ namespace MissionPlanner
                     plane.Raw = adsb.Raw;
                     plane.Speed = adsb.Speed;
                     plane.VerticalSpeed = adsb.VerticalSpeed;
+                    plane.DataSource = adsb.DataSource;
                     plane.Source = sender;
                     instance.adsbPlanes[id] = plane;
                 }
@@ -1295,7 +1320,8 @@ namespace MissionPlanner
                         new adsb.PointLatLngAltHdg(adsb.Lat, adsb.Lng,
                                 adsb.Alt, adsb.Heading, adsb.Speed, id,
                                 DateTime.Now)
-                            {CallSign = adsb.CallSign, Squawk = adsb.Squawk, Raw = adsb.Raw, Source = sender};
+                            {CallSign = adsb.CallSign, Squawk = adsb.Squawk, Raw = adsb.Raw, Source = sender,
+                                DataSource = adsb.DataSource};
                 }
             }
         }
@@ -1765,7 +1791,9 @@ namespace MissionPlanner
                             }
 
                             // load version specific config
-                            ParameterMetaDataRepositoryAPMpdef.GetMetaDataVersioned(VersionDetection.GetVersion(comPort.MAV.VersionString));
+                            if (!VersionedParameterMetadata.ContainsVersion(ParameterMetaDataRepository.GetFirmwareKey(
+                                comPort.MAV.cs.firmware.ToString(), comPort.MAV.VersionString)))
+                                ParameterMetaDataRepositoryAPMpdef.GetMetaDataVersioned(VersionDetection.GetVersion(comPort.MAV.VersionString));
                         }
                         catch (Exception ex)
                         {
@@ -5183,61 +5211,17 @@ namespace MissionPlanner
                 }
             }
 
-            var gpsStatusPanel = new Panel
-            {
-                Name = "FmtGpsStatusPanel",
-                BackColor = Color.FromArgb(24, 24, 24),
-                Size = new Size(150, 35),
-                Margin = Padding.Empty
-            };
-            var gpsIconBox = new PictureBox
-            {
-                Name = "FmtGpsIcon",
-                Location = new Point(2, 5),
-                Size = new Size(25, 25),
-                BackColor = Color.Transparent,
-                Image = gpsIcon,
-                SizeMode = PictureBoxSizeMode.Zoom,
-                TabStop = false
-            };
-            FmtGpsPrimaryLabel = new Label
-            {
-                Name = "FmtGpsPrimaryLabel",
-                AutoSize = false,
-                Location = new Point(29, 1),
-                Size = new Size(119, 17),
-                BackColor = Color.Transparent,
-                ForeColor = Color.Gray,
-                Font = new Font(SystemFonts.MenuFont.FontFamily, 8.25f, FontStyle.Bold),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Text = IsFmtTraditionalChineseUi ? "衛星: --  未連線" : "Sats: --  Disconnected"
-            };
-            FmtGpsDopLabel = new Label
-            {
-                Name = "FmtGpsDopLabel",
-                AutoSize = false,
-                Location = new Point(29, 17),
-                Size = new Size(119, 16),
-                BackColor = Color.Transparent,
-                ForeColor = Color.Gray,
-                Font = new Font(SystemFonts.MenuFont.FontFamily, 8.0f, FontStyle.Regular),
-                TextAlign = ContentAlignment.MiddleLeft,
-                Text = "H: --  |  V: --"
-            };
-            gpsStatusPanel.Controls.Add(gpsIconBox);
-            gpsStatusPanel.Controls.Add(FmtGpsPrimaryLabel);
-            gpsStatusPanel.Controls.Add(FmtGpsDopLabel);
-
-            MenuFmtGpsStatus = new ToolStripControlHost(gpsStatusPanel)
+            FmtGpsStatus = new FmtGpsStatusControl(gpsIcon, IsFmtTraditionalChineseUi);
+            MenuFmtGpsStatus = new ToolStripControlHost(FmtGpsStatus)
             {
                 Name = "MenuFmtGpsStatus",
                 Alignment = ToolStripItemAlignment.Right,
                 AutoSize = false,
-                Size = new Size(150, 35),
+                Size = FmtGpsStatus.Size,
                 Margin = Padding.Empty,
                 Padding = Padding.Empty,
                 BackColor = Color.FromArgb(24, 24, 24),
-                ToolTipText = "GPS satellites, fix status, HDOP and VDOP"
+                ToolTipText = "GPS1 (green) / GPS2 (yellow): satellites, fix status, HDOP and VDOP. No GPS / No Fix: red; 2D: yellow."
             };
             MainMenu.Items.Add(MenuFmtGpsStatus);
 
@@ -5542,6 +5526,10 @@ namespace MissionPlanner
             var satCount = connected ? comPort.MAV.cs.satcount : 0;
             var hdop = connected ? comPort.MAV.cs.gpshdop : 0;
             var vdop = connected ? comPort.MAV.cs.gpsvdop : 0;
+            var gpsStatus2 = connected ? comPort.MAV.cs.gpsstatus2 : 0;
+            var satCount2 = connected ? comPort.MAV.cs.satcount2 : 0;
+            var hdop2 = connected ? comPort.MAV.cs.gpshdop2 : 0;
+            var vdop2 = connected ? comPort.MAV.cs.gpsvdop2 : 0;
             var rotorRpm = connected ? comPort.MAV.cs.rpm1 : 0;
             var showRotorRpm = connected && IsFmtTraditionalHelicopter();
             var flightSeconds = connected ? Math.Max(0, comPort.MAV.cs.timeInAir) : 0;
@@ -5564,7 +5552,12 @@ namespace MissionPlanner
                 ApplyFmtQuickActionButtonStyle(MenuFmtAirspeedZero);
                 UpdateFmtIceEngineButton(connected);
                 UpdateFmtControlSourceButtons(connected);
-                UpdateFmtGpsStatus(connected, gpsStatus, satCount, hdop, vdop);
+                if (FmtGpsStatus != null && MenuFmtGpsStatus != null)
+                {
+                    FmtGpsStatus.UpdateStatus(connected, IsFmtTraditionalChineseUi,
+                        gpsStatus, satCount, hdop, vdop, gpsStatus2, satCount2, hdop2, vdop2);
+                    MenuFmtGpsStatus.Size = FmtGpsStatus.Size;
+                }
                 UpdateFmtRotorRpm(showRotorRpm, rotorRpm);
                 UpdateFmtFlightTime(connected, flightSeconds,
                     hasTotalFlightTime ? (double?)totalFlightSeconds : null);
@@ -6143,33 +6136,6 @@ namespace MissionPlanner
             FmtTotalFlightTimeLabel.ForeColor = connected ? Color.Gainsboro : Color.Gray;
         }
 
-        private void UpdateFmtGpsStatus(bool connected, float gpsStatus, float satCount, float hdop, float vdop)
-        {
-            if (FmtGpsPrimaryLabel == null || FmtGpsDopLabel == null)
-                return;
-
-            if (!connected)
-            {
-                FmtGpsPrimaryLabel.Text = IsFmtTraditionalChineseUi
-                    ? "衛星: --  未連線"
-                    : "Sats: --  Disconnected";
-                FmtGpsDopLabel.Text = "H: --  |  V: --";
-                FmtGpsPrimaryLabel.ForeColor = Color.Gray;
-                FmtGpsDopLabel.ForeColor = Color.Gray;
-                return;
-            }
-
-            var fixLabel = GetFmtGpsFixLabel(gpsStatus, IsFmtTraditionalChineseUi);
-            var fixColor = GetFmtGpsFixColor(gpsStatus);
-            FmtGpsPrimaryLabel.Text = string.Format(CultureInfo.InvariantCulture,
-                IsFmtTraditionalChineseUi ? "衛星: {0:0}  {1}" : "Sats: {0:0}  {1}",
-                Math.Max(0, satCount), fixLabel);
-            FmtGpsDopLabel.Text = string.Format(CultureInfo.InvariantCulture,
-                "H: {0}  |  V: {1}", FormatFmtDop(hdop), FormatFmtDop(vdop));
-            FmtGpsPrimaryLabel.ForeColor = fixColor;
-            FmtGpsDopLabel.ForeColor = gpsStatus >= 3 ? Color.LightGreen : fixColor;
-        }
-
         internal static string GetFmtGpsFixLabel(float gpsStatus, bool traditionalChinese)
         {
             if (traditionalChinese)
@@ -6202,24 +6168,6 @@ namespace MissionPlanner
                 case 8: return "PPP";
                 default: return "Unknown";
             }
-        }
-
-        private static Color GetFmtGpsFixColor(float gpsStatus)
-        {
-            if (gpsStatus >= 6)
-                return Color.Lime;
-            if (gpsStatus >= 3)
-                return Color.LimeGreen;
-            if (gpsStatus >= 2)
-                return Color.Gold;
-            return Color.OrangeRed;
-        }
-
-        private static string FormatFmtDop(float value)
-        {
-            return value > 0 && !float.IsNaN(value) && !float.IsInfinity(value)
-                ? value.ToString("0.0", CultureInfo.InvariantCulture)
-                : "--";
         }
 
         private void MenuFmtArmDisarm_Click(object sender, EventArgs e)

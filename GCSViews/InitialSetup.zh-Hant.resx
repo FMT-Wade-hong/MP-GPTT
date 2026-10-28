@@ -223,7 +223,7 @@
     <value>7</value>
   </data>
   <data name="backstageViewPagetradheli.Text" xml:space="preserve">
-    <value>Heli Setup</value>
+    <value>直升機設定</value>
   </data>
   <data name="backstageViewPageframetype.TrayLocation" type="System.Drawing.Point, System.Drawing">
     <value>17, 56</value>

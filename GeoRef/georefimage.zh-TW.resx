@@ -892,7 +892,7 @@
     <value>39</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
-    <value>Rotation</value>
+    <value>旋轉</value>
   </data>
   <data name="num_camerarotation.Location" type="System.Drawing.Point, System.Drawing">
     <value>311, 25</value>
@@ -919,7 +919,7 @@
     <value>37</value>
   </data>
   <data name="label8.Text" xml:space="preserve">
-    <value>Cross fov</value>
+    <value>橫向視角</value>
   </data>
   <data name="label7.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -937,7 +937,7 @@
     <value>36</value>
   </data>
   <data name="label7.Text" xml:space="preserve">
-    <value>Dir fov</value>
+    <value>縱向視角</value>
   </data>
   <data name="num_hfov.Location" type="System.Drawing.Point, System.Drawing">
     <value>258, 26</value>

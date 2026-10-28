@@ -127,7 +127,7 @@
     <value>寫入參數</value>
   </data>
   <data name="CHK_lockrollpitch.Text" xml:space="preserve">
-    <value>Lock Pitch and Roll Values</value>
+    <value>鎖定俯仰與橫滾設定值</value>
   </data>
   <data name="groupBox1.Text" xml:space="preserve">
     <value>Rate Loiter</value>
@@ -148,16 +148,16 @@
     <value>Stabilize Roll</value>
   </data>
   <data name="groupBox23.Text" xml:space="preserve">
-    <value>Rate Yaw</value>
+    <value>偏航角速度</value>
   </data>
   <data name="groupBox24.Text" xml:space="preserve">
-    <value>Rate Pitch</value>
+    <value>俯仰角速度</value>
   </data>
   <data name="groupBox25.Text" xml:space="preserve">
-    <value>Rate Roll</value>
+    <value>橫滾角速度</value>
   </data>
   <data name="groupBox4.Text" xml:space="preserve">
-    <value>WPNav (cm's)</value>
+    <value>航點導航（cm）</value>
   </data>
   <data name="groupBox5.Text" xml:space="preserve">
     <value>Throttle Rate</value>
@@ -175,13 +175,13 @@
     <value>D</value>
   </data>
   <data name="label13.Text" xml:space="preserve">
-    <value>Speed Dn</value>
+    <value>下降速度</value>
   </data>
   <data name="label15.Text" xml:space="preserve">
-    <value>Radius</value>
+    <value>半徑</value>
   </data>
   <data name="label16.Text" xml:space="preserve">
-    <value>Speed </value>
+    <value>速度</value>
   </data>
   <data name="label17.Text" xml:space="preserve">
     <value>D</value>
@@ -196,7 +196,7 @@
     <value>P</value>
   </data>
   <data name="label27.Text" xml:space="preserve">
-    <value>Speed Up</value>
+    <value>上升速度</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
     <value>I</value>
@@ -250,7 +250,7 @@
     <value>IMAX</value>
   </data>
   <data name="label9.Text" xml:space="preserve">
-    <value>Loiter Speed</value>
+    <value>盤旋速度</value>
   </data>
   <data name="label90.Text" xml:space="preserve">
     <value>I</value>
@@ -259,15 +259,15 @@
     <value>P</value>
   </data>
   <data name="myLabel1.Text" xml:space="preserve">
-    <value>RC7 Opt</value>
+    <value>RC7 選項</value>
   </data>
   <data name="myLabel2.Text" xml:space="preserve">
     <value>RC6 Opt</value>
   </data>
   <data name="myLabel3.Text" xml:space="preserve">
-    <value>Min</value>
+    <value>最小</value>
   </data>
   <data name="myLabel4.Text" xml:space="preserve">
-    <value>RC8 Opt</value>
+    <value>RC8 選項</value>
   </data>
 </root>
