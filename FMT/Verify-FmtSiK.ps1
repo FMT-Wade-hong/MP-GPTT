@@ -14,9 +14,10 @@ Copy-Item -LiteralPath (Join-Path $PreviewDirectory 'FMTPlanner.exe.config') -De
 if ($LASTEXITCODE -ne 0) { throw 'SiK harness failed.' }
 $initial = Get-Content -LiteralPath (Join-Path $ProjectRoot 'GCSViews\InitialSetup.cs') -Raw -Encoding UTF8
 $rtk = $initial.IndexOf('AddBackstageViewPage(typeof(ConfigSerialInjectGPS)')
-$sik = $initial.IndexOf('AddBackstageViewPage(typeof(ConfigSiKRadio), "數傳設定", true, mand)')
+$sik = $initial.IndexOf('AddBackstageViewPage(typeof(ConfigSiKRadio), "SIK 數傳設定", true, opt)')
+$p400 = $initial.IndexOf('AddBackstageViewPage(typeof(ConfigP400), "P400 數傳設定", true, opt)')
 $hidden = $initial.IndexOf('if (ShowFmtOptionalHardware)')
-if ($rtk -lt 0 -or $sik -le $rtk -or $sik -ge $hidden) { throw 'SiK page must be visible immediately below RTK.' }
+if ($rtk -lt 0 -or $sik -le $rtk -or $p400 -le $sik -or $p400 -ge $hidden) { throw 'SiK page must remain visible between RTK and P400.' }
 $page = Get-Content -LiteralPath (Join-Path $ProjectRoot 'GCSViews\ConfigurationView\ConfigSiKRadio.cs') -Raw -Encoding UTF8
 if ($page.Contains('MainV2.comPort.Close(') -or $page.Contains('MainV2.comPort.BaseStream =')) { throw 'SiK page must never hijack MP transport.' }
 if (!$page.Contains('if (HasActiveTelemetry())')) { throw 'Missing connected-MP operation guard.' }
