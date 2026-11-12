@@ -366,7 +366,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                         if (items[0].GetType() == typeof(MavlinkCheckBoxBitMask))
                         {
                             ((MavlinkCheckBoxBitMask)items[0]).ValueChanged -= Control_ValueChanged;
-                            ((MavlinkCheckBoxBitMask)items[0]).Value = Convert.ToSingle(value);
+                            ((MavlinkCheckBoxBitMask)items[0]).Value = Convert.ToDouble(value);
                             ((MavlinkCheckBoxBitMask)items[0]).ValueChanged += Control_ValueChanged;
                             return;
                         }

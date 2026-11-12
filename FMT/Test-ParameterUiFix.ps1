@@ -87,6 +87,6 @@ try {
     $lock.Dispose()
     if (!$number.Enabled -or $disabled.Enabled -or $grid.ReadOnly -or !$guide.ReadOnly) { throw 'Original control state not restored' }
 } finally { $root.Dispose() }
-$source = Get-Content (Join-Path $PSScriptRoot '../GCSViews/ConfigurationView/ConfigArducopter.cs') -Raw
-if (!$source.Contains('if (!MainV2.comPort.setParam(value, (float)temp[value]))') -or !$source.Contains('ValidateChildren();')) { throw 'Write result or pending text not checked' }
-'PASS: typed 0.4 with missing metadata/ACC P aliases, negative and zero baselines, staged writes/cache isolation, all Copter group bounds, dark read-only guide during refresh, state restoration, write failure guards'
+# Write/readback behaviour is exercised with real MAVLink packets by
+# Test-ParameterWriteReadback.ps1 rather than matching a particular method-call string.
+'PASS: typed 0.4 with missing metadata/ACC P aliases, negative and zero baselines, staged writes/cache isolation, all Copter group bounds, dark read-only guide during refresh, state restoration'

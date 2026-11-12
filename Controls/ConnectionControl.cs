@@ -10,6 +10,8 @@ namespace MissionPlanner.Controls
         public ConnectionControl()
         {
             InitializeComponent();
+            SerialPort.DeviceNamesChanged += SerialPort_DeviceNamesChanged;
+            Disposed += (sender, e) => SerialPort.DeviceNamesChanged -= SerialPort_DeviceNamesChanged;
             this.linkLabel1.Click += (sender, e) =>
             {
                 ShowLinkStats?.Invoke(this, EventArgs.Empty);
@@ -17,6 +19,13 @@ namespace MissionPlanner.Controls
         }
 
         public event EventHandler ShowLinkStats;
+
+        private void SerialPort_DeviceNamesChanged(object sender, EventArgs e)
+        {
+            if (IsDisposed || Disposing || !IsHandleCreated) return;
+            try { BeginInvoke((Action)(() => { if (!IsDisposed) cmb_Connection.Invalidate(); })); }
+            catch (InvalidOperationException) { } // Handle can disappear during shutdown.
+        }
 
         public ComboBox CMB_baudrate
         {
@@ -50,26 +59,19 @@ namespace MissionPlanner.Controls
 
         private void cmb_Connection_DrawItem(object sender, DrawItemEventArgs e)
         {
-            if (e.Index < 0)
+            if (!(sender is ComboBox combo) || e.Index < 0 || e.Index >= combo.Items.Count)
                 return;
+            using (var background = new SolidBrush((e.State & DrawItemState.Selected) != 0 ? SystemColors.Highlight : combo.BackColor))
+                e.Graphics.FillRectangle(background, e.Bounds);
 
-            ComboBox combo = sender as ComboBox;
-            if ((e.State & DrawItemState.Selected) == DrawItemState.Selected)
-                e.Graphics.FillRectangle(new SolidBrush(SystemColors.Highlight),
-                    e.Bounds);
-            else
-                e.Graphics.FillRectangle(new SolidBrush(combo.BackColor),
-                    e.Bounds);
-
-            string text = combo.Items[e.Index].ToString();
+            string text = Convert.ToString(combo.Items[e.Index]);
             if (!MainV2.MONO)
             {
                 text = text + " " + SerialPort.GetNiceName(text);
             }
 
-            e.Graphics.DrawString(text, e.Font,
-                new SolidBrush(combo.ForeColor),
-                new Point(e.Bounds.X, e.Bounds.Y));
+            using (var foreground = new SolidBrush(combo.ForeColor))
+                e.Graphics.DrawString(text, e.Font ?? combo.Font, foreground, new Point(e.Bounds.X, e.Bounds.Y));
 
             e.DrawFocusRectangle();
         }

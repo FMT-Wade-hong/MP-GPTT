@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using log4net;
 using Microsoft.Win32.SafeHandles;
 
@@ -202,9 +204,13 @@ namespace MissionPlanner.Comms
 
         private static readonly object locker = new object();
 
-        private static readonly Dictionary<string, string> comportnamecache = new Dictionary<string, string>();
-
-        private static string portnamenice = "";
+        private static readonly ConcurrentDictionary<string, string> comportnamecache = new ConcurrentDictionary<string, string>();
+        private static readonly ConcurrentDictionary<string, Lazy<Task<string>>> nameRequests =
+            new ConcurrentDictionary<string, Lazy<Task<string>>>();
+        private static Task<string[]> portEnumeration;
+        private static string[] lastSystemPorts = new string[0];
+        internal static Func<string[]> SystemPortReader = System.IO.Ports.SerialPort.GetPortNames;
+        public static event EventHandler DeviceNamesChanged;
 
         public new static string[] GetPortNames()
         {
@@ -280,15 +286,21 @@ namespace MissionPlanner.Comms
 
                 try
                 {
-                    ports = System.IO.Ports.SerialPort.GetPortNames();
-                    // any exceptions will still result in a list
-                    ports = ports.Select(p => p?.TrimEnd()).ToArray();
-                    ports = ports.Select(FixBlueToothPortNameBug).ToArray();
+                    // A driver/registry query must not block the UI indefinitely. Reuse one
+                    // pending request instead of starting more workers on every dropdown click.
+                    if (portEnumeration == null) portEnumeration = Task.Run(() => SystemPortReader());
+                    if (portEnumeration.Wait(1000))
+                    {
+                        lastSystemPorts = NormalizePortNames(portEnumeration.Result);
+                        portEnumeration = null;
+                    }
                 }
                 catch (Exception ex)
                 {
                     log.Error(ex);
+                    portEnumeration = null;
                 }
+                ports = lastSystemPorts;
 
                 if (ports != null)
                     allPorts.AddRange(ports);
@@ -305,7 +317,7 @@ namespace MissionPlanner.Comms
                     }
                 }
 
-                return allPorts.Distinct().ToArray();
+                return NormalizePortNames(allPorts);
             }
         }
 
@@ -313,79 +325,43 @@ namespace MissionPlanner.Comms
 
         public static string GetNiceName(string port)
         {
-            // make sure we are exclusive
-            lock (locker)
-            {
-                portnamenice = "";
-
-                if (port == "AUTO" || port == "UDP" || port == "UDPCl" || port == "TCP" || port == "WS")
-                    return "";
-
-                if (comportnamecache.ContainsKey(port))
-                {
-                    log.Info("done GetNiceName cache " + port + " " + comportnamecache[port]);
-                    return comportnamecache[port];
-                }
-
-                try
-                {
-                    log.Info("start GetNiceName " + port);
-
-                    CallWithTimeout(GetName, 1000, port);
-                }
-                catch
-                {
-                }
-
-                log.Info("done GetNiceName " + port + " = " + portnamenice);
-
-                comportnamecache[port] = portnamenice;
-
-                return (string) portnamenice.Clone();
-            }
+            if (string.IsNullOrWhiteSpace(port) || port == "AUTO" || port == "UDP" ||
+                port == "UDPCl" || port == "TCP" || port == "WS") return "";
+            if (comportnamecache.TryGetValue(port, out var name)) return name;
+            // WMI can stall inside a Bluetooth driver. Never abort that worker or wait
+            // for it from DrawItem. Results belong to their own port, even if they arrive late.
+            var request = nameRequests.GetOrAdd(port, p => new Lazy<Task<string>>(() => Task.Run(() => GetName(p))));
+            var task = request.Value;
+            return task.Status == TaskStatus.RanToCompletion ? task.Result : "";
         }
 
         public delegate string EventArgsDeviceName(string port);
 
         public static event EventArgsDeviceName GetDeviceName;
 
-        private static void GetName(string port)
+        private static string GetName(string port)
         {
+            var name = "";
             try
             {
-                var ans = GetDeviceName?.Invoke(port);
-                if (!String.IsNullOrEmpty(ans))
-                {
-                    portnamenice = ans;
-                    return;
-                }
+                name = GetDeviceName?.Invoke(port) ?? "";
             }
-            catch
+            catch (Exception ex)
             {
+                log.Debug("Unable to resolve serial port name " + port, ex);
             }
-
-            portnamenice = "";
+            comportnamecache[port] = name;
+            try { DeviceNamesChanged?.Invoke(null, EventArgs.Empty); }
+            catch (Exception ex) { log.Debug("Serial port name notification failed", ex); }
+            return name;
         }
 
-        private static void CallWithTimeout<T>(Action<T> action, int timeoutMilliseconds, T data)
+        internal static string[] NormalizePortNames(IEnumerable<string> ports)
         {
-            Thread threadToKill = null;
-            Action wrappedAction = () =>
-            {
-                threadToKill = Thread.CurrentThread;
-                action(data);
-            };
-
-            var result = wrappedAction.BeginInvoke(null, null);
-            if (result.AsyncWaitHandle.WaitOne(timeoutMilliseconds))
-            {
-                wrappedAction.EndInvoke(result);
-            }
-            else
-            {
-                threadToKill.Abort();
-                throw new TimeoutException();
-            }
+            return (ports ?? Enumerable.Empty<string>()).Select(FixBlueToothPortNameBug)
+                .Where(p => !string.IsNullOrWhiteSpace(p) && !p.Any(char.IsControl))
+                .Distinct(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
+                    StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal).ToArray();
         }
 
         // .NET bug: sometimes bluetooth ports are enumerated with bogus characters
@@ -397,17 +373,12 @@ namespace MissionPlanner.Comms
         {
             if (portName == null)
                 return null;
-            if (!portName.StartsWith("COM"))
+            portName = portName.Trim('\0', ' ', '\t', '\r', '\n');
+            if (!portName.StartsWith("COM", StringComparison.OrdinalIgnoreCase))
                 return portName;
-            var newPortName = "COM"; // Start over with "COM"
-            foreach (var portChar in portName.Substring(3).Take(3)
-            ) //  Remove "COM", put the rest in a character array
-                if (char.IsDigit(portChar))
-                    newPortName += portChar.ToString(); // Good character, append to portName
-            //  else
-            //log.WarnFormat("Bad (Non Numeric) character in port name '{0}' - removing", portName);
-
-            return newPortName;
+            int end = 3;
+            while (end < portName.Length && portName[end] >= '0' && portName[end] <= '9') end++;
+            return end == 3 ? null : "COM" + portName.Substring(3, end - 3);
         }
     }
 

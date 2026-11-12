@@ -622,7 +622,7 @@ namespace MissionPlanner.GCSViews
                 // load settings
                 if (Settings.Instance["quickView" + f] != null)
                 {
-                    Control[] ctls = Controls.Find("quickView" + f, true);
+                    Control[] ctls = tableLayoutPanelQuick.Controls.Find("quickView" + f, true);
                     if (ctls.Length > 0)
                     {
                         QuickView QV = (QuickView) ctls[0];
@@ -656,7 +656,7 @@ namespace MissionPlanner.GCSViews
                     // if no config, update description on predefined
                     try
                     {
-                        Control[] ctls = Controls.Find("quickView" + f, true);
+                        Control[] ctls = tableLayoutPanelQuick.Controls.Find("quickView" + f, true);
                         if (ctls.Length > 0)
                         {
                             QuickView QV = (QuickView) ctls[0];
@@ -999,6 +999,15 @@ namespace MissionPlanner.GCSViews
 
             if (disposing)
             {
+                // The detached tab is outside this control's tree and must be disposed explicitly.
+                var quickWindow = quickViewWindow;
+                quickViewWindow = null;
+                tabQuickDetached = false;
+                if (quickWindow != null)
+                {
+                    quickWindow.FormClosed -= dropoutQuick_FormClosed;
+                    quickWindow.Dispose();
+                }
                 if (MainV2.comPort != null)
                 {
                     MainV2.comPort.logreadmode = false;
@@ -7311,12 +7320,20 @@ namespace MissionPlanner.GCSViews
             hud1.batterycellcount = iCellCount;
         }
         private bool tabQuickDetached = false;
+        private Form quickViewWindow;
         private bool tuningwasrightclick;
 
         private void undockDockToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (IsDisposed || Disposing || tabQuick.IsDisposed) return;
+            if (quickViewWindow != null && !quickViewWindow.IsDisposed)
+            {
+                quickViewWindow.Activate();
+                return;
+            }
 
             Form dropout = new Form();
+            quickViewWindow = dropout;
             TabControl tab = new TabControl();
             dropout.FormBorderStyle = FormBorderStyle.Sizable;
             dropout.ShowInTaskbar = false;
@@ -7337,17 +7354,23 @@ namespace MissionPlanner.GCSViews
             dropout.FormClosed += dropoutQuick_FormClosed;
             dropout.Controls.Add(tab);
             dropout.RestoreStartupLocation();
-            dropout.Show();
+            var owner = FindForm();
+            if (owner != null) dropout.Show(owner);
+            else dropout.Show();
             tabQuickDetached = true;
-            (sender as ToolStripMenuItem).Visible = false;
+            if (sender is ToolStripMenuItem menu) menu.Visible = false;
         }
 
         void dropoutQuick_FormClosed(object sender, FormClosedEventArgs e)
         {
-            (sender as Form).SaveStartupLocation();
-            tabControlactions.Controls.Add(tabQuick);
-            tabControlactions.SelectedTab = tabQuick;
+            if (!ReferenceEquals(sender, quickViewWindow)) return;
+            quickViewWindow = null;
             tabQuickDetached = false;
+            if (IsDisposed || Disposing || tabQuick.IsDisposed || tabControlactions.IsDisposed) return;
+            ((Form)sender).SaveStartupLocation();
+            tabQuick.BorderStyle = BorderStyle.None;
+            tabControlactions.TabPages.Add(tabQuick);
+            tabControlactions.SelectedTab = tabQuick;
             contextMenuStripQuickView.Items["undockToolStripMenuItem"].Visible = true;
         }
 

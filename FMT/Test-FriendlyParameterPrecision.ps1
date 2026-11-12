@@ -53,4 +53,53 @@ foreach ($culture in @('en-US','de-DE')) {
     } finally { [Threading.Thread]::CurrentThread.CurrentCulture=$oldCulture }
 }
 $mav.param.Clear()
+# Raw-table display and editing must expand exponents without changing numeric values.
+$rawType = $assembly.GetType('MissionPlanner.GCSViews.ConfigurationView.ConfigRawParams',$true)
+$rawStartup = $rawType.GetField('startup',[Reflection.BindingFlags]'Static,NonPublic')
+$oldStartup = $rawStartup.GetValue($null)
+$oldCulture = [Threading.Thread]::CurrentThread.CurrentCulture
+$raw = [Activator]::CreateInstance($rawType)
+$form = New-Object Windows.Forms.Form
+try {
+    $rawStartup.SetValue($null,$true)
+    $grid = $rawType.GetField('Params',$flags).GetValue($raw)
+    $grid.AllowUserToAddRows=$false; $grid.ReadOnly=$false
+    $form.StartPosition='Manual'; $form.Location=New-Object Drawing.Point -30000,-30000
+    $form.Size=New-Object Drawing.Size 1000,700
+    $raw.Dock='Fill'; $form.Controls.Add($raw); $form.Show()
+    foreach ($culture in @('zh-TW','de-DE')) {
+        [Threading.Thread]::CurrentThread.CurrentCulture=[Globalization.CultureInfo]$culture
+        $separator=[Globalization.CultureInfo]::CurrentCulture.NumberFormat.NumberDecimalSeparator
+        $grid.Rows.Clear()
+        foreach ($case in @(@('1E-05','0.00001'),@('-1.25E-07','-0.000000125'),
+            @('1.234567E+20','123456700000000000000'),@('0','0'),@('0.215434','0.215434'),
+            @('1.401298E-45',('0.'+('0'*44)+'1401298')))) {
+            $inputText=$case[0].Replace('.',$separator)
+            $expected=$case[1].Replace('.',$separator)
+            $row=New-Object Windows.Forms.DataGridViewRow
+            $row.CreateCells($grid)
+            $row.Cells[$grid.Columns['Command'].Index].Value='FMT_DECIMAL_'+$grid.Rows.Count
+            $row.Cells[$grid.Columns['Fav'].Index].Value=$false
+            $row.Cells[$grid.Columns['Value'].Index].Value=$inputText
+            $row.Cells[$grid.Columns['Default_value'].Index].Value=$inputText
+            $grid.Rows.Add($row) | Out-Null
+            foreach ($column in @('Value','Default_value')) {
+                $cell=$row.Cells[$column]; $cell.Value=$inputText
+                if ($cell.FormattedValue -cne $expected -or $cell.Value -cne $inputText) { throw "Decimal display changed precision/cache: $culture $inputText" }
+            }
+        }
+        $grid.CurrentCell=$grid.Rows[0].Cells['Value']
+        if (!$grid.BeginEdit($false) -or $grid.EditingControl.Text -cne ('0'+$separator+'00001')) { throw 'Editor still shows scientific notation' }
+        $grid.CancelEdit()
+        $stage=$rawType.GetMethod('StageComparedParameter',$flags)
+        if (!$stage.Invoke($raw,@('FMT_DECIMAL_0',[double]0.00001234567))) { throw 'Small decimal edit not staged exactly' }
+        if ($grid.Rows[0].Cells['Value'].FormattedValue -cne ('0'+$separator+'00001234567')) { throw 'Staged small value displays exponent or rounding' }
+        if ($rawType.GetField('_changes',$flags).GetValue($raw)['FMT_DECIMAL_0'] -ne [double]0.00001234567) { throw 'Display formatting altered staged value' }
+    }
+    'PASS: raw current/default display and actual editor use ordinary decimals; tiny/negative/large values; zh-TW/de-DE; staging precision preserved'
+} finally {
+    [Threading.Thread]::CurrentThread.CurrentCulture=$oldCulture
+    $rawStartup.SetValue($null,$oldStartup)
+    $form.Dispose(); $raw.Dispose()
+}
 'PASS: actual friendly page; fractional IMAX; sub-milliscale PID precision; staged writes/cache; version editor disposal; float/integer distinction; en-US/de-DE parsing'

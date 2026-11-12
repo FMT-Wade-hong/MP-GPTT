@@ -299,7 +299,10 @@ namespace MissionPlanner.FMT
                 // Fit complete fixed rows into the viewport. There is no minimum
                 // scale that could turn a narrow or short pane into a scroll page.
                 var innerWidth = Math.Max(0, ClientSize.Width - Padding.Horizontal);
-                var baseWidth = visibleGroups.Max(group => group.Modes.Length) * 72 + 8;
+                // All groups share one grid so VTOL's five Q buttons have the same
+                // width and alignment as the six fixed-wing buttons below them.
+                var columns = visibleGroups.Max(group => group.Modes.Length);
+                var baseWidth = columns * 72 + 8;
                 var baseHeight = 24 + visibleGroups.Count * 76 + 8;
                 var scale = (float)Math.Max(0, Math.Min(1.8, Math.Min(
                     innerWidth / (double)baseWidth,
@@ -322,7 +325,7 @@ namespace MissionPlanner.FMT
                 statusLabel.Height = (int)Math.Round(24 * scale);
                 Height = Math.Min(heightLimit, Padding.Vertical + (int)Math.Ceiling(baseHeight * scale));
 
-                int groupIndex = -1, buttonIndex = 0, columns = 1;
+                int groupIndex = -1, buttonIndex = 0;
                 var inset = (int)Math.Round(4 * scale);
                 var gap = (int)Math.Round(6 * scale);
                 modesPanel.SuspendLayout();
@@ -335,7 +338,6 @@ namespace MissionPlanner.FMT
                         if (control is Label)
                         {
                             groupIndex++; buttonIndex = 0;
-                            columns = visibleGroups[groupIndex].Modes.Length;
                             control.SetBounds(inset, (int)Math.Round((4 + groupIndex * 76) * scale),
                                 Math.Max(0, innerWidth - 2 * inset), (int)Math.Round(20 * scale));
                         }

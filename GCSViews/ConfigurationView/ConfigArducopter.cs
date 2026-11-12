@@ -21,9 +21,10 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private readonly Hashtable changes = new Hashtable();
         internal bool startup = true;
         private CancellationTokenSource refreshCancellation;
+        private CancellationTokenSource writeCancellation;
         private readonly MavlinkNumericUpDown THR_HOVER = new MavlinkNumericUpDown();
 
-        public void Deactivate() { refreshCancellation?.Cancel(); }
+        public void Deactivate() { refreshCancellation?.Cancel(); writeCancellation?.Cancel(); }
 
         public ConfigArducopter()
         {
@@ -36,7 +37,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             label13.Text = "下降 m/s";
             label9.Text = "Loiter m/s";
             BUT_rerequestparams.Text = "更新當頁參數";
-            Disposed += (s, e) => refreshCancellation?.Cancel();
+            Disposed += (s, e) => { refreshCancellation?.Cancel(); writeCancellation?.Cancel(); };
         }
 
         private void AddHoverControl()
@@ -93,7 +94,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         public void Activate()
         {
-            if (refreshCancellation != null) return;
+            if (refreshCancellation != null || writeCancellation != null) return;
             if (!MainV2.comPort.BaseStream.IsOpen)
             {
                 Enabled = false;
@@ -111,7 +112,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             }
 
             startup = true;
-
+            try
+            {
             changes.Clear();
             BindHoverControl(MainV2.comPort.MAV.param,
                 MainV2.comPort.MAV.cs.firmware != Firmwares.ArduCopter2);
@@ -264,6 +266,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     if (control2 is MavlinkNumericUpDown)
                     {
                         var ParamName = ((MavlinkNumericUpDown) control2).ParamName;
+                        if (string.IsNullOrWhiteSpace(ParamName)) continue;
                         toolTip1.SetToolTip(control2,
                             $"{ParamName}:\n{ParameterMetaDataRepository.GetParameterMetaData(ParamName, ParameterMetaDataConstants.Description, MainV2.comPort.MAV.cs.firmware.ToString())}");
                     }
@@ -271,13 +274,20 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     if (control2 is MavlinkComboBox)
                     {
                         var ParamName = ((MavlinkComboBox) control2).ParamName;
+                        if (string.IsNullOrWhiteSpace(ParamName)) continue;
                         toolTip1.SetToolTip(control2,
                             $"{ParamName}:\n{ParameterMetaDataRepository.GetParameterMetaData(ParamName, ParameterMetaDataConstants.Description, MainV2.comPort.MAV.cs.firmware.ToString())}");
                     }
                 }
             }
 
-            startup = false;
+            }
+            catch
+            {
+                Enabled = false;
+                throw;
+            }
+            finally { startup = false; }
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -427,68 +437,103 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             }
         }
 
-        private void BUT_writePIDS_Click(object sender, EventArgs e)
+        private async void BUT_writePIDS_Click(object sender, EventArgs e)
         {
-            ValidateChildren(); // Commit text still being edited before taking the staged snapshot.
+            if (startup || writeCancellation != null || refreshCancellation != null) return;
+            if (!ValidateChildren()) return;
             var temp = (Hashtable)changes.Clone();
-
-            foreach (string value in temp.Keys)
+            if (temp.Count == 0)
             {
-                try
+                CustomMessageBox.Show("目前沒有待寫入的修改。修改欄位後會以綠色標示。", "寫入參數");
+                return;
+            }
+            var link = MainV2.comPort;
+            var target = link?.MAV;
+            var stream = link?.BaseStream;
+            if (stream == null || !stream.IsOpen || link.ReadOnly || link.logreadmode ||
+                !FMT.FmtRelayControlService.CanLocalStationTransmitControl)
+            {
+                CustomMessageBox.Show("目前無可寫入的飛控連線或控制權。", "寫入參數");
+                return;
+            }
+            if (link.giveComport || link.IsParameterListLoading || link.IsLogDownloadActive)
+            {
+                CustomMessageBox.Show("請等待目前的通訊作業完成後再寫入。", "寫入參數");
+                return;
+            }
+            using (var lease = FmtPageParameterRefresh.TryBeginWrite())
+            {
+                if (lease == null)
                 {
-                    if ((float)changes[value] > (float)MainV2.comPort.MAV.param[value] * 2.0f)
-                        if (
-                            CustomMessageBox.Show(value + " has more than doubled the last input. Are you sure?",
-                                "Large Value", MessageBoxButtons.YesNo) == (int)DialogResult.No)
-                        {
-                            try
-                            {
-                                // set control as well
-                                var textControls = Controls.Find(value, true);
-                                if (textControls.Length > 0)
-                                {
-                                    // restore old value
-                                    textControls[0].Text = MainV2.comPort.MAV.param[value].Value.ToString();
-                                    textControls[0].BackColor = Color.FromArgb(0x43, 0x44, 0x45);
-                                }
-                            }
-                            catch
-                            {
-                            }
-                            return;
-                        }
-
-                    if (MainV2.comPort.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
-                    {
-                        CustomMessageBox.Show("You are not connected", Strings.ERROR);
-                        return;
-                    }
-
-                    if (!MainV2.comPort.setParam(value, (float)temp[value]))
-                    {
-                        CustomMessageBox.Show(string.Format(Strings.ErrorSetValueFailed, value), Strings.ERROR);
-                        continue; // Keep the staged value and green editor for retry.
-                    }
-
-                    changes.Remove(value);
-
+                    CustomMessageBox.Show("已有參數作業進行中，請等待完成後再寫入。", "寫入參數");
+                    return;
+                }
+                using (var cancellation = new CancellationTokenSource())
+                using (var editors = new FmtPageParameterRefresh.EditorLock(this))
+                {
+                    writeCancellation = cancellation;
+                    var systemId = target.sysid;
+                    var componentId = target.compid;
+                    Func<bool> current = () => !cancellation.IsCancellationRequested && !IsDisposed &&
+                        ReferenceEquals(MainV2.comPort, link) && ReferenceEquals(link.MAV, target) &&
+                        ReferenceEquals(link.BaseStream, stream) && stream.IsOpen && !link.ReadOnly && !link.logreadmode &&
+                        target.sysid == systemId && target.compid == componentId &&
+                        FMT.FmtRelayControlService.CanLocalStationTransmitControl;
+                    var failures = new List<string>();
+                    int confirmed = 0;
                     try
                     {
-                        // set control as well
-                        var textControls = Controls.Find(value, true);
-                        if (textControls.Length > 0)
+                        foreach (string name in temp.Keys)
                         {
-                            textControls[0].BackColor = Color.FromArgb(0x43, 0x44, 0x45);
+                            if (!current()) { failures.Add("連線、頁面或控制權已變更，後續寫入已停止。"); break; }
+                            var requested = (float)temp[name];
+                            var previous = target.param[name];
+                            if (previous == null) { failures.Add(name + "：飛控未提供此參數。"); continue; }
+                            if (requested > (float)previous * 2f && CustomMessageBox.Show(
+                                name + " 的新值超過原值兩倍，是否繼續寫入？", "參數變更確認",
+                                MessageBoxButtons.YesNo) != (int)DialogResult.Yes) continue;
+                            try
+                            {
+                                await WriteStagedParameterAsync(link, target, name, requested, current, cancellation.Token);
+                                confirmed++;
+                            }
+                            catch (OperationCanceledException) { failures.Add("操作已停止，未確認的修改已保留。"); break; }
+                            catch (Exception ex)
+                            {
+                                failures.Add(name + "：" + ex.Message);
+                                FMT.FmtCrashDiagnostics.Record("PID parameter " + name, ex);
+                            }
                         }
+                        if (!IsDisposed && !cancellation.IsCancellationRequested)
+                            CustomMessageBox.Show("已寫入並讀回確認 " + confirmed + " 項。" +
+                                (failures.Count == 0 ? "" : "\r\n未確認的修改已保留：\r\n" + string.Join("\r\n", failures)),
+                                "參數寫入結果");
                     }
-                    catch
-                    {
-                    }
+                    finally { writeCancellation = null; }
                 }
-                catch
-                {
-                    CustomMessageBox.Show(string.Format(Strings.ErrorSetValueFailed, value), Strings.ERROR);
-                }
+            }
+        }
+
+        internal async Task WriteStagedParameterAsync(MAVLinkInterface link, MAVState target, string name,
+            float requested, Func<bool> current, CancellationToken cancellation)
+        {
+            var systemId = target.sysid;
+            var componentId = target.compid;
+            var actual = await Task.Run(() => FmtPageParameterRefresh.WriteReadAsync(
+                () => link.setParamCheckedAsync(systemId, componentId, name, requested, true, current),
+                async () => (double)await link.GetParamAsync(systemId, componentId, name).ConfigureAwait(false),
+                current, cancellation));
+            // Compare at MAVLink REAL32 precision, including small PID changes.
+            if (float.IsNaN((float)actual) || (float)actual != requested)
+                throw new InvalidOperationException("要求值 " + requested.ToString("G9") +
+                    "，飛控讀回 " + ((float)actual).ToString("G9") + "，未確認寫入成功。");
+            if (IsDisposed || cancellation.IsCancellationRequested || !current())
+                throw new OperationCanceledException();
+            if (changes.ContainsKey(name) && (float)changes[name] == requested)
+            {
+                changes.Remove(name);
+                foreach (Control editor in Controls.Find(name, true))
+                    editor.BackColor = Color.FromArgb(0x43, 0x44, 0x45);
             }
         }
 
@@ -504,7 +549,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private async void BUT_refreshpart_Click(object sender, EventArgs e)
         {
-            if (refreshCancellation != null) return;
+            if (refreshCancellation != null || writeCancellation != null) return;
             using (var cancellation = new CancellationTokenSource())
             {
                 refreshCancellation = cancellation;

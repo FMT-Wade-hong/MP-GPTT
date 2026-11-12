@@ -1,8 +1,8 @@
-# FeiMaoTecPlanner V1.2.4
+# FeiMaoTecPlanner V1.2.5
 
-最新正式版本為 **FeiMaoTecPlanner V1.2.4**；下載套件完整解壓後執行 `FMTPlanner-V1.2.4.exe`，保留同資料夾的相依檔案。
+最新正式版本為 **FeiMaoTecPlanner V1.2.5**；下載套件完整解壓後執行 `FMTPlanner-V1.2.5.exe`，保留同資料夾的相依檔案。
 
-> 已通過編譯、62 項離線回歸及 10 分鐘連續運行測試；資源紀錄見 [V1.2.4 發布驗證](FMT/RELEASE-AUDIT-V1.2.4.md)。尚未完成實機／實飛驗證，不宣稱已排除所有不定時閃退。
+> 已通過編譯、66 項離線回歸及 10 分鐘連續運行測試；資源紀錄見 [V1.2.5 發布驗證](FMT/RELEASE-AUDIT-V1.2.5.md)。尚未完成實機／實飛驗證，不宣稱已排除所有不定時閃退。
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/FMT-Wade-hong/MP-GPTT/FMTPlanner-v1.1.6/FMT/Assets/fmt-logo.png" alt="FMT 飛貓科技" width="420">
@@ -14,14 +14,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.4/FMTPlanner-V1.2.4.zip"><strong>下載 FMTPlanner V1.2.4</strong></a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.5/FMTPlanner-V1.2.5.zip"><strong>下載 FMTPlanner V1.2.5</strong></a>
   ·
   <a href="README-FMT.md">繁體中文圖文操作手冊</a>
   ·
-  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.4">版本發布頁</a>
+  <a href="https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.5">版本發布頁</a>
 </p>
 
-![Version](https://img.shields.io/badge/version-V1.2.4-22a9dc)
+![Version](https://img.shields.io/badge/version-V1.2.5-22a9dc)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
 ![Package](https://img.shields.io/badge/package-portable%20ZIP-35a853)
 ![Language](https://img.shields.io/badge/UI-English%20%7C%20繁體中文-f0ad00)
@@ -30,8 +30,8 @@
 
 | 項目 | 內容 |
 |---|---|
-| 軟體名稱 | **FeiMaoTecPlanner V1.2.4** |
-| 執行檔 | 本機建置 **FMTPlanner.exe**；下載套件 **FMTPlanner-V1.2.4.exe** |
+| 軟體名稱 | **FeiMaoTecPlanner V1.2.5** |
+| 執行檔 | 本機建置 **FMTPlanner.exe**；下載套件 **FMTPlanner-V1.2.5.exe** |
 | 公司／品牌 | **FMT 飛貓科技** |
 | 基礎專案 | ArduPilot Mission Planner |
 | 支援系統 | Windows |
@@ -39,7 +39,18 @@
 | 支援構型 | 多旋翼、定翼機、VTOL／QuadPlane |
 | 介面語言 | 預設英文，可使用繁體中文 |
 
-## V1.2.4 主要更新
+## V1.2.5 主要更新
+
+- **參數修改與寫入**：修正選配參數缺失造成整頁修改不變色、不進入待寫入清單；進階調校寫入後另行讀回，數值一致才清除修改標示。
+- **小數與位元遮罩**：`1E-05` 改為 `0.00001` 顯示；修正高位遮罩計算及整數讀回捨入，無法精確傳輸的整數會停止送出並顯示原因。
+- **VTOL 兩排一致縮放**：Q 模式與固定翼模式共用六欄，對應按鈕同寬、同高、同字型且對齊，保留無捲軸排列。
+- **分離儀表視窗**：切換返回時更新欄位綁定，防止重複分離，主頁釋放時一起關閉，修正殘留視窗的關閉例外。
+- **COM／藍牙查詢**：修正埠名稱截斷與無效項目，慢速列舉保留上次有效結果；名稱查詢改為背景執行，不再強制中止 WMI 執行緒。
+- 保留 4.6／4.7 參數相容性、雙 GPS、馬達測試防連點、ADS-B 與前版穩定性修復。
+
+[本版發布驗證與限制](FMT/RELEASE-AUDIT-V1.2.5.md) · [完整更新紀錄](CHANGELOG-FMT.md)。特定藍牙轉接器與實體飛控尚未驗證。
+
+## V1.2.4 主要更新（歷史版本）
 
 - **4.6／4.7 參數相容性**：內嵌 31 組官方發布版本的完整參數文件，依飛控機型與韌體版本選用；修正 PID、起飛、直升機與 OSD 的名稱／單位及小數精度。實際可用參數仍以飛控回傳為準。
 - **穩定性修正**：釋放 HUD 縮放／關閉後的圖像資源，修正縮放時仍被標籤使用的字型遭到釋放；診斷日誌限制容量並保留本機錯誤記錄。
@@ -147,9 +158,9 @@
 
 ## 快速開始
 
-1. 下載 [FMTPlanner-V1.2.4.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.4/FMTPlanner-V1.2.4.zip)。
+1. 下載 [FMTPlanner-V1.2.5.zip](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.5/FMTPlanner-V1.2.5.zip)。
 2. 將 ZIP **完整解壓縮**到可寫入的資料夾。
-3. 執行 **FMTPlanner-V1.2.4.exe**，不要直接在壓縮檔內啟動。
+3. 執行 **FMTPlanner-V1.2.5.exe**，不要直接在壓縮檔內啟動。
 4. 登入後選擇正確 COM 埠與傳輸速率，再按 **CONNECT／連線**。
 5. 正式使用前請變更預設密碼，並先完成飛控校正與任務安全檢查。
 
@@ -165,10 +176,10 @@
 
 ## 文件與下載
 
-- [V1.2.4 發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.4)
-- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.4/FMTPlanner-V1.2.4.zip)
+- [V1.2.5 發布頁](https://github.com/FMT-Wade-hong/MP-GPTT/releases/tag/FMTPlanner-v1.2.5)
+- [下載可攜式程式](https://github.com/FMT-Wade-hong/MP-GPTT/releases/download/FMTPlanner-v1.2.5/FMTPlanner-V1.2.5.zip)
 - [完整繁體中文圖文操作手冊](README-FMT.md)
-- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.2.4/CHANGELOG-FMT.md)
+- [版本變更記錄](https://github.com/FMT-Wade-hong/MP-GPTT/blob/FMTPlanner-v1.2.5/CHANGELOG-FMT.md)
 - [FMT 飛貓科技官網](https://www.feimaotec.com)
 
 ## 安全提醒

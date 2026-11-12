@@ -39,6 +39,17 @@ try {
                 $previousRight=$control.Right
             }
             $first=@($panel.Controls | Where-Object {$_ -is [Windows.Forms.Button]})[0]
+            if($vehicle[1]) {
+                $rows=@($panel.Controls | Where-Object {$_ -is [Windows.Forms.Button]} | Group-Object Top | Sort-Object {[int]$_.Name})
+                if($rows.Count -ne 2 -or $rows[0].Count -ne 5 -or $rows[1].Count -ne 6){throw 'VTOL mode grouping changed'}
+                $upper=@($rows[0].Group | Sort-Object Left); $lower=@($rows[1].Group | Sort-Object Left)
+                for($column=0; $column -lt $upper.Count; $column++) {
+                    if($upper[$column].Left -ne $lower[$column].Left -or $upper[$column].Size -ne $lower[$column].Size -or
+                        !$upper[$column].Font.Equals($lower[$column].Font)) {
+                        throw "VTOL rows scale differently at $width x $available, column $column : $($upper[$column].Size) vs $($lower[$column].Size)"
+                    }
+                }
+            }
             if($width -gt 280 -and ($first.Width -le $previousWidth -or $first.Font.Size -lt $previousFont)){throw 'Buttons/text did not scale with larger viewport'}
             $previousWidth=$first.Width; $previousFont=$first.Font.Size
             if($available -eq 600 -and $width -in @(280,620,900) -and ($firmware -eq 'ArduCopter2' -or $vehicle[1])) {
@@ -55,4 +66,4 @@ if($source -match 'if\s*\(port.MAV.cs.armed\)\s*\{') { throw 'Armed hard block r
 foreach($required in @('port.MAV.cs.armed ?','MessageBoxDefaultButton.Button2','port.ReadOnly','port.logreadmode','port.sysidcurrent != targetSystem')) {
     if(!$source.Contains($required)) { throw "Missing safety confirmation/guard: $required" }
 }
-'PASS: 108 viewport/profile cases; no scrolling, wrapping, overlap, clipped buttons or captions; buttons and fonts scale with the viewport; disconnected and existing safety guards preserved; no vehicle writes.'
+'PASS: 108 viewport/profile cases; VTOL rows share column widths, heights, fonts and alignment; no scrolling, wrapping, overlap, clipped buttons or captions; buttons and fonts scale with the viewport; disconnected and existing safety guards preserved; no vehicle writes.'

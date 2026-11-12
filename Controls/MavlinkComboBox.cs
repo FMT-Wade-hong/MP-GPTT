@@ -64,7 +64,12 @@ namespace MissionPlanner.Controls
             }
             else
             {
-
+                this.ParamName = null;
+                this.DataSource = null;
+                this.SelectedIndex = -1;
+                _source2 = null;
+                this.Enabled = false;
+                enableControl(false);
             }
 
             base.SelectedIndexChanged += new EventHandler(MavlinkComboBox_SelectedIndexChanged);
@@ -94,6 +99,12 @@ namespace MissionPlanner.Controls
 
                 this.SelectedValue = (int)paramlist[paramname].Value;
             }
+            else
+            {
+                this.Enabled = false;
+                this.SelectedIndex = -1;
+                enableControl(false);
+            }
 
             base.SelectedIndexChanged += new EventHandler(MavlinkComboBox_SelectedIndexChanged);
         }
@@ -119,6 +130,12 @@ namespace MissionPlanner.Controls
                 enableControl(true);
 
                 this.Text = Enum.GetName(source, (Int32)paramlist[paramname].Value);
+            }
+            else
+            {
+                this.Enabled = false;
+                this.SelectedIndex = -1;
+                enableControl(false);
             }
 
             base.SelectedIndexChanged += new EventHandler(MavlinkComboBox_SelectedIndexChanged);

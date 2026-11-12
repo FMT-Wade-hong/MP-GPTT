@@ -123,6 +123,9 @@ public partial class MAVLink
                 case MAV_PARAM_TYPE.INT32:
                     return (double)int32_value;
                 case MAV_PARAM_TYPE.REAL32:
+                    // ArduPilot transports integer parameters numerically as REAL32.
+                    // Formatting them to seven significant digits can flip mask bits.
+                    if (TypeAP != MAV_PARAM_TYPE.REAL32) return float_value;
                     /*
 item.float_value
 0.8
@@ -218,7 +221,7 @@ item.float_value
 
         public override string ToString()
         {
-            if (Type == MAV_PARAM_TYPE.REAL32)
+            if (Type == MAV_PARAM_TYPE.REAL32 && TypeAP == MAV_PARAM_TYPE.REAL32)
                 return ((float)this).ToString();
             return Value.ToString();
         }
@@ -227,7 +230,7 @@ item.float_value
         {
             if (!default_value.HasValue)
                 return "NaN";
-            if (Type == MAV_PARAM_TYPE.REAL32)
+            if (Type == MAV_PARAM_TYPE.REAL32 && TypeAP == MAV_PARAM_TYPE.REAL32)
                 return ((float)default_value).ToString();
             return default_value.ToString();
         }

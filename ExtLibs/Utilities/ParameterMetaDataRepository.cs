@@ -59,6 +59,9 @@ namespace MissionPlanner.Utilities
         /// <returns></returns>
         public static string GetParameterMetaData(string nodeKey, string metaKey, string vechileType)
         {
+            // Optional controls may have no binding on this firmware/board.
+            if (string.IsNullOrWhiteSpace(nodeKey) || string.IsNullOrWhiteSpace(metaKey))
+                return string.Empty;
             vechileType = VehicleTypeResolver?.Invoke(vechileType) ?? vechileType;
             // An explicit firmware snapshot must never fall back to another release's units/ranges.
             if (System.Text.RegularExpressions.Regex.IsMatch(vechileType ?? "", @"^(Copter|Heli|Plane|Rover|Sub|Tracker)\d+\.\d+\.\d+$"))

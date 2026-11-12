@@ -21,45 +21,55 @@ namespace MissionPlanner.Controls
         public string ParamName { get; set; }
         public Func<string, string> OptionTextTranslator { get; set; }
         private readonly ToolTip originalOptionTip = new ToolTip();
+        private bool loading;
+        private uint unlistedBits;
 
 
-        public float Value
+        public double Value
         {
             get
             {
-                float answer = 0;
+                uint answer = unlistedBits;
 
                 for (int a = 0; a < chklist.Count; a++)
                 {
-                    answer += chklist[a].Value.Checked ? (uint)(1 << chklist[a].Key) : 0;
+                    if (chklist[a].Value.Checked) answer |= 1u << chklist[a].Key;
                 }
 
                 // type conversions
                 // ie int8 255 = -1
                 if (Type == MAVLink.MAV_PARAM_TYPE.INT8)
                 {
-                    answer = (sbyte)answer;
+                    return unchecked((sbyte)answer);
                 }
                 else if (Type == MAVLink.MAV_PARAM_TYPE.INT16)
                 {
-                    answer = (short)answer;
+                    return unchecked((short)answer);
                 }
                 else if (Type == MAVLink.MAV_PARAM_TYPE.INT32)
                 {
-                    answer = (int)answer;
+                    return unchecked((int)answer);
                 }
 
-                return (float)answer;
+                return answer;
             }
             set
             {
-                for (int a = 0; a < chkcount; a++)
+                // Binding a mask must not fire intermediate writes or round high bits.
+                var bits = unchecked((uint)(long)value);
+                uint listedBits = 0;
+                loading = true;
+                try
                 {
-                    CheckBox chk = (CheckBox)panel1.Controls[a];
-
-
-                    chk.Checked = (((uint)value & (1 << list[a].Key)) > 0);
+                    foreach (var item in chklist)
+                    {
+                        var bit = 1u << item.Key;
+                        listedBits |= bit;
+                        item.Value.Checked = (bits & bit) != 0;
+                    }
+                    unlistedBits = bits & ~listedBits;
                 }
+                finally { loading = false; }
             }
         }
 
@@ -76,6 +86,13 @@ namespace MissionPlanner.Controls
 
         public void setup(string paramname, MAVLink.MAVLinkParamList paramlist)
         {
+            foreach (var item in chklist)
+            {
+                item.Value.CheckedChanged -= MavlinkCheckBoxBitMask_CheckedChanged;
+                item.Value.Dispose();
+            }
+            chklist.Clear();
+            unlistedBits = 0;
             this.ParamName = paramname;
 
             if (paramlist.ContainsKey(paramname))
@@ -91,13 +108,14 @@ namespace MissionPlanner.Controls
 
                 list = ParameterMetaDataRepository.GetParameterBitMaskInt(ParamName,
                     MainV2.comPort.MAV.cs.firmware.ToString());
+                list.RemoveAll(option => option.Key < 0 || option.Key > 31);
                 chkcount = list.Count;
 
                 int leftside = 9;
                 int top = 9;
                 int bottom = 0;
 
-                uint value = (uint)paramlist[paramname].Value;
+                uint value = unchecked((uint)(long)paramlist[paramname].Value);
 
                 Type = paramlist[paramname].TypeAP;
 
@@ -113,7 +131,7 @@ namespace MissionPlanner.Controls
 
                     chk.CheckedChanged -= MavlinkCheckBoxBitMask_CheckedChanged;
 
-                    if ((value & (1 << list[a].Key)) > 0)
+                    if ((value & (1u << list[a].Key)) != 0)
                     {
                         chk.Checked = true;
                     }
@@ -132,8 +150,7 @@ namespace MissionPlanner.Controls
                         leftside = 9;
                     }
                 }
-
-
+                Value = paramlist[paramname].Value;
                 this.panel1.Height = bottom;
 
                 this.Height = myLabel1.Height + tableLayoutPanel1.Height + 25;
@@ -146,6 +163,7 @@ namespace MissionPlanner.Controls
 
         void MavlinkCheckBoxBitMask_CheckedChanged(object sender, EventArgs e)
         {
+            if (loading) return;
             if (this.ValueChanged != null)
             {
                 this.ValueChanged(sender, ParamName, Value.ToString());

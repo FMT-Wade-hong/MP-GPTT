@@ -33,6 +33,8 @@ try {
         'MissionPlanner.Controls.dll'='MissionPlanner.Controls.dll'
         'MissionPlanner.ArduPilot.dll'='MissionPlanner.ArduPilot.dll'
         'MissionPlanner.Utilities.dll'='MissionPlanner.Utilities.dll'
+        'MissionPlanner.Comms.dll'='MissionPlanner.Comms.dll'
+        'MAVLink.dll'='MAVLink.dll'
     }
     foreach($file in $files.Keys) {
         $entry=$zip.GetEntry($prefix+$files[$file])

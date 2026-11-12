@@ -61,6 +61,42 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 Options.HeaderText = "範圍／選項";
             }
             Params.CellClick += Params_FmtCellClick;
+            Params.CellFormatting += Params_FormatDecimalValue;
+        }
+
+        private void Params_FormatDecimalValue(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.ColumnIndex != Value.Index && e.ColumnIndex != Default_value.Index) return;
+            var text = Convert.ToString(e.Value, CultureInfo.CurrentCulture);
+            var formatted = FormatDecimalParameter(text);
+            if (formatted == text) return;
+            // Format the display/editor only; never round or modify the parameter/cache.
+            e.Value = formatted;
+            e.FormattingApplied = true;
+        }
+
+        internal static string FormatDecimalParameter(string text)
+        {
+            if (string.IsNullOrEmpty(text) || (text.IndexOf('E') < 0 && text.IndexOf('e') < 0))
+                return text;
+            var match = Regex.Match(text,
+                @"^([+-]?)([0-9]+)(?:([.,])([0-9]*))?[eE]([+-]?[0-9]+)$");
+            if (!match.Success || !int.TryParse(match.Groups[5].Value, NumberStyles.Integer,
+                    CultureInfo.InvariantCulture, out var exponent) || exponent < -324 || exponent > 308)
+                return text;
+            // Shift the decimal point in the existing digits, without another floating-point conversion.
+            var digits = match.Groups[2].Value + match.Groups[4].Value;
+            var point = match.Groups[2].Length + exponent;
+            var separator = match.Groups[3].Success ? match.Groups[3].Value :
+                CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+            string number;
+            if (point <= 0)
+                number = "0" + separator + new string('0', -point) + digits;
+            else if (point >= digits.Length)
+                number = digits + new string('0', point - digits.Length);
+            else
+                number = digits.Insert(point, separator);
+            return match.Groups[1].Value + number;
         }
 
         internal void ApplyFmtReadableTheme()

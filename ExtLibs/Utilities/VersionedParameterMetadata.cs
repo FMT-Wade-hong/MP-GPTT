@@ -28,6 +28,7 @@ namespace MissionPlanner.Utilities
         {
             value = string.Empty;
             if (!ContainsVersion(key)) return false;
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(field)) return true;
             var index = Indexes.GetOrAdd(key, k => new Lazy<Dictionary<string, Dictionary<string, string>>>(
                 () => Load(k), LazyThreadSafetyMode.ExecutionAndPublication)).Value;
             if (index.TryGetValue(name, out var parameter) && parameter.TryGetValue(field, out var found))

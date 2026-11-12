@@ -4,7 +4,8 @@ $ErrorActionPreference='Stop'
 $results=@()
 $tests=@('Local124','CrashGuard124','DualGpsToolbar','MotorTestGuard','AdsbHttp','IceSetup','HudCompact',
     'ScreenSizeMatrix','TranslationAudit124','AllParameterTranslation','TranslationSemantics',
-    'ReviewedParameterTranslation','ParameterLocalization')
+    'ReviewedParameterTranslation','ParameterLocalization','TuningActivation','ParameterWriteReadback',
+    'GitHubIssues','QuickViewLifecycle')
 foreach($name in $tests) {
     $timer=[Diagnostics.Stopwatch]::StartNew()
     $output=Join-Path $ReportDirectory ($name+'.out')
@@ -16,4 +17,4 @@ foreach($name in $tests) {
     Write-Output "$name exit=$($process.ExitCode) seconds=$([Math]::Round($timer.Elapsed.TotalSeconds,1))"
 }
 if(@($results | Where-Object ExitCode -ne 0).Count){throw 'Release regression failed; inspect results.json and per-test logs'}
-'PASS: baseline 50 regression scripts plus 12 additional suites; no real vehicle connection.'
+"PASS: baseline 50 regression scripts plus $($tests.Count-1) additional suites; no real vehicle connection."

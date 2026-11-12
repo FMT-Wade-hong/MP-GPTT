@@ -1738,6 +1738,12 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
             if ((MAVlist[sysid, compid].cs.capabilities & (uint) MAV_PROTOCOL_CAPABILITY.PARAM_FLOAT) > 0 ||
                 MAVlist[sysid, compid].apname == MAV_AUTOPILOT.ARDUPILOTMEGA)
             {
+                // Integer masks must not silently lose low bits on the numeric REAL32 path.
+                // Byte-wise integer encoding (the branch below) keeps all 32 bits intact.
+                if (param.TypeAP != MAV_PARAM_TYPE.REAL32 && param.TypeAP != MAV_PARAM_TYPE.REAL64 &&
+                    value == Math.Truncate(value) && (double)(float)value != value)
+                    throw new ArgumentOutOfRangeException(nameof(value),
+                        paramname + " 的整數值無法透過目前的 MAVLink 浮點傳輸精確表示；未送出，以免改動其他位元。");
                 req.param_value = new MAVLinkParam(paramname, value, (MAV_PARAM_TYPE.REAL32)).float_value;
             }
             else
