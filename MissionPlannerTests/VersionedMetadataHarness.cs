@@ -73,7 +73,7 @@ internal static class VersionedMetadataHarness
             versions++;
             Console.WriteLine("PASS: " + key);
         }
-        Check(versions == 31, "Expected 31 published 4.6/4.7 snapshots");
+        Check(versions >= 36, "Expected all original snapshots plus five 4.7.3 releases");
         var vehicleNames = new[] { "ArduCopter2", "ArduPlane", "ArduRover", "ArduSub", "ArduTracker" };
         var families = new[] { "Copter", "Plane", "Rover", "Sub", "Tracker" };
         for (int i = 0; i < vehicleNames.Length; i++)

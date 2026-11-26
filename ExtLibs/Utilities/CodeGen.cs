@@ -36,7 +36,14 @@ namespace MissionPlanner
             lasterror = "";
             var filecontents = File.ReadAllText(filepath, Encoding.UTF8);
             {
-                var bytes = filecontents.Select(a => (byte) a).ToArray();
+                // The shared cache must not reuse plugins compiled against another build.
+                // Include referenced module identities as FMT keeps a fixed version number across local builds.
+                var modules = AppDomain.CurrentDomain.GetAssemblies()
+                    .Where(a => !a.IsDynamic && (a.GetName().Name.StartsWith("MissionPlanner", StringComparison.Ordinal) ||
+                        a.GetName().Name == "FMTPlanner" || a.GetName().Name == "MAVLink"))
+                    .Select(a => a.GetName().Name + ":" + a.ManifestModule.ModuleVersionId)
+                    .OrderBy(a => a, StringComparer.Ordinal);
+                var bytes = Encoding.UTF8.GetBytes(filecontents + "\n" + string.Join("\n", modules));
                 var md5 = new MD5Digest();
                 md5.BlockUpdate(bytes, 0, bytes.Length);
                 var result = new byte[md5.GetDigestSize()];

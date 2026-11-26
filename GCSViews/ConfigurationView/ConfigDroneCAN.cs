@@ -669,11 +669,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 new List<DroneCAN.DroneCAN.uavcan_protocol_param_GetSet_res>();
             prd.doWorkArgs.ForceExit = true;
             prd.doWorkArgs.CancelRequestChanged += (sender2, args) => { prd.doWorkArgs.CancelAcknowledged = true; };
-            prd.DoWork += dialogue => { paramlist = can.GetParameters(nodeID); };
+            bool complete = false;
+            prd.DoWork += dialogue => { paramlist = can.GetParameters(nodeID); complete = true; };
             prd.UpdateProgressAndStatus(-1, Strings.GettingParams);
             prd.RunBackgroundOperationAsync();
 
-            if (!prd.doWorkArgs.CancelRequested)
+            if (complete && !prd.doWorkArgs.CancelRequested)
                 new DroneCANParams(can, nodeID, paramlist).ShowUserControl();
         }
 

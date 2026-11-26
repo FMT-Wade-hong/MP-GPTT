@@ -1,0 +1,153 @@
+﻿歷史開發驗證紀錄；修正已整合於 V1.2.6。正式建置與最終測試結果請見 RELEASE-AUDIT-V1.2.6.md。
+
+FMTPlanner V1.2.5 — GitHub 異常查核與修正，2026-11-27
+
+狀態：本機測試更新，未推送、未建立標籤或發布套件。
+測試版：bin/GitHubAudit125/net472/FMTPlanner.exe
+此份測試版包含前次 Stability125 的設定檔、OpenGL 及 FTP 生命週期修正。
+
+查核範圍
+
+FMT-Wade-hong/MP-GPTT：目前沒有未關閉的問題回報；Issue #2 已關閉，
+另有舊版發布草稿 PR #1，不能當作新異常回報。
+https://github.com/FMT-Wade-hong/MP-GPTT/issues/2
+https://github.com/FMT-Wade-hong/MP-GPTT/pull/1
+
+另查 ArduPilot/MissionPlanner 最近更新的 80 筆 Issue、30 筆開啟中的 crash 搜尋結果，
+以及 35 筆最近合併 PR；集合可能重疊。逐項比對與本機 Windows 版本相關的程式路徑，
+對確認相符的缺陷修正。這不是所有歷史 Issue、所有平台或所有實機情境的完整驗證。
+查詢摘要保存於 tmp/github-audit-20261127/discovery.json。
+
+本次修正的 12 類問題
+
+1. OSD 參數名稱：固定 16-byte 欄位未帶結尾 NUL 時仍讀取完整名稱；
+   登錄請求後才送出，避免極快回覆漏收，已處理回覆不重複觸發。
+   https://github.com/ArduPilot/MissionPlanner/issues/3868
+   https://github.com/ArduPilot/MissionPlanner/pull/3874
+
+2. ADS-B SBS：移除英尺重複轉公尺；保留 MSG3／MSG4 升降率及新目標第一筆升降率。
+   統一精確換算：1 ft = 0.3048 m、1 ft/min = 0.508 cm/s。
+   HTTP 資料同樣採精確常數；台灣識別區、100 海里及每 2 秒更新設定不變。
+   https://github.com/ArduPilot/MissionPlanner/issues/3786
+
+3. ADS-B 威脅色：NONE 改回綠色，與 LOW 橘色、HIGH 紅色區別。
+   這是針對回報中顏色無法區分的介面改善，不更改飛控判斷的威脅等級。
+   https://github.com/ArduPilot/MissionPlanner/issues/3788
+
+4. 動作命令：Do_Parachute 使用 RELEASE=2，修正先前送 0（停用）而非釋放；
+   一般動作的保留參數清為 0，保留原有飛前校正及電池重設的指定參數、確認流程。
+   https://github.com/ArduPilot/MissionPlanner/issues/3535
+   https://github.com/ArduPilot/MissionPlanner/pull/3854
+   https://github.com/ArduPilot/MissionPlanner/pull/3853
+   https://mavlink.io/en/messages/common.html#MAV_CMD_DO_PARACHUTE
+
+5. INT 任務上傳：下一航點請求同時接受 MISSION_REQUEST 與 MISSION_REQUEST_INT，
+   按實際訊息型別解碼並保留來源、目標及序號核對，避免無故重送或中斷。
+   https://github.com/ArduPilot/MissionPlanner/pull/3869
+
+6. DroneCAN 參數：等待訊號初始為 0，逐索引等候正確節點、目標及 transfer ID 的回覆；
+   忽略重複或不相符回覆；漏包重試使用新 transfer ID，支援 5-bit 回繞。
+   只有收到清單結束才回傳／加入快取。逾時不把部分清單當完成，頁面不開啟空成功結果。
+   https://github.com/ArduPilot/MissionPlanner/issues/3751
+   https://github.com/ArduPilot/MissionPlanner/pull/3758
+   https://dronecan.github.io/Specification/4.1_CAN_bus_transport_layer/
+
+7. 簽署金鑰保存：讀取失敗時停止覆寫原檔；保存先產生完整加密資料，再原子替換。
+   網路介面順序變更時嘗試目前安裝介面的 MAC 與無介面預設值，修正 Crypto 共用陣列污染。
+   若原介面已移除且無法解密，只能保留檔案，仍需原介面或備份，不能保證自動救回。
+   https://github.com/ArduPilot/MissionPlanner/issues/3694
+
+8. 內建網頁介面：56781 改為只監聽 IPv4 loopback，raw WebSocket 只提供遙測讀取；
+   拒絕跨站來源及入站資料，不再把未驗證的封包轉寫飛控。斷線時移除原連線訂閱。
+   相容性變更：其他電腦不能再直接連此內建 HTTP 埠；raw WebSocket 入站 frame 會關閉連線。
+   專用 MQTT／UDP 轉發功能不在此限制路徑內。這不是整個程式的全面安全稽核。
+   https://github.com/ArduPilot/MissionPlanner/issues/3757
+
+9. 外掛快取：快取鍵含目前 FMT／MissionPlanner／MAVLink 模組識別及 UTF-8 原始碼，
+   防止固定版本號的不同建置重用舊外掛，或非 ASCII 程式文字被截成 byte 後誤共用快取。
+   https://github.com/ArduPilot/MissionPlanner/pull/3847
+
+10. 電池校正輸入：接受單一小數點或逗號，禁止千位分隔混用、NaN／Infinity，
+    避免逗號小數語系將 12.34 誤讀成 1234；維持原寫入流程。
+    https://github.com/ArduPilot/MissionPlanner/issues/2567
+    https://github.com/ArduPilot/MissionPlanner/pull/3849
+    https://github.com/ArduPilot/MissionPlanner/pull/3870
+
+11. MAVFTP：根目錄收到 @SYS 時不再新增第二份，保留獨立系統目錄及其他正常目錄。
+    https://github.com/ArduPilot/MissionPlanner/issues/3492
+
+12. 舊 InitialParamsCalculator 外掛：依實際 PSC_D_ACC_P 名稱選擇 4.7 懸停後建議比例，
+    P=0.1×MOT_THST_HOVER、I=0.2×MOT_THST_HOVER；舊參數維持原比例。
+    取消比較視窗不再顯示成功，提示落地上鎖後評估，不自動套用這組建議。
+    FMT 內建初始參數頁先前已有相同版本判斷，本次修的是另附外掛。
+    https://github.com/ArduPilot/MissionPlanner/pull/3829
+    https://ardupilot.org/copter/docs/initial-tuning-flight.html#test-althold
+
+已存在的修正與未確認項目
+
+- #3864／#3673 分離儀表、#3719 COM 列舉、#3696 位元遮罩、#3826／#3731／#3678
+  進階調校與 4.7 參數問題已有本機修正，本次納入回歸。
+- #3768 轉發停止按鈕及 #3736 TLOG 圖軸更新順序，本機已有相關修正。
+- #3747：特定 Plane 4.6.3、SiK／ELRS 組合在 GPS 3D 後不再收到 BATTERY_STATUS。
+  本機電壓顯示依 BATTERY_STATUS，SYS_STATUS 仍收到時不會用其電壓覆蓋。
+  尚無原硬體封包重現；SYS_STATUS 電壓在多電池配置有來源歧義，未擅自改成通用覆蓋。
+  尚未確認／修復該回報的完整鏈路原因。
+  https://github.com/ArduPilot/MissionPlanner/issues/3747
+- #3461 DataFlash 下載中斷／進度倒退需要實機長日誌及鏈路條件；此次未取得同樣重現。
+  https://github.com/ArduPilot/MissionPlanner/issues/3461
+- #3763 MK15 連線閃退缺少堆疊與可重現條件；既有 Windows 修正不能宣稱就是其原因。
+  https://github.com/ArduPilot/MissionPlanner/issues/3763
+- #3661 RTL 高度語意由飛控的 TERRAIN_FOLLOW 等設定決定，不把正常 RTL 指令改寫成帶位置航點。
+  https://github.com/ArduPilot/MissionPlanner/issues/3661
+- macOS／Android 專屬問題不視為已驗證此 Windows 建置存在。
+
+建置與驗證
+
+- Release/net472 建置：0 errors、1273 warnings；既有警告仍保留，並非零警告建置。
+- 專項涵蓋 OSD 完整名稱與立即／重複回覆；SBS 高度與升降率；動作參數；
+  四種語系數值解析；兩種任務請求；40 筆 DroneCAN 清單、錯誤節點／transfer ID、
+  漏包重試及中途不完整；隔離簽署金鑰讀寫／原檔保護；外掛快取及實際外掛編譯；
+  WebSocket 來源、唯讀限制、遙測輸出與斷線清理。
+- FTP 生命週期測試加入實際回覆含 @SYS／LOGS 的根目錄，驗證不重複且不遺失正常資料夾。
+- ADS-B HTTP 舊測試預期值更新：3280 ft 應為 999.744 m，不再使用近似的 1000 m。
+  此項測試初次失敗及通過的重測均保留，不當作額外產品修正。
+- 完整回歸 92 組通過：50 個基礎腳本、39 組擴充及 MQTT／SiK／飛行操作 3 組。
+  原始整套執行有一項 ADS-B 預期值失敗；更新精確換算值後單獨重測通過。
+  原始 results.json 不覆寫，整合結果另存 regression-final-results.json。
+- GitHub 專項補充重測 125 項斷言通過；生命週期主回歸 404 項斷言通過。
+- 加跑生命週期時，與 HUD 連續測試並行出現一次非注入的 OpenGL Error 170（context 忙碌），
+  產品已攔截並停用該 3D 控制項，測試因「注入前應正常」的斷言失敗，沒有未處理閃退。
+  不能由單次結果斷定是並行負載造成，也不能宣稱該 context 問題已根治。
+  連續繪圖結束後單獨重測通過（386 項斷言），包含 10 個真實 GL 控制項、100 次縮放／
+  顯示切換、5 次 3D 失效返回 2D／重開，以及 10 次 FTP 開關。未重現 Error 170，
+  仍保留為尚未確認原因的觀察，不以單次通過保證往後不會發生。
+- 10 分鐘正常垃圾回收連續測試通過：600 秒，GDI／OpenGL 各 8,340 幀，84 次 ICE
+  頁面生命週期，六類機型／VTOL 模式列反覆縮放；OpenGL 未降級，無未處理例外。
+  私用記憶體在 60 秒暖機點 304.87 MiB、結束 256.91 MiB，全程取樣 159.69–329.77 MiB；
+  暖機至結束 handles 845→832、GDI 46→45、USER 94→72，無持續累積超過測試門檻。
+  此結果不能抹除另一次 3D context 加測失敗；兩者操作路徑不同。
+
+驗證證據
+
+tmp/github-audit-20261127/build-verified.log
+tmp/github-audit-20261127/targeted.log
+tmp/github-audit-20261127/targeted-final.log（125 項）
+tmp/github-audit-20261127/regression/（每組標準輸出、錯誤及 results.json）
+tmp/github-audit-20261127/regression-final-results.json、ci-results.json
+tmp/github-audit-20261127/AdsbHttp-verified.log
+tmp/github-audit-20261127/ci-mqtt.log、ci-sik.log、ci-actions.log
+tmp/github-audit-20261127/soak.log、soak.json
+tmp/github-audit-20261127/lifecycle-repeat.log（並行加測失敗，保留供追查）
+tmp/github-audit-20261127/lifecycle-serial.log、summary.json
+
+SHA-256
+FMTPlanner.exe: 506577665ABE847392BBDE44015FEBC16A773176EA3F7D8FE47819CDD8D251BA
+MissionPlanner.ArduPilot.dll: 069325796BEFDABB34CF275711A5274D429E516E33A0B74CF0B43DA0AEB3E0B3
+MissionPlanner.Utilities.dll: 4BA533EBBE1949956CBD214B4C32493D03AFFF9938F1253EE89AF9BC030B065B
+DroneCAN.dll: F11D96982F9664DE1395259EE0C26A8A5AB13EBDFC19CE3B2E595F4813D23A1A
+
+限制
+
+此次使用本機模擬封包、隔離設定／金鑰檔、loopback 測試與 Windows GDI／OpenGL 控制項。
+未連接實體飛控、未送出真實馬達／降落傘／舵機命令，未改動使用者的實際簽署金鑰檔。
+離線通過不代表所有硬體、任意運行時間或實飛情境都已確認；未復現項目如上列明。

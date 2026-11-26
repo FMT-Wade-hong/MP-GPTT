@@ -49,6 +49,11 @@ namespace MissionPlanner.Controls
         private CheckBox chk_locktomav;
         private Timer timer1;
         private System.ComponentModel.IContainer components;
+        private volatile bool stopImageLoader;
+        private int graphicsFailed;
+        private bool graphicsInitialized;
+        public bool GraphicsFailed => Volatile.Read(ref graphicsFailed) != 0;
+        public event EventHandler GraphicsUnavailable;
         private CheckBox chk_fog;
         private PointLatLngAlt _center { get; set; } = new PointLatLngAlt(-34.9807459, 117.8514028, 70);
 
@@ -197,18 +202,54 @@ namespace MissionPlanner.Controls
             return vec.Xyz;
         }
 
-        ~OpenGLtest2()
+        private void ReportGraphicsFailure(Exception error)
         {
-            foreach (var tileInfo in textureid)
+            if (Interlocked.Exchange(ref graphicsFailed, 1) != 0) return;
+            stopImageLoader = true;
+            log4net.LogManager.GetLogger(typeof(OpenGLtest2)).Warn("3D map rendering stopped", error);
+            if (!IsHandleCreated || IsDisposed || Disposing) return;
+            try
             {
-                try
+                BeginInvoke((Action)(() =>
                 {
-                    tileInfo.Value.Cleanup();
-                }
-                catch
-                {
-                }
+                    if (IsDisposed || Disposing) return;
+                    timer1.Stop();
+                    GraphicsUnavailable?.Invoke(this, EventArgs.Empty);
+                }));
             }
+            catch (InvalidOperationException) { }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && !IsDisposed)
+            {
+                stopImageLoader = true;
+                timer1?.Stop();
+                if (_imageloaderThread != null && _imageloaderThread.IsAlive && _imageloaderThread != Thread.CurrentThread)
+                    _imageloaderThread.Join(2000);
+                if (textureSemaphore.Wait(250))
+                {
+                    try
+                    {
+                        if (IsHandleCreated && Context != null && !Context.IsDisposed)
+                        {
+                            Context.MakeCurrent(WindowInfo);
+                            foreach (var tile in textureid.Values) tile.Cleanup(true);
+                            _flightPlanLines?.Dispose();
+                            if (green != 0) GL.DeleteTextures(1, ref green);
+                            Context.MakeCurrent(null);
+                        }
+                    }
+                    catch (Exception ex) { log4net.LogManager.GetLogger(typeof(OpenGLtest2)).Debug("3D map cleanup after context loss", ex); }
+                    finally { textureid.Clear(); textureSemaphore.Release(); }
+                }
+                try { core.OnMapClose(); }
+                catch (Exception ex) { log4net.LogManager.GetLogger(typeof(OpenGLtest2)).Debug("3D map cache cleanup", ex); }
+                components?.Dispose();
+                if (ReferenceEquals(instance, this)) instance = null;
+            }
+            base.Dispose(disposing);
         }
 
         public void Deactivate()
@@ -331,16 +372,19 @@ namespace MissionPlanner.Controls
 
         void imageLoader()
         {
+            try
+            {
             core.Zoom = minzoom;
             GMaps.Instance.CacheOnIdleRead = false;
             GMaps.Instance.BoostCacheEngine = true;
             // shared context
-            var win = new OpenTK.GameWindow(640, 480, Context.GraphicsMode);
+            using (var win = new OpenTK.GameWindow(640, 480, Context.GraphicsMode))
+            {
             win.Visible = false;
             IMGContext = win.Context;
             core.Zoom = 20;
 
-            while (!this.IsDisposed)
+            while (!stopImageLoader && !this.IsDisposed)
             {
                 if (sizeChanged)
                 {
@@ -373,6 +417,10 @@ namespace MissionPlanner.Controls
 
                 System.Threading.Thread.Sleep(100);
             }
+            }
+            }
+            catch (Exception ex) { if (!stopImageLoader && !IsDisposed) ReportGraphicsFailure(ex); }
+            finally { IMGContext = null; }
         }
 
         public int minzoom { get; set; } = 12;
@@ -414,6 +462,7 @@ namespace MissionPlanner.Controls
 
         protected override void OnPaint(System.Windows.Forms.PaintEventArgs e)
         {
+            if (GraphicsFailed || stopImageLoader || IsDisposed || Disposing) return;
             if (!started)
                 timer1.Start();
             started = true;
@@ -422,18 +471,21 @@ namespace MissionPlanner.Controls
             {
                 base.OnPaint(e);
             }
-            catch
+            catch (Exception ex)
             {
+                ReportGraphicsFailure(ex);
                 return;
             }
 
-            Utilities.Extensions.ProtectReentry(doPaint);
+            try { Utilities.Extensions.ProtectReentry(doPaint); }
+            catch (Exception ex) { ReportGraphicsFailure(ex); }
         }
 
         public void doPaint()
         {
             DateTime start = DateTime.Now;
-            if (this.DesignMode)
+            if (this.DesignMode || GraphicsFailed || stopImageLoader || !graphicsInitialized ||
+                !IsHandleCreated || IsDisposed || Disposing || Width <= 0 || Height <= 0)
                 return;
             var beforewait = DateTime.Now;
             if (textureSemaphore.Wait(1) == false)
@@ -1101,15 +1153,11 @@ namespace MissionPlanner.Controls
 
         private void test_Load(object sender, EventArgs e)
         {
+            if (graphicsInitialized || GraphicsFailed || stopImageLoader || IsDisposed || Disposing || !IsHandleCreated) return;
+            try
+            {
             if (!Context.IsCurrent)
                 Context.MakeCurrent(this.WindowInfo);
-
-            _imageloaderThread = new Thread(imageLoader)
-            {
-                IsBackground = true,
-                Name = "gl imageLoader"
-            };
-            _imageloaderThread.Start();
 
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Lighting);
@@ -1123,7 +1171,15 @@ namespace MissionPlanner.Controls
             GL.Enable(EnableCap.CullFace);
             GL.Enable(EnableCap.Texture2D);
             var preload = tileInfo.Program;
+            graphicsInitialized = true;
             test_Resize(null, null);
+            if (!GraphicsFailed)
+            {
+                _imageloaderThread = new Thread(imageLoader) { IsBackground = true, Name = "gl imageLoader" };
+                _imageloaderThread.Start();
+            }
+            }
+            catch (Exception ex) { ReportGraphicsFailure(ex); }
         }
 
         private void num_minzoom_ValueChanged(object sender, EventArgs e)
@@ -1152,9 +1208,16 @@ namespace MissionPlanner.Controls
 
         private void test_Resize(object sender, EventArgs e)
         {
-            textureSemaphore.Wait();
+            if (!graphicsInitialized || GraphicsFailed || stopImageLoader || !IsHandleCreated ||
+                IsDisposed || Disposing || Width <= 0 || Height <= 0) return;
+            if (!textureSemaphore.Wait(100)) return;
             try
             {
+                if (Context == null || Context.IsDisposed)
+                {
+                    ReportGraphicsFailure(new GraphicsContextException("3D map context is no longer available."));
+                    return;
+                }
                 if (!Context.IsCurrent)
                     Context.MakeCurrent(this.WindowInfo);
                 GL.Viewport(0, 0, this.Width, this.Height);
@@ -1170,6 +1233,7 @@ namespace MissionPlanner.Controls
                 if (Context.IsCurrent)
                     Context.MakeCurrent(null);
             }
+            catch (Exception ex) { ReportGraphicsFailure(ex); }
             finally
             {
                 textureSemaphore.Release();
@@ -1267,7 +1331,7 @@ namespace MissionPlanner.Controls
                 if (idVBO == 0 || idEBO == 0)
                     return;
 
-                if (_program == 0)
+                if (_program == 0 || !GL.IsProgram(_program))
                     CreateShaders();
 
                 // use the shader
@@ -1464,7 +1528,7 @@ void main(void) {
             {
                 get
                 {
-                    if (_program == 0)
+                    if (_program == 0 || !GL.IsProgram(_program))
                         CreateShaders();
                     return _program;
                 }

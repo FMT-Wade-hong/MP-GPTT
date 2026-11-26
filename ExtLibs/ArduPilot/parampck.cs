@@ -43,7 +43,7 @@ namespace MissionPlanner.ArduPilot
         {
             MAVLink.MAVLinkParamList list = new MAVLink.MAVLinkParamList();
 
-            if (data.Length < 6)
+            if (data == null || data.Length < 6)
                 return null;
 
             int dataPointer = 0;
@@ -52,6 +52,7 @@ namespace MissionPlanner.ArduPilot
             var num_params = BitConverter.ToUInt16(data, dataPointer+=2);
             var total_params = BitConverter.ToUInt16(data, dataPointer+=2);
             dataPointer+=2;
+            list.TotalReported = total_params;
 
             if ((magic2 != magic) && (magic2 != magic_with_defaults))
                 return null;
@@ -61,6 +62,7 @@ namespace MissionPlanner.ArduPilot
             byte pad_byte = 0;
             int count = 0;
             var last_name = "";
+            var names = new HashSet<string>(StringComparer.Ordinal);
             while (true)
             {
                 while (data.Length - dataPointer > 0 && data[dataPointer] == pad_byte)
@@ -68,6 +70,8 @@ namespace MissionPlanner.ArduPilot
 
                 if (data.Length - dataPointer == 0)
                     break;
+
+                if (data.Length - dataPointer < 2) return null;
 
                 var ptype = data[dataPointer++];
                 var plen = data[dataPointer++];
@@ -79,6 +83,9 @@ namespace MissionPlanner.ArduPilot
 
                 var name_len = ((plen >> 4) & 0x0F) + 1;
                 var common_len = plen & 0x0F;
+                if (common_len > last_name.Length || common_len + name_len > 16 ||
+                    data.Length - dataPointer < name_len + mapped.type_len *
+                    (with_defaults && (flags & 1) != 0 ? 2 : 1)) return null;
 
                 var nameBuilder = new StringBuilder().Append(last_name.Substring(0, common_len));
 
@@ -88,6 +95,7 @@ namespace MissionPlanner.ArduPilot
                 dataPointer += name_len;
 
                 var name = nameBuilder.ToString();
+                if (string.IsNullOrWhiteSpace(name) || name.Any(c => c < 33 || c > 126) || !names.Add(name)) return null;
                 
                 last_name = name;
                 var v = decode_value(mapped.type_format, data, dataPointer);
@@ -122,7 +130,7 @@ namespace MissionPlanner.ArduPilot
                         default_value));
             }
 
-            if (count != num_params || count > total_params)
+            if (count != num_params || count > total_params || list.Count != count)
                 return null;
 
             return list;

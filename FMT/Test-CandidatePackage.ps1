@@ -16,7 +16,11 @@ try {
     }
     $checked = 0
     foreach ($entry in $zip.Entries) {
-        if ($entry.FullName -match '(?i)(H420-source-full|preview\.png$|swarm-tab-.*\.png$|(?:resource|source)-icon\.png$|parameter-translation-audit\.json$|\.(log|tlog|rlog|pfx|p12|key|dmp)$|/(config\.xml|settings\.json|password\.bin|\.env)$)') { throw "Unwanted package entry: $($entry.FullName)" }
+        if ($entry.FullName -match '(?i)/(github-audit-[^/]+|stability-lifecycle-[^/]+|mission-clear-test-data|parameter-download-test-data)/|/authkeys\.xml$|Harness\.exe') { throw "Regression data or signing keys in package: $($entry.FullName)" }
+        # The published documentation audit is separate from the generated runtime test report.
+        if ($entry.FullName -match '(?i)parameter-translation-audit\.json$' -and
+            $entry.FullName -ne ($root+'FMT/TranslationAudit/parameter-translation-audit.json')) { throw "Local translation test result in package: $($entry.FullName)" }
+        if ($entry.FullName -match '(?i)(H420-source-full|preview\.png$|swarm-tab-.*\.png$|(?:resource|source)-icon\.png$|\.(log|tlog|rlog|pfx|p12|key|dmp)$|/(config\.xml|settings\.json|password\.bin|\.env)$)') { throw "Unwanted package entry: $($entry.FullName)" }
         if ($entry.FullName -notmatch '\.(exe|dll)$') { continue }
         $relative = $entry.FullName.Substring($root.Length)
         if ($relative -eq "FMTPlanner-V$Version.exe") { $relative = 'FMTPlanner.exe' }

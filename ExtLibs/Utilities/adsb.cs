@@ -52,11 +52,11 @@ namespace MissionPlanner.Utilities
         /// <summary>
         /// Multiplication constant to convert feet to meters
         /// </summary>
-        private const double FEET_TO_METERS = 1.0d / 3.28d;
+        private const double FEET_TO_METERS = 0.3048d;
         /// <summary>
         /// Multiplication constant to convert feet/mim to cm/s
         /// </summary>
-        private const double FTM_TO_CMS = 1.0d / 1.968d;
+        private const double FTM_TO_CMS = 0.508d;
         /// <summary>
         /// Timeout in milliseconds for ADS-B connections to default endpoints.
         /// These are all localhost, so we can be pretty short.
@@ -417,6 +417,7 @@ namespace MissionPlanner.Utilities
             public double heading = 0;
             // Horizontal ground speed in cm/s
             internal int ground_speed;
+            internal double vertical_speed;
 
             public Plane()
             {
@@ -892,12 +893,11 @@ namespace MissionPlanner.Utilities
                             String logged_date = strArray[8];//String. Date the message was logged. 
                             String logged_time = strArray[9];//String. Time the message was logged. 
                             String callsign = strArray[10];//String. Eight character flight ID or callsign. 
-                            int altitude = 0;
+                            double altitude = 0;
                             try
                             {
                                 // H = HAE
-                                altitude = (int)double.Parse(strArray[11].TrimEnd('H','h'), CultureInfo.InvariantCulture);// Integer. Mode C Altitude relative to 1013 mb (29.92" Hg). 
-                                altitude = (int)((double)altitude * FEET_TO_METERS);
+                                altitude = double.Parse(strArray[11].TrimEnd('H','h'), CultureInfo.InvariantCulture) * FEET_TO_METERS;
                             }
                             catch { }
                            
@@ -911,12 +911,6 @@ namespace MissionPlanner.Utilities
                             try
                             {
                                 lon = double.Parse(strArray[15], CultureInfo.InvariantCulture);//Float. Longitude 
-                            }
-                            catch { }
-                            int vspeed = 0;
-                            try
-                            {
-                                vspeed = (int)(int.Parse(strArray[16]) * FTM_TO_CMS);
                             }
                             catch { }
 
@@ -934,16 +928,21 @@ namespace MissionPlanner.Utilities
 
                             Plane plane = ((Plane)Planes[hex_ident]);
 
+                            double verticalRate;
+                            if (double.TryParse(strArray[16], NumberStyles.Float, CultureInfo.InvariantCulture, out verticalRate) &&
+                                !double.IsNaN(verticalRate) && !double.IsInfinity(verticalRate))
+                                plane.vertical_speed = verticalRate * FTM_TO_CMS;
+
                             if (lat == 0 && lon == 0)
                                 continue;
 
                             if (UpdatePlanePosition != null && plane != null)
                             {
-                                double METERS_PER_FOOT = 3.28;
-                                PointLatLngAltHdg plln = new PointLatLngAltHdg(lat, lon, altitude / METERS_PER_FOOT, (float)plane.heading, plane.ground_speed, hex_ident, DateTime.Now)
+                                PointLatLngAltHdg plln = new PointLatLngAltHdg(lat, lon, altitude, (float)plane.heading, plane.ground_speed, hex_ident, DateTime.Now)
                                 {
                                     CallSign = plane.CallSign,
-                                    Squawk = squawk
+                                    Squawk = squawk,
+                                    VerticalSpeed = plane.vertical_speed
                                 };
                                 UpdatePlanePosition(null, plln);
                             }
@@ -974,6 +973,11 @@ namespace MissionPlanner.Utilities
                                 ((Plane)Planes[hex_ident]).heading = (int)double.Parse(strArray[13], CultureInfo.InvariantCulture);//Integer degrees, 0 = N. Ground track angle. 
                             }
                             catch { }
+
+                            double verticalRate;
+                            if (double.TryParse(strArray[16], NumberStyles.Float, CultureInfo.InvariantCulture, out verticalRate) &&
+                                !double.IsNaN(verticalRate) && !double.IsInfinity(verticalRate))
+                                ((Plane)Planes[hex_ident]).vertical_speed = verticalRate * FTM_TO_CMS;
 
                         }
                         else if (strArray[1] == "1" || strArray[1] == "5" || strArray[1] == "6")

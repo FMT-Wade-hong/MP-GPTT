@@ -13,7 +13,7 @@ $process = $type.GetMethod('processToScreen',$flags)
 $page = [Activator]::CreateInstance($type)
 $total = 0
 try {
-    foreach ($case in @(@('Copter4.6.3','ArduCopter2'),@('Copter4.7.2','ArduCopter2'),@('Plane4.7.2','ArduPlane'),@('Rover4.7.2','ArduRover'),@('Sub4.7.2','ArduSub'),@('Tracker4.7.2','ArduTracker'))) {
+    foreach ($case in @(@('Copter4.6.3','ArduCopter2'),@('Copter4.7.2','ArduCopter2'),@('Plane4.7.2','ArduPlane'),@('Rover4.7.2','ArduRover'),@('Sub4.7.2','ArduSub'),@('Tracker4.7.2','ArduTracker'),@('Copter4.7.3','ArduCopter2'),@('Plane4.7.3','ArduPlane'),@('Rover4.7.3','ArduRover'),@('Sub4.7.3','ArduSub'),@('Tracker4.7.3','ArduTracker'))) {
         $input = [IO.File]::OpenRead((Join-Path $PSScriptRoot ('../ExtLibs/Utilities/ParameterMetadata/'+$case[0]+'.apm.pdef.xml.gz')))
         $gzip = New-Object IO.Compression.GZipStream $input,([IO.Compression.CompressionMode]::Decompress)
         $reader = New-Object IO.StreamReader $gzip

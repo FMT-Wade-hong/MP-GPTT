@@ -89,7 +89,8 @@ internal static class AdsbHttpHarness
             Check(unexpectedUpdates == 0 && acceptedUpdates == 2,
                 "2000 outside aircraft are discarded before aircraft/map events");
             Check(plane.Tag == "ABC123" && plane.CallSign == "TEST123", "aircraft identity");
-            Check(plane.Lat == 25.1 && plane.Lng == 121.2 && Math.Abs(plane.Alt - 1000) < 0.01,
+            // Fixture altitude is 3280 feet, which is exactly 999.744 metres.
+            Check(plane.Lat == 25.1 && plane.Lng == 121.2 && Math.Abs(plane.Alt - 999.744) < 0.001,
                 "aircraft map coordinates and altitude");
             Check(plane.Heading == 90 && Math.Abs(plane.Speed - 5144.4) < 0.01 && plane.Squawk == 0x1200,
                 "aircraft heading, speed and squawk");

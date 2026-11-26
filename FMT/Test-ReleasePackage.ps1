@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory=$true)][string]$PackagePath,
     [string]$SourceDirectory='bin/Release/net461',
-    [string]$Version=''
+    [string]$Version='',
+    [switch]$Candidate
 )
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
@@ -23,6 +24,9 @@ try {
     if(@($names | Select-Object -Unique).Count -ne $names.Count){throw 'Duplicate ZIP entries'}
     foreach($name in $names) {
         if(!$name.StartsWith($prefix) -or $name -match '(^|/)\.\.(/|$)'){throw "Invalid package path: $name"}
+        if($name -match '(?i)/(github-audit-[^/]+|stability-lifecycle-[^/]+|mission-clear-test-data|parameter-download-test-data)/|/authkeys\.xml$') {
+            throw "Regression settings or signing keys in package: $name"
+        }
         if($name -match '(?i)H420-source-full|FlightLogViewer|Harness\.exe|crash-test-|/Diagnostics/|/mode-scale-|/screen-\d|/screen-size-|preview\.png$|\.(pfx|p12|key|tlog|rlog|dmp|log|pdb)$|/(config\.xml|settings\.json|password\.bin|\.env)$') {
             throw "Private or test artifact in package: $name"
         }
@@ -55,8 +59,17 @@ try {
         if(!$entry){throw "Missing release instructions: $file"}
         $reader=[IO.StreamReader]::new($entry.Open())
         try {$content=$reader.ReadToEnd()} finally {$reader.Dispose()}
-        if($content -match '(?i)local candidate'){throw 'Candidate package cannot be published as a release'}
+        $isCandidate=$content -match '(?i)local candidate'
+        if(!$Candidate -and $isCandidate){throw 'Candidate package cannot be published as a release'}
+        if($Candidate -and !$isCandidate){throw 'Candidate package label missing'}
         if(!$content.Contains($Version)){throw "Incorrect instructions version: $file"}
+    }
+    foreach($manual in @('README-FMT.md','CHANGELOG-FMT.md')) {
+        $reader=[IO.StreamReader]::new($zip.GetEntry($prefix+$manual).Open())
+        try {$text=$reader.ReadToEnd()} finally {$reader.Dispose()}
+        foreach($match in [regex]::Matches($text, '\]\((FMT/[^)#]+)(?:#[^)]*)?\)')) {
+            if(!$zip.GetEntry($prefix+$match.Groups[1].Value)) { throw "Bundled manual link missing: $($match.Groups[1].Value)" }
+        }
     }
     "PASS: V$Version package; $($names.Count) unique entries, runtime/document hashes, version, privacy and test-artifact exclusions."
 } finally {$zip.Dispose()}

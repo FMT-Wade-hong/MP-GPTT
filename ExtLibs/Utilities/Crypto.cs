@@ -32,7 +32,9 @@ namespace MissionPlanner.Utilities
         /// <summary>
         /// Default constructor
         /// </summary>
-        public Crypto()
+        public Crypto() : this(GetDefaultNetworkAddress()) { }
+
+        private static byte[] GetDefaultNetworkAddress()
         {
             try
             {
@@ -42,22 +44,29 @@ namespace MissionPlanner.Utilities
                     select nic.GetPhysicalAddress()
                     ).FirstOrDefault();
 
-                var bytes = macAddr.GetAddressBytes();
-
-                Array.Copy(bytes, IV, bytes.Length);
-
-                Array.Copy(bytes, Key, bytes.Length);
+                return macAddr?.GetAddressBytes();
             }
             catch
             {
             }
+            return null;
+        }
 
-
+        public Crypto(byte[] networkAddress)
+        {
+            // Never mutate the templates: fallback readers may try several adapters.
+            var key = (byte[])Key.Clone();
+            var iv = (byte[])IV.Clone();
+            if (networkAddress != null && networkAddress.Length <= iv.Length)
+            {
+                Array.Copy(networkAddress, iv, networkAddress.Length);
+                Array.Copy(networkAddress, key, networkAddress.Length);
+            }
             this.algorithm = new RijndaelManaged();
             this.algorithm.Mode = CipherMode.CBC;
             this.algorithm.Padding = PaddingMode.PKCS7;
-            this.algorithm.Key = Key;
-            this.algorithm.IV = IV;
+            this.algorithm.Key = key;
+            this.algorithm.IV = iv;
         }
 
         /// <summary>

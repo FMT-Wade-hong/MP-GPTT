@@ -1,0 +1,51 @@
+FMTPlanner local test build verification — 2026-11-26
+
+Build: bin/Metadata473/net472/FMTPlanner.exe
+Application version remains V1.2.5. Local test build; no GitHub release performed.
+
+Official source:
+https://github.com/ArduPilot/ardupilot/tree/d9c5097c3d8333435712ffed86bca8ce00c4bb46
+Tags: Copter-4.7.3, Plane-4.7.3, Rover-4.7.3, Sub-4.7.3, Tracker-4.7.3.
+The matching upstream parser completed with exit 0 for all five families.
+Source annotations only; parameter documentation was not rewritten.
+Definition counts (including hardware/controller variants):
+  Copter 5959; Plane 5948; Rover 5668; Sub 5595; Tracker 3774.
+Unique grid rows:
+  Copter 5692; Plane 5726; Rover 5446; Sub 5373; Tracker 3582.
+XML SHA-256 and provenance are recorded in ExtLibs/Utilities/ParameterMetadata/manifest.json.
+
+Behavior:
+- Exact bundled or downloaded metadata wins, including absent fields/names.
+- Future patch/minor/major versions retain their own vehicle/version key.
+- Missing exact releases use same-name reference descriptions from the nearest older valid release of the same family/frame.
+- Reference text is labelled in raw/friendly parameter pages. No borrowed units, scaling, range, increment, enum, bitmask or read-only assumptions.
+- Friendly reference controls accept finite raw numeric edits without inherited slider limits; names absent from the nearest release are not resurrected.
+- XML/gzip download, per-key coalescing, 12-second per-request timeout, two-minute failure retry interval, seven-day valid-file freshness.
+- Per-user cache; bounded/Dtd-prohibited XML parsing and vehicle-family validation before atomic replacement.
+- Failed downloads preserve the last valid file/index. Restart finds newer valid cached releases.
+- Metadata HTTP client uses TLS 1.2 independently of legacy process-wide defaults; certificate validation is unchanged.
+- Raw page refresh changes metadata cells only. Pending values/edits are preserved. Friendly page defers reconstruction while focused or with staged edits.
+
+Validation:
+1. Build succeeds: 0 errors, 1331 existing/dependency/compiler warnings.
+2. Full offline regression: baseline 50 scripts plus 18 additional suites (68 total), all passed.
+   Report: tmp/metadata473-release-tests/results.json
+3. Final metadata/download/UI suite: 80 checks passed after TLS and disk-cache discovery changes.
+   Includes malformed/empty/wrong-family/XML-entity responses, independent family failure, gzip fallback,
+   atomic cache preservation, timeout, cooldown, 20 simultaneous requests, 2000 concurrent reads,
+   future firmware keys, helicopter separation, actual raw/friendly page staging and metadata refresh.
+   Report: tmp/metadata473-download-final.log
+4. Final bundled-data audit: 36 releases, 170472 unique parameter definitions,
+   1764570 metadata fields and 392 helicopter variants passed.
+   Report: tmp/metadata473-allversions-final.log
+5. Complete-table UI test: 56398 rows over 11 old/new family/version combinations, all passed.
+   Report: tmp/metadata473-CompleteParameterTable.log
+6. Real HTTPS download using the final production downloader:
+   https://autotest.ardupilot.org/Parameters/versioned/Copter/stable-4.5.7/apm.pdef.xml
+   Exact WPNAV_SPEED units and user-cache persistence verified.
+   Report: tmp/metadata473-live-final.log
+7. Opened final application (login screen) and offline 4.7.3 preview.
+   Visually confirmed ARMING_SKIPCHK, ATC_RAT_RLL_P and WP_SPD descriptions/options/units.
+
+No real flight controller was connected or written during these checks.
+Reference metadata does not establish unchanged semantics for an unverified future firmware.

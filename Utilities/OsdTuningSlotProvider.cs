@@ -38,25 +38,27 @@ namespace MissionPlanner.Utilities
 
         public void ParamShow(byte screen, byte index)
         {
-            MainV2.comPort.sendPacket(new MAVLink.mavlink_osd_param_show_config_t(++request,
+            var requestId = ++request;
+            if (!paramShowRequests.TryAdd(requestId, (screen, index)))
+                throw new Exception($"Unable to store the request info for {screen} {index}");
+            MainV2.comPort.sendPacket(new MAVLink.mavlink_osd_param_show_config_t(requestId,
                     (byte)MainV2.comPort.sysidcurrent,
                     (byte)MainV2.comPort.compidcurrent, screen, index), (byte)MainV2.comPort.sysidcurrent,
                 (byte)MainV2.comPort.compidcurrent);
 
-            if (!paramShowRequests.TryAdd(request, (screen, index)))
-                throw new Exception($"Unable to store the request info for {screen} {index}");
         }
 
         public void ParamSet(byte screen, byte index, string name, MAVLink.OSD_PARAM_CONFIG_TYPE type, float min, float max, float increment)
         {
-            MainV2.comPort.sendPacket(new MAVLink.mavlink_osd_param_config_t(++request, min, max, increment,
+            var requestId = ++request;
+            if (!paramSetRequests.TryAdd(requestId, (screen, index)))
+                throw new Exception($"Unable to store the request info for {screen} {index}");
+            MainV2.comPort.sendPacket(new MAVLink.mavlink_osd_param_config_t(requestId, min, max, increment,
                     (byte)MainV2.comPort.sysidcurrent,
                     (byte)MainV2.comPort.compidcurrent, screen, index, name.ToCharArray().ToByteArray(),
                     (byte)type), (byte)MainV2.comPort.sysidcurrent,
                 (byte)MainV2.comPort.compidcurrent);
 
-            if (!paramSetRequests.TryAdd(request, (screen, index)))
-                throw new Exception($"Unable to store the request info for {screen} {index}");
         }
 
         private bool HandleParamShowResponse(MAVLink.MAVLinkMessage arg)
@@ -65,7 +67,7 @@ namespace MissionPlanner.Utilities
             {
                 var rep = (MAVLink.mavlink_osd_param_show_config_reply_t)arg.data;
 
-                if (paramShowRequests.TryGetValue(rep.request_id, out var requestInfo))
+                if (paramShowRequests.TryRemove(rep.request_id, out var requestInfo))
                 {
                     (byte Screen, byte Index, string Name) result = (requestInfo.Screen, requestInfo.Index, null);
 
@@ -73,6 +75,7 @@ namespace MissionPlanner.Utilities
                     {
                         var zeroIndex = Array.IndexOf(rep.param_id, (byte)0);
 
+                        if (zeroIndex < 0) zeroIndex = rep.param_id.Length;
                         if (zeroIndex > 0)
                         {
                             result.Name = System.Text.Encoding.UTF8.GetString(rep.param_id, 0, zeroIndex);
@@ -102,10 +105,10 @@ namespace MissionPlanner.Utilities
             {
                 var rep = (MAVLink.mavlink_osd_param_config_reply_t)arg.data;
 
-                if (paramSetRequests.TryGetValue(rep.request_id, out var requestInfo))
+                if (paramSetRequests.TryRemove(rep.request_id, out var requestInfo))
                 {
                     bool success = rep.result == (byte)MAVLink.OSD_PARAM_CONFIG_ERROR.OSD_PARAM_SUCCESS;
-                    OnParamSetResponce((requestInfo.Screen, requestInfo.Index, success));
+                    OnParamSetResponce?.Invoke((requestInfo.Screen, requestInfo.Index, success));
                 }
                 else
                 {

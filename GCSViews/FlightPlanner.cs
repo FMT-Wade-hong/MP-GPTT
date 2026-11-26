@@ -142,6 +142,7 @@ namespace MissionPlanner.GCSViews
         private readonly GMapOverlay taiwanCaaOverlay = new GMapOverlay("Taiwan CAA Airspace");
         private readonly HashSet<string> taiwanCaaZoneIds = new HashSet<string>();
         private CancellationTokenSource mapContextRefreshCancellation;
+        private CancellationTokenSource fmtMissionClearCancellation;
         internal MyButton BUT_fmtAltitudeCheck;
         internal MyButton BUT_fmtAirspaceCheck;
         private bool polygongridmode;
@@ -367,6 +368,7 @@ namespace MissionPlanner.GCSViews
             panel5.Controls.Add(estimate);
             BUT_write.Location = new Point(3, 119);
             but_writewpfast.Location = new Point(3, 148);
+            but_writewpfast.Text = traditionalChinese ? "清除任務" : "Clear Mission";
             panel5.Height = 177;
             panel5.Controls.Add(BUT_fmtAltitudeCheck);
             panel5.Controls.Add(BUT_fmtAirspaceCheck);
@@ -513,12 +515,14 @@ namespace MissionPlanner.GCSViews
 
         public void Deactivate()
         {
+            fmtMissionClearCancellation?.Cancel();
             config(true);
             timer1.Stop();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
+            if (fmtMissionClearCancellation != null) return true;
             // undo
             if (keyData == (Keys.Control | Keys.Z))
             {
@@ -571,10 +575,6 @@ namespace MissionPlanner.GCSViews
                 return true;
             }
 
-            if (keyData == (Keys.Control | Keys.F | Keys.Shift))
-            {
-                but_writewpfast_Click(this, EventArgs.Empty);
-            }
             if (keyData == (Keys.Control | Keys.W | Keys.Shift))
             {
                 BUT_write_Click(this, EventArgs.Empty);
@@ -780,6 +780,7 @@ namespace MissionPlanner.GCSViews
         /// <param name="e"></param>
         public void BUT_read_Click(object sender, EventArgs e)
         {
+            if (FmtMissionClear.IsActive) return;
             if (Commands.Rows.Count > 0)
             {
                 if (sender is FlightData)
@@ -819,6 +820,7 @@ namespace MissionPlanner.GCSViews
         /// <param name="e"></param>
         public void BUT_write_Click(object sender, EventArgs e)
         {
+            if (FmtMissionClear.IsActive) return;
             if ((altmode) CMB_altmode.SelectedValue == altmode.Absolute)
             {
                 if ((int) DialogResult.No ==
@@ -2125,6 +2127,7 @@ namespace MissionPlanner.GCSViews
 
         public void but_writewpfast_Click(object sender, EventArgs e)
         {
+            if (FmtMissionClear.IsActive) return;
             if ((altmode) CMB_altmode.SelectedValue == altmode.Absolute)
             {
                 if ((int) DialogResult.No ==
@@ -2290,6 +2293,68 @@ namespace MissionPlanner.GCSViews
         public void CHK_splinedefault_CheckedChanged(object sender, EventArgs e)
         {
             splinemode = CHK_splinedefault.Checked;
+        }
+
+        private async void BUT_clearMission_Click(object sender, EventArgs e)
+            => await ClearMissionAsync();
+
+        private async Task ClearMissionAsync()
+        {
+            if (fmtMissionClearCancellation != null || FmtMissionClear.IsActive) return;
+            var chinese = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+            var title = chinese ? "清除任務" : "Clear Mission";
+            if (!(cmb_missiontype.SelectedValue is MAVLink.MAV_MISSION_TYPE missionType) ||
+                missionType != MAVLink.MAV_MISSION_TYPE.MISSION)
+            {
+                CustomMessageBox.Show(chinese ? "請先切換至飛行任務。" : "Please select the flight mission first.", title);
+                return;
+            }
+
+            var port = MainV2.comPort;
+            var connected = port?.BaseStream?.IsOpen == true;
+            if (!connected && Commands.Rows.Count == 0) return;
+            var request = connected ? new FmtMissionClear(port) : null;
+            var cancellation = new CancellationTokenSource();
+            fmtMissionClearCancellation = cancellation;
+            var wasEnabled = Enabled;
+            try
+            {
+                var reason = request?.Validate();
+                if (reason != null) throw new InvalidOperationException(reason);
+                var prompt = connected
+                    ? (chinese ? "確定清除飛控內的全部飛行任務，以及規劃頁航點與路線？\r\n請先儲存要保留的航線。HOME、電子圍籬與集結點不會變更。"
+                        : "Delete the flight mission from the vehicle and clear the planner?\r\nSave any route you want to keep first. HOME, fences and rally points will remain unchanged.")
+                    : (chinese ? "目前未連線，只能清除規劃頁航點與路線，無法清除飛控內的任務。\r\nHOME 會保留。確定清除本機規劃？"
+                        : "Disconnected: only the local plan can be cleared, not the vehicle mission.\r\nHOME will be preserved. Clear the local plan?");
+                if (CustomMessageBox.Show(prompt, title, MessageBoxButtons.YesNo) != (int)DialogResult.Yes) return;
+                cancellation.Token.ThrowIfCancellationRequested();
+                Enabled = false;
+                if (request != null)
+                    await request.ExecuteAsync(cancellation.Token);
+                else if (!ReferenceEquals(MainV2.comPort, port) || port?.BaseStream?.IsOpen == true)
+                    throw new InvalidOperationException("連線狀態已變更，請重新確認清除範圍。");
+                cancellation.Token.ThrowIfCancellationRequested();
+                if (IsDisposed || Disposing) return;
+                clearMissionToolStripMenuItem_Click(this, EventArgs.Empty);
+                if (connected)
+                    CustomMessageBox.Show(chinese ? "飛控任務已清除，讀回任務數量為 0。" : "Vehicle mission cleared. Read-back count: 0.", title);
+            }
+            catch (OperationCanceledException)
+            {
+                log.Info("Mission clear cancelled; a transmitted command may have executed. Read the vehicle mission again.");
+            }
+            catch (Exception error)
+            {
+                log.Error("Mission clear failed", error);
+                if (!IsDisposed && !Disposing && !cancellation.IsCancellationRequested)
+                    CustomMessageBox.Show((chinese ? "未能確認清除完成，請重新讀取任務。\r\n" : "Clear was not confirmed. Read the vehicle mission again.\r\n") + error.Message, title);
+            }
+            finally
+            {
+                fmtMissionClearCancellation = null;
+                if (!IsDisposed && !Disposing) Enabled = wasEnabled;
+                cancellation.Dispose();
+            }
         }
 
         public void clearMissionToolStripMenuItem_Click(object sender, EventArgs e)

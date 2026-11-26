@@ -735,6 +735,7 @@ namespace MissionPlanner
         public MainV2()
         {
             log.Info("Mainv2 ctor");
+            _ = Task.Run(() => ParameterMetaDataRepositoryAPMpdef.GetMetaData());
 
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
 
@@ -1321,7 +1322,7 @@ namespace MissionPlanner
                                 adsb.Alt, adsb.Heading, adsb.Speed, id,
                                 DateTime.Now)
                             {CallSign = adsb.CallSign, Squawk = adsb.Squawk, Raw = adsb.Raw, Source = sender,
-                                DataSource = adsb.DataSource};
+                                DataSource = adsb.DataSource, VerticalSpeed = adsb.VerticalSpeed};
                 }
             }
         }
@@ -1726,26 +1727,39 @@ namespace MissionPlanner
                 //158	MAV_COMP_ID_PERIPHERAL	Generic autopilot peripheral component ID. Meant for devices that do not implement the parameter microservice.
                 if (getparams && comPort.MAV.compid != (byte)MAVLink.MAV_COMPONENT.MAV_COMP_ID_PERIPHERAL)
                 {
+                    bool loadedParameterCache = false;
                     if (UseCachedParams && File.Exists(comPort.MAV.ParamCachePath) &&
                         new FileInfo(comPort.MAV.ParamCachePath).LastWriteTime > DateTime.Now.AddHours(-1))
                     {
-                        File.ReadAllText(comPort.MAV.ParamCachePath).FromJSON<MAVLink.MAVLinkParamList>()
-                            .ForEach(a => comPort.MAV.param.Add(a));
-                        comPort.MAV.param.TotalReported = comPort.MAV.param.TotalReceived;
+                        try
+                        {
+                            var cached = ParameterCacheSnapshot.Read(File.ReadAllText(comPort.MAV.ParamCachePath));
+                            if (cached != null)
+                            {
+                                comPort.MAV.param.Clear();
+                                comPort.MAV.param.TotalReported = cached.TotalReported;
+                                comPort.MAV.param.AddRange(cached);
+                                loadedParameterCache = true;
+                            }
+                        }
+                        catch (Exception ex) { log.Warn("Parameter cache could not be verified; downloading again", ex); }
                     }
-                    else
+                    if (!loadedParameterCache)
                     {
                         if (Settings.Instance.GetBoolean("Params_BG", false))
                         {
+                            var parameterPort = comPort;
+                            var parameterSystem = parameterPort.MAV.sysid;
+                            var parameterComponent = parameterPort.MAV.compid;
                             Task.Run(() =>
                             {
                                 try
                                 {
-                                    comPort.getParamListMavftp(comPort.MAV.sysid, comPort.MAV.compid);
+                                    parameterPort.getParamListMavftp(parameterSystem, parameterComponent);
                                 }
-                                catch
+                                catch (Exception ex)
                                 {
-
+                                    log.Error("Background parameter download incomplete", ex);
                                 }
                             });
                         }
@@ -1791,9 +1805,9 @@ namespace MissionPlanner
                             }
 
                             // load version specific config
-                            if (!VersionedParameterMetadata.ContainsVersion(ParameterMetaDataRepository.GetFirmwareKey(
-                                comPort.MAV.cs.firmware.ToString(), comPort.MAV.VersionString)))
-                                ParameterMetaDataRepositoryAPMpdef.GetMetaDataVersioned(VersionDetection.GetVersion(comPort.MAV.VersionString));
+                            // Request only the connected vehicle's exact version. The downloader
+                            // catches failures and preserves its last valid cache independently.
+                            _ = ParameterMetaDataRepositoryAPMpdef.GetMetaDataVersioned(GetCurrentFirmwareMetadataKey());
                         }
                         catch (Exception ex)
                         {

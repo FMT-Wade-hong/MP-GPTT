@@ -325,7 +325,7 @@
     <value>9</value>
   </data>
   <data name="but_writewpfast.Text" xml:space="preserve">
-    <value>Write Fast</value>
+    <value>Clear Mission</value>
   </data>
   <data name="&gt;&gt;but_writewpfast.Name" xml:space="preserve">
     <value>but_writewpfast</value>

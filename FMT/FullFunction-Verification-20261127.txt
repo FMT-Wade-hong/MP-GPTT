@@ -1,0 +1,72 @@
+﻿歷史開發驗證紀錄；修正已整合於 V1.2.6。正式建置與最終測試結果請見 RELEASE-AUDIT-V1.2.6.md。
+
+FMTPlanner V1.2.5 全功能離線檢查 — 2026-11-27
+
+測試對象：bin/ParameterDownload125/net472/FMTPlanner.exe
+FMTPlanner.exe SHA-256：CABF3C93FE63BF3E640DD04A6BB43722C8F9A2D642DCC678ACD3D2B8F0543B30
+MissionPlanner.ArduPilot.dll SHA-256：D2B88005643008D0610525B1B605B337319C1CB9619303EACDC678EB281BAB94
+程式版本維持 V1.2.5。本次未修改執行檔或發布套件。
+
+功能回歸：90 組檢查全部通過。
+- Test-Release124.ps1 本次執行時包含 50 個基礎腳本、22 組擴充檢查，共 72 組。
+- 額外執行 15 個原未列入主清單的檢查，修正兩個舊測試腳本後全部通過。
+- GitHub 流程的 MQTT、SiK、飛行操作 3 組回歸通過。
+- 已將這 15 個補充檢查納入後續 Test-Release124.ps1 主清單。
+  MQTT 檢查編譯目前原始碼；SiK 與飛行操作指定本次測試版。未操作真實設備。
+
+涵蓋項目：
+1. 連線與轉發：連線取消、關閉清理、時間同步、COM 列舉、遙測顯示隔離、
+   主副站控制權、來源切換、UDP 多用戶與唯讀限制、延遲、訊息滾動及搖桿復原。
+2. 參數：4.6／4.7／4.7.3 版本資料及後續同名參數參考說明、首次完整下載、
+   漏包補讀、快取、進階調校初始化／修改標記、寫入另行讀回、小數精度、32 位遮罩、
+   一般／完整參數頁、當頁更新、PID、直升機、起飛、降落、ICE 與安全設定。
+3. 任務規劃：HOME 與路線銜接、重讀、航點拖曳及距離標示、估時、清除及重置任務。
+   清除後使用實際任務下載器重新讀取，確認保持空任務。
+4. 遙測與介面：雙 GPS、HUD、VTOL 兩排縮放、六類機型模式列、螢幕尺寸模擬、
+   工具列、分離儀表、舵角指示器、群飛頁、選單、地圖圖示／空域／初始縮放、
+   ADS-B 請求與解析、記錄存檔位置、空速計校正及馬達測試防連點。
+5. 數傳及外部資料：P400 參數／頻率、SiK、ELRS 介面設定、MQTT 模擬與中斷清理。
+6. 翻譯：94 份參數資料、原文相符的翻譯查詢、數值／位元索引保留、介面資源及語意案例。
+7. 視覺抽查：小尺寸 VTOL 上下排、640 寬任務列及 200% 動作頁截圖，未見截字或重疊。
+
+部分測試細項數量（包含在上述 90 組內，不另外累加為測試組數）：
+- 參數下載 278 項、版本說明下載／相容性／頁面更新 80 項。
+- 空速計校正 75 項、重置任務 289 項。
+- 清除任務 123 項通訊流程、34 項連線介面、24 項離線介面。
+- 舵角指示器 108 項，包含 500 次重繪及 20 次開關。
+- 1,000 次 HUD 繪圖、100 次實際 OpenGL 縮放／擷取、30 次 ICE 頁面生命週期。
+
+測試本身發現並修正：
+- ToolbarHeight 未設定組件解析，導致 PowerShell 測試程序無法載入 Caching.Abstractions；
+  改用其他 WinForms 測試共用的解析器後，四種初始高度均正確恢復工具列尺寸。
+- UdpRelayServer 的反射呼叫仍使用舊方法參數數目；補上 inputOnly 參數後，
+  在允許本機迴路的環境通過多用戶廣播、逐封包授權、唯讀及過期端點清理。
+  沙箱內重試的 UDP 封包未送達本機接收器；此結果不視為產品轉發失敗。
+
+翻譯待補項目：本機較新的通用參數資料仍有 6 段說明保留英文。
+- FLOW_ALT_MIN。
+- SIM_FLOW_OFS_X、SIM_FLOW_OFS_Y。
+- ArduPlane:FS_LONG_ACTN、ArduPlane:FS_SHORT_ACTN。
+- SIM_GPS1_UBXMDL 至 SIM_GPS4_UBXMDL 共用的一段說明。
+原文完整保留，不以其他版本的不同語意翻譯覆蓋；因此不宣稱所有說明均已中文化。
+選項標籤中也保留技術名稱與未逐句審核的英文，詳細清單見 parameter-translation-audit.json。
+
+10 分鐘穩定性測試：通過（600.1 秒）。
+- GDI 與實際 OpenGL 各 8457 次繪圖／擷取，85 次 ICE 頁面生命週期，持續反覆縮放模式列。
+- OpenGL 全程保持啟用，未觸發繪圖例外或測試失敗。
+- 第 60 秒暖機後至結束：私用記憶體 181.55 → 185.67 MiB（變化 4.12 MiB）。
+- Handles 791 → 782、GDI 物件 46 → 45、USER 物件 78 → 72。
+- 均未超過既有資源留存門檻；每 60 秒採樣前執行 GC，數字代表本操作組合的留存量。
+
+日誌與證據：
+- tmp/fullcheck-20261127/regression/results.json 及各套件 .out/.err。
+- tmp/fullcheck-20261127/extra/results.json 保留初次失敗；final-results.json 記錄通過的重測。
+- tmp/fullcheck-20261127/extra/ToolbarHeight-retry.log、UdpRelayServer-retry.log。
+- tmp/fullcheck-20261127/ci-results.json 及 Mqtt/SiK/FlightActions.out。
+- tmp/fullcheck-20261127-soak.log、tmp/fullcheck-20261127/soak.json。
+- bin/ParameterDownload125/net472/parameter-translation-audit.json。
+
+範圍限制：本次通過的是可離線執行的既有回歸與補充檢查，不代表每個功能分支都已窮盡。
+未連接實體飛控、馬達、舵機、感測器或數傳硬體，未進行韌體燒錄、實飛或實際地理環境測試。
+線上地圖、ADS-B 等服務的即時可用性，實體多螢幕 DPI 切換及原出問題電腦的驅動／鏈路仍需另行確認。
+10 分鐘測試只能評估本次操作組合，不能證明長時間運行絕不閃退。

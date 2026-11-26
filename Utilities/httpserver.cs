@@ -70,7 +70,7 @@ namespace MissionPlanner.Utilities
         {
             try
             {
-                listener = new TcpListener(IPAddress.Any, 56781);
+                listener = new TcpListener(IPAddress.Loopback, 56781);
 
                 listener.Start();
             }
@@ -401,6 +401,12 @@ namespace MissionPlanner.Utilities
                     /////////////////////////////////////////////////////////////////
                     else if (url.Contains(" /websocket/raw") || url.Contains(" / ") && head.Contains("Upgrade: websocket"))
                     {
+                        if (IsCrossSiteRequest(head))
+                        {
+                            var denied = Encoding.ASCII.GetBytes("HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n");
+                            stream.Write(denied, 0, denied.Length);
+                            return;
+                        }
                         using (var writer = new StreamWriter(stream, Encoding.ASCII))
                         {
                             writer.WriteLine("HTTP/1.1 101 WebSocket Protocol Handshake");
@@ -421,6 +427,7 @@ namespace MissionPlanner.Utilities
                             writer.WriteLine("");
                             writer.Flush();
 
+                            var telemetrySource = MainV2.comPort;
                             EventHandler<MAVLink.MAVLinkMessage> action = null;
                             action = async (sender, message) =>
                             {
@@ -460,80 +467,24 @@ namespace MissionPlanner.Utilities
                                 }
                             };
 
-                            MainV2.comPort.OnPacketReceived += action;
-
-                            while (client.Connected)
+                            telemetrySource.OnPacketReceived += action;
+                            try
                             {
-                                while (client.Available > 0)
+                                // This unauthenticated endpoint is a read-only telemetry stream.
+                                // Reject incoming frames before interpreting their size or payload.
+                                while (run && client.Connected)
                                 {
-                                    var paylen = 0;
-                                    var opcode = stream.ReadByte();
-                                    if (opcode == 0x88)
+                                    if (client.Client.Poll(1000, SelectMode.SelectRead) && client.Available == 0)
+                                        return; // Peer closed without a WebSocket frame.
+                                    if (client.Available > 0)
+                                    {
+                                        stream.Write(new byte[] { 0x88, 0x02, 0x03, 0xf0 }, 0, 4); // policy violation (1008)
                                         return;
-                                    var lenw = stream.ReadByte();
-                                    if ((lenw & 0x7f) == 126)
-                                    {
-                                        paylen = stream.ReadByte() << 8;
-                                        paylen += stream.ReadByte();
                                     }
-                                    else if ((lenw & 0x7f) == 127)
-                                    {
-                                        paylen = stream.ReadByte() << 56;
-                                        paylen += stream.ReadByte() << 48;
-                                        paylen += stream.ReadByte() << 40;
-                                        paylen += stream.ReadByte() << 32;
-                                        paylen += stream.ReadByte() << 24;
-                                        paylen += stream.ReadByte() << 16;
-                                        paylen += stream.ReadByte() << 8;
-                                        paylen += stream.ReadByte();
-                                    }
-                                    else
-                                    {
-                                        paylen = (lenw & 0x7f);
-                                    }
-
-                                    var maskflag = lenw & 0x80;
-
-                                    var mask = new byte[4];
-
-                                    // masking
-                                    if (maskflag > 0)
-                                    {
-                                        stream.Read(mask, 0, 4);
-                                    }
-
-                                    //Console.Write(bydata.ToString("X2"));
-                                    var payload = new byte[paylen];
-
-                                    stream.Read(payload, 0, paylen);
-
-                                    for (var i = 0; i < paylen; i++)
-                                        payload[i] ^= mask[i % 4];
-
-                                    MAVLink.MAVLinkMessage message = new MAVLink.MAVLinkMessage(payload, DateTime.Now);
-
-                                    if (message != MAVLink.MAVLinkMessage.Invalid)
-                                    {
-                                        //MainV2.comPort.sendPacket(message.data, MainV2.comPort.MAV.sysid, MainV2.comPort.MAV.compid);
-
-                                        MainV2.comPort.DoOnPacketSent(message);
-
-                                        lock (MainV2.comPort.writelock)
-                                        {
-                                            if (MainV2.comPort.BaseStream.IsOpen)
-                                                MainV2.comPort.BaseStream.Write(payload, 0, paylen);
-                                        }
-                                    }
-
-
-
-                         
+                                    Thread.Sleep(100);
                                 }
-
-                                Thread.Sleep(200);
                             }
-
-                            MainV2.comPort.OnPacketReceived -= action;
+                            finally { telemetrySource.OnPacketReceived -= action; }
                         }
                     }
                     /////////////////////////////////////////////////////////////////

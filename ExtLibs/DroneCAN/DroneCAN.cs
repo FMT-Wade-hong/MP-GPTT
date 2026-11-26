@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -533,68 +533,76 @@ namespace DroneCAN
 
         public List<DroneCAN.uavcan_protocol_param_GetSet_res> GetParameters(byte node)
         {
-            List<DroneCAN.uavcan_protocol_param_GetSet_res> paramlist = new List<DroneCAN.uavcan_protocol_param_GetSet_res>();
+            var parameters = new List<uavcan_protocol_param_GetSet_res>();
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            var sync = new object();
             ushort index = 0;
-            var timeout = DateTime.Now.AddSeconds(2);
-
-            SemaphoreSlim wait = new SemaphoreSlim(1);
-
-            MessageRecievedDel paramdelegate = (frame, msg, transferID) =>
+            byte pendingTransfer = 0;
+            bool newRequest = true, complete = false, active = true;
+            Exception failure = null;
+            var deadline = DateTime.UtcNow.AddSeconds(2);
+            using (var wait = new SemaphoreSlim(0))
             {
-                if (frame.IsServiceMsg && frame.SvcDestinationNode != SourceNode && frame.SourceNode == node)
-                    return;
-                
-                if (msg.GetType() == typeof(DroneCAN.uavcan_protocol_param_GetSet_res))
+                MessageRecievedDel response = (frame, message, responseTransfer) =>
                 {
-                    var getsetreq = msg as DroneCAN.uavcan_protocol_param_GetSet_res;
-
-                    if (getsetreq.name_len == 0)
+                    lock (sync)
                     {
-                        timeout = DateTime.MinValue;
-                        return;
+                        if (!active || complete || newRequest || !frame.IsServiceMsg ||
+                            frame.SvcDestinationNode != SourceNode || frame.SourceNode != node ||
+                            (responseTransfer & 31) != (pendingTransfer & 31) ||
+                            !(message is uavcan_protocol_param_GetSet_res)) return;
+                        var parameter = (uavcan_protocol_param_GetSet_res)message;
+                        if (parameter.name_len == 0) complete = true;
+                        else if (parameter.name == null || parameter.name_len > parameter.name.Length)
+                            failure = new InvalidDataException("Invalid DroneCAN parameter name length.");
+                        else
+                        {
+                            var name = Encoding.ASCII.GetString(parameter.name, 0, parameter.name_len);
+                            if (!names.Add(name))
+                                failure = new InvalidDataException("Duplicate DroneCAN parameter at a different index.");
+                            else
+                            {
+                                parameters.Add(parameter);
+                                index++;
+                                newRequest = true;
+                                deadline = DateTime.UtcNow.AddSeconds(2);
+                            }
+                        }
+                        wait.Release();
                     }
-
-                    var value = getsetreq.value;
-
-                    var name = ASCIIEncoding.ASCII.GetString(getsetreq.name, 0, getsetreq.name_len);
-
-                    if (!paramlist.Any(a => ASCIIEncoding.ASCII.GetString(a.name, 0, a.name_len) == name))
-                        paramlist.Add(getsetreq);
-
-                    Console.WriteLine("{0}: {1}", name, value);
-
-                    timeout = DateTime.Now.AddSeconds(2);
-                    index++;
-
-                    wait.Release();
-                }
-            };
-            MessageReceived += paramdelegate;
-
-            while (true)
-            {
-                if (DateTime.Now > timeout)
-                    break;
-
-                DroneCAN.uavcan_protocol_param_GetSet_req req = new DroneCAN.uavcan_protocol_param_GetSet_req()
-                {
-                    index = index
                 };
-
-
-                var slcan = PackageMessageSLCAN(node, 30, transferID++, req);
-
-                WriteToStreamSLCAN(slcan);
-
-                wait.Wait(333);
+                MessageReceived += response;
+                try
+                {
+                    while (true)
+                    {
+                        uavcan_protocol_param_GetSet_req request;
+                        byte requestTransfer;
+                        lock (sync)
+                        {
+                            if (failure != null) throw failure;
+                            if (complete) break;
+                            if (DateTime.UtcNow > deadline)
+                                throw new TimeoutException("DroneCAN parameter list is incomplete; retry the download.");
+                              // A retry is a new service transfer; reusing an ID can be
+                              // discarded by the receiver's duplicate-transfer filter.
+                              pendingTransfer = transferID++;
+                              newRequest = false;
+                            requestTransfer = pendingTransfer;
+                            request = new uavcan_protocol_param_GetSet_req { index = index };
+                        }
+                        WriteToStreamSLCAN(PackageMessageSLCAN(node, 30, requestTransfer, request));
+                        wait.Wait(333);
+                    }
+                }
+                finally
+                {
+                    lock (sync) { active = false; MessageReceived -= response; }
+                }
             }
-
-            MessageReceived -= paramdelegate;
-
-            _paramlistcache.AddRange(paramlist);
+            _paramlistcache.AddRange(parameters);
             _paramlistcache = _paramlistcache.Distinct().ToList();
-
-            return paramlist;
+            return parameters;
         }
 
         Dictionary<string, string> fileServerList = new Dictionary<string, string>();

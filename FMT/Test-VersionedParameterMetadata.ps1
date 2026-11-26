@@ -26,5 +26,6 @@ foreach ($version in @('4.5.7','4.6.3','4.7.1')) {
     if ($count -lt 10) { throw "Insufficient coverage: $key" }
     "PASS: $key - $count navigation/controller descriptions and units match exact snapshot"
 }
-if ($get.Invoke($null, @('WPNAV_SPEED', 'Description', 'Copter4.6.99')) -ne '') { throw 'Missing version fell back to another release' }
-'PASS: unavailable exact version does not mix generic or legacy metadata'
+if ($get.Invoke($null, @('WPNAV_SPEED', 'Description', 'Copter4.6.99')) -eq '') { throw 'Same-name reference description missing' }
+if ($get.Invoke($null, @('WPNAV_SPEED', 'Units', 'Copter4.6.99')) -ne '') { throw 'Reference metadata must not impose another release units' }
+'PASS: unavailable version permits same-name reference text without inheriting units or write semantics'

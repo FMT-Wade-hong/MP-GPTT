@@ -167,7 +167,27 @@
     <value>載入 Log</value>
   </data>
   <data name="BUT_loganalysis.Text" xml:space="preserve">
-    <value>Log 分析</value>
+    <value>飛行記錄分析</value>
+  </data>
+  <data name="BUT_DFMavlink.Text" xml:space="preserve">
+    <value>下載飛控記錄
+（MAVLink）</value>
+  </data>
+  <data name="BUT_logbrowse.Text" xml:space="preserve">
+    <value>檢視飛行記錄</value>
+  </data>
+  <data name="BUT_georefimage.Text" xml:space="preserve">
+    <value>影像地理定位</value>
+  </data>
+  <data name="BUT_matlab.Text" xml:space="preserve">
+    <value>建立 MATLAB
+檔案</value>
+  </data>
+  <data name="but_bintolog.Text" xml:space="preserve">
+    <value>BIN 轉 LOG</value>
+  </data>
+  <data name="but_dflogtokml.Text" xml:space="preserve">
+    <value>匯出 KML／GPX</value>
   </data>
   <data name="BUT_playlog.Text" xml:space="preserve">
     <value>播放/暫停</value>

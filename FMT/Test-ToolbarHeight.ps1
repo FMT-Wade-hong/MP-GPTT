@@ -1,7 +1,7 @@
 param([string]$Directory = 'bin/ToolbarHeightFix/net461')
 $ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName System.Windows.Forms
-$assembly = [Reflection.Assembly]::LoadFrom((Resolve-Path "$Directory/FMTPlanner.exe"))
+# Load the same dependency resolver as the other WinForms regression tests.
+. "$PSScriptRoot/Test-RoverChinese.ps1" -Directory $Directory
 $type = $assembly.GetType('MissionPlanner.MainV2')
 $flags = [Reflection.BindingFlags]'Instance,Public,NonPublic'
 $instance = [Runtime.Serialization.FormatterServices]::GetUninitializedObject($type)

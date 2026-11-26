@@ -1,0 +1,38 @@
+FMTPlanner 任務操作更新驗證 — 2026-11-26
+
+測試版：bin/MissionActions125/net472/FMTPlanner.exe
+版本：V1.2.5，本機測試版，尚未上傳 GitHub。
+SHA-256：766A93AD9D1B866E4362F41953E41F3E8BC3FDA6AF00FE24CEE541A2C6EF1D9A
+本紀錄取代先前 MissionReset125 測試版的「僅限地面／未解鎖」限制說明。
+
+本次行為：
+- 任務規劃頁 Write Fast 改為清除任務，取消 Ctrl+Shift+F 快速寫入捷徑。
+  按鈕確認後沿用規劃頁清除功能，移除本機航點與路線，保留 HOME 及飛控任務快取。
+  取消確認不更動規劃；空白任務不需確認；電子圍籬／集結點頁不執行此按鈕的清除。
+  一般寫入航點按鈕及 Ctrl+Shift+W 保留。舊公開快速上傳方法保留供程式相容。
+- 任務列目前執行：連線中、尚未讀取任務、非 AUTO／RTL 時，顯示尚未讀取任務。
+  已有任務但未執行時顯示未啟用；斷線、AUTO、RTL 保留各自狀態說明。
+- 重置任務允許已解鎖、未解鎖及飛行中操作。
+  確認視窗提醒 AUTO 執行中可能立即重跑開頭任務，改變飛行方向／高度。
+  保留最新連線、控制權、載入任務、通訊忙碌及目標一致性檢查。
+  命令 DO_SET_MISSION_CURRENT 的 param1=0、param2=0；不自動切換模式或解鎖。
+  只在指定飛控 ACK 成功後確認；逾時不自動重送；離頁取消並釋放 ACK 訂閱。
+
+驗證結果：
+- Release/net472 建置成功：0 錯誤、1,376 警告。
+  建置紀錄：tmp/build-missionactions125.log。
+- Test-MissionClear.ps1：24 項檢查通過。
+  使用實際編譯的 FlightPlanner 按鈕事件與 CommsInjection 記憶體串流。
+  驗證取消／確認、航點與地圖路線、HOME 保留、飛控快取保留、空任務、圍籬／集結點防護。
+  飛控傳送次數為 0。圍籬類型切換的既有說明視窗在測試中略過，不屬本次測試範圍。
+  測試紀錄：tmp/missionclear125-tests.log。
+- Test-MissionReset.ps1：289 項檢查通過。
+  涵蓋 AUTO／ALT_HOLD、解鎖狀態、各落地狀態，以及 ACK、逾時、取消、目標變更與防重複。
+  涵蓋 640 至 2560 寬度離線介面、同尺寸按鈕、忙碌互斥與資源釋放。
+  測試紀錄：tmp/missionactions125-reset-tests.log。
+- 已檢視實際控制項繪製的 mission-not-read-preview.png。
+  清除按鈕文字已透過編譯後的控制項核對；離線畫面輸出未成功，未列為視覺驗證通過。
+- git diff --check（core.whitespace=cr-at-eol）通過。
+
+全部命令測試使用離線記憶體串流，未連線或操作實機。
+未進行實機清除、重置、解鎖或飛行驗證。

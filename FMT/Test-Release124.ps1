@@ -5,7 +5,10 @@ $results=@()
 $tests=@('Local124','CrashGuard124','DualGpsToolbar','MotorTestGuard','AdsbHttp','IceSetup','HudCompact',
     'ScreenSizeMatrix','TranslationAudit124','AllParameterTranslation','TranslationSemantics',
     'ReviewedParameterTranslation','ParameterLocalization','TuningActivation','ParameterWriteReadback',
-    'GitHubIssues','QuickViewLifecycle')
+    'GitHubIssues','QuickViewLifecycle','SurfaceAngles','MetadataDownload','ParameterDownload','AirspeedCalibration','MissionReset','MissionClear',
+    'AirspeedZeroVisibility','ForwardingCompactLayout','FramePresetList','LogSaveLocation',
+    'P400At','P400Frequency','P400FrequencyRadio','RelayCommandLayout','SikFrequency',
+    'SwarmMenu','SwarmUnifiedUI','ToolbarHeight','UdpRelayServer','WaypointDistanceLabel','WaypointDragRepaint','StabilityLifecycle','GitHubAudit125')
 foreach($name in $tests) {
     $timer=[Diagnostics.Stopwatch]::StartNew()
     $output=Join-Path $ReportDirectory ($name+'.out')

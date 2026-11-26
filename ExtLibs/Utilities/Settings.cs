@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Xml;
 
 namespace MissionPlanner.Utilities
@@ -43,6 +44,7 @@ namespace MissionPlanner.Utilities
         /// use to store all internal config - use Instance
         /// </summary>
         public static Dictionary<string, string> config = new Dictionary<string, string>();
+        private static readonly object saveLock = new object();
 
         public static string FileName { get; set; } = "config.xml";
 
@@ -57,7 +59,7 @@ namespace MissionPlanner.Utilities
 
             set
             {
-                config[key] = value;
+                lock (config) config[key] = value;
             }
         }
 
@@ -465,12 +467,16 @@ namespace MissionPlanner.Utilities
 
             }
 
-            if (!File.Exists(GetConfigFullPath()))
+            var settingsPath = GetConfigFullPath();
+            using (LockConfigFile(settingsPath))
+            {
+            if (!File.Exists(settingsPath))
                 return;
 
             try
             {
-                using (XmlTextReader xmlreader = new XmlTextReader(GetConfigFullPath()))
+                using (XmlTextReader xmlreader = new XmlTextReader(new FileStream(settingsPath,
+                    FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)))
                 {
                     while (xmlreader.Read())
                     {
@@ -502,13 +508,18 @@ namespace MissionPlanner.Utilities
                 File.Copy(GetConfigFullPath(), GetConfigFullPath() + DateTime.Now.toUnixTime() + ".failed", true);
                 throw;
             }
+            }
         }
 
         public void Save()
         {
+            lock (saveLock)
+            {
             string filename = GetConfigFullPath();
-
-            using (XmlTextWriter xmlwriter = new XmlTextWriter(filename, Encoding.UTF8))
+            KeyValuePair<string, string>[] snapshot;
+            lock (config) snapshot = config.OrderBy(pair => pair.Key).ToArray();
+            using (var buffer = new MemoryStream())
+            using (XmlTextWriter xmlwriter = new XmlTextWriter(buffer, Encoding.UTF8))
             {
                 xmlwriter.Formatting = Formatting.Indented;
 
@@ -516,9 +527,9 @@ namespace MissionPlanner.Utilities
 
                 xmlwriter.WriteStartElement("Config");
 
-                foreach (string key2 in config.Keys.OrderBy(a=>a))
+                foreach (var entry in snapshot)
                 {
-                    var key = key2;
+                    var key = entry.Key;
                     try
                     {
                         if (key.Contains("/"))
@@ -535,7 +546,7 @@ namespace MissionPlanner.Utilities
                             continue;
                         }
 
-                        xmlwriter.WriteElementString(key, ""+config[key]);
+                        xmlwriter.WriteElementString(key, "" + entry.Value);
                     }
                     catch
                     {
@@ -545,8 +556,71 @@ namespace MissionPlanner.Utilities
                 xmlwriter.WriteEndElement();
 
                 xmlwriter.WriteEndDocument();
-                xmlwriter.Close();
+                xmlwriter.Flush();
+                WriteSettingsAtomically(filename, buffer.ToArray());
             }
+            }
+        }
+
+        private static void WriteSettingsAtomically(string filename, byte[] contents)
+        {
+            using (LockConfigFile(filename))
+            {
+            // Each process writes its own file; readers see either complete XML version.
+            var temporary = filename + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(contents, 0, contents.Length);
+                    stream.Flush(true);
+                }
+                for (int attempt = 0; ; attempt++)
+                {
+                    try
+                    {
+                        if (File.Exists(filename)) File.Replace(temporary, filename, null);
+                        else File.Move(temporary, filename);
+                        return;
+                    }
+                    catch (IOException ex) when (attempt < 20 &&
+                        ((ex.HResult & 0xffff) == 32 || (ex.HResult & 0xffff) == 33 ||
+                         (ex.HResult & 0xffff) == 80 || (ex.HResult & 0xffff) == 183))
+                    {
+                        // A reader from an older process may briefly deny replacement.
+                        Thread.Sleep(50);
+                    }
+                }
+            }
+            finally
+            {
+                try { if (File.Exists(temporary)) File.Delete(temporary); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+            }
+        }
+
+        private static IDisposable LockConfigFile(string filename)
+        {
+            var path = Path.GetFullPath(filename);
+            if (!isUnix) path = path.ToUpperInvariant();
+            using (var hash = System.Security.Cryptography.SHA256.Create())
+                return new ConfigFileLease("FMT.Settings." + BitConverter.ToString(hash.ComputeHash(Encoding.UTF8.GetBytes(path))).Replace("-", ""));
+        }
+
+        private sealed class ConfigFileLease : IDisposable
+        {
+            private readonly Mutex mutex;
+            internal ConfigFileLease(string name)
+            {
+                mutex = new Mutex(false, name);
+                bool acquired;
+                try { acquired = mutex.WaitOne(5000); }
+                catch (AbandonedMutexException) { acquired = true; }
+                if (!acquired) { mutex.Dispose(); throw new IOException("設定檔正在由另一個程式儲存，請稍後再試。"); }
+            }
+            public void Dispose() { mutex.ReleaseMutex(); mutex.Dispose(); }
         }
 
         public void Remove(string key)

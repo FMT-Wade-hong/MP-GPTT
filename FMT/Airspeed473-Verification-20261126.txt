@@ -1,0 +1,36 @@
+FMTPlanner airspeed calibration fix — 2026-11-26
+
+Local build: bin/Airspeed473/net472/FMTPlanner.exe (V1.2.5, not published)
+SHA-256: 6B0196140036FC2E0CD1161F8AD27D584B878D556B4038A20D4144B0C5C2E7D9
+Includes the existing 4.7.3 metadata/download, surface indicator and avoidance-circle changes.
+
+Root cause:
+- The toolbar sent MAV_CMD_PREFLIGHT_CALIBRATION with param6=2.
+- ArduPilot 4.6.0 and 4.7.3 GCS_Common.cpp do not implement that airspeed-only combination.
+- The supported param3=1 branch updates the barometer and starts enabled airspeed sensor calibration.
+- Confirmation now discloses both sensor operations. All other command parameters remain zero.
+- Existing asynchronous transport and state guards remain; replay is additionally rejected.
+- Capture only the pinned target/command ACK for actionable rejection messages, then remove the subscription.
+
+Primary sources inspected:
+https://github.com/ArduPilot/ardupilot/blob/d9c5097c3d8333435712ffed86bca8ce00c4bb46/libraries/GCS_MAVLink/GCS_Common.cpp#L4889
+https://github.com/ArduPilot/ardupilot/blob/9cc2b9d59a54868be94e53bd45fc4279e33f6b9f/libraries/GCS_MAVLink/GCS_Common.cpp
+https://ardupilot.org/plane/docs/calibrating-an-airspeed-sensor.html#manual-offset-calibration
+
+Validation:
+- Release/net472 build: 0 errors; 1,376 compiler/dependency warnings.
+- Test-AirspeedCalibration.ps1: 75 checks passed against the compiled production helper/transport.
+  Actual outgoing command ID, parameters and target; ACCEPTED, UNSUPPORTED, TEMPORARILY_REJECTED,
+  DENIED, FAILED; IN_PROGRESS followed by success/failure; wrong target/component/command ACKs ignored.
+  Armed, read-only, busy, replay, disconnected/missing stream, changed target/connection,
+  parameter/log download guards send no command. Existing busy ownership is preserved.
+  Actual 25-second IN_PROGRESS timeout does not resend and releases command ownership/ACK subscription.
+- Test-AirspeedZeroAsync.ps1: async UI, repeat-click/target/state guards, timeout message,
+  cleanup and barometer disclosure passed.
+- Test-IceToolbar.ps1 (includes Test-AirspeedZeroVisibility): all sensor visibility and toolbar checks passed.
+- git diff --check with core.whitespace=cr-at-eol: passed.
+- Launched the new executable and visually confirmed the V1.2.5 login window; left authentication to the user.
+
+All protocol testing used CommsInjection memory streams. No real flight controller was connected,
+no live calibration or flight test was performed. Actual sensor calibration success must be checked
+in the vehicle's calibration messages during ground testing.

@@ -1,0 +1,40 @@
+FMTPlanner 清除飛控任務修正 — 2026-11-27
+
+測試版：bin/MissionClearVehicle125/net472/FMTPlanner.exe
+版本：V1.2.5，本機測試版，尚未上傳 GitHub。
+SHA-256：9630A1C02EA26B2CD237B45D473C8F6D1A0A82DB0F97AEA4DBDB604383E54AE5
+
+問題：上一個 MissionActions125 測試版只清空規劃頁，飛控仍保留任務，重新讀取會再載入。
+修正：
+- 連線時顯示確認清除飛控任務的視窗；可取消，不要求規劃頁已有航點。
+- 僅送 MISSION_CLEAR_ALL，mission_type=MISSION，目標固定為確認時的飛控。
+- 收到指定飛控／元件、正確收件者及任務類型的 MISSION_ACK 成功回覆後，
+  送 MISSION_REQUEST_LIST，核對回傳 MISSION_COUNT=0，完成下載 ACK 後清除快取與規劃頁。
+- 不清除 FENCE／RALLY，不修改 HOME、模式、解鎖狀態或參數。
+- 飛控拒絕、讀回非零、逾時及連線變更均不顯示成功，畫面保留規劃。
+  正常 MAVLink 接收器仍可能依讀回封包更新內部快取；畫面上的規劃不因此自動清空。
+- 操作期間防連點，阻擋規劃頁讀取／一般寫入／舊快速寫入入口；與重置任務互斥。
+- 離頁／關閉取消等待，釋放訂閱；已送出的清除命令無法撤回，需重新讀取確認。
+- 清除回覆及讀回各等待最多 3 秒；逾時不自動重送刪除命令。
+- 斷線時仍可清除本機規劃，確認視窗明確說明不會清除飛控內任務。
+
+驗證：
+- Release/net472 建置：0 錯誤、1,376 警告。
+- Test-MissionClear.ps1：123 項飛控通訊流程檢查、34 項連線介面檢查、24 項離線規劃檢查通過。
+  使用 CommsInjection 模擬飛控與實際 MAVLink 封包解析器。
+  實際呼叫規劃頁使用的 mav_mission.download 再下載任務，結果為空；重新載入表格仍無航點。
+  驗證拒絕、假成功但讀回非零、錯誤回覆來源／收件者／類型、重複、兩階段逾時／取消、
+  唯讀、回放、通訊忙碌、無控制權、斷線、過期心跳與切換飛控。
+  連線介面確認取消不送命令、失敗保留規劃、空白頁可清除飛控、讀寫互斥、HOME 與其他任務類型保留。
+- Test-MissionReset.ps1：289 項回歸通過。
+- 日誌：tmp/build-missionclearvehicle125.log、tmp/missionclearvehicle125-tests.log、tmp/missionclearvehicle125-reset-tests.log。
+- git diff --check（core.whitespace=cr-at-eol）通過。
+
+參考並核對：
+https://mavlink.io/en/services/mission.html#clear-plan
+https://github.com/ArduPilot/ardupilot/blob/d9c5097c3d8333435712ffed86bca8ce00c4bb46/libraries/GCS_MAVLink/MissionItemProtocol.cpp
+https://github.com/ArduPilot/ardupilot/blob/d9c5097c3d8333435712ffed86bca8ce00c4bb46/libraries/GCS_MAVLink/MissionItemProtocol_Waypoints.cpp
+https://github.com/ArduPilot/ardupilot/blob/d9c5097c3d8333435712ffed86bca8ce00c4bb46/libraries/AP_Mission/AP_Mission.cpp
+ArduPilot 該版本在已解鎖且任務正在執行時拒絕 clear()；本次不改模式或以其他上傳方式繞過。
+
+限制：全為離線模擬及編譯後程式測試，未操作或清除實機任務，未做實飛驗證。

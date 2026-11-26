@@ -16,6 +16,7 @@ namespace MissionPlanner.GCSViews
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
+            if (disposing) fmtMissionClearCancellation?.Cancel();
             if (disposing && (components != null))
             {
                 components.Dispose();
@@ -300,7 +301,7 @@ namespace MissionPlanner.GCSViews
             this.but_writewpfast.Name = "but_writewpfast";
             this.but_writewpfast.TextColorNotEnabled = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(87)))), ((int)(((byte)(4)))));
             this.but_writewpfast.UseVisualStyleBackColor = true;
-            this.but_writewpfast.Click += new System.EventHandler(this.but_writewpfast_Click);
+            this.but_writewpfast.Click += new System.EventHandler(this.BUT_clearMission_Click);
             // 
             // BUT_write
             // 

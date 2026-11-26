@@ -372,6 +372,66 @@
       "sha256": "a5d375f4bd912e64f83f83a73dc4bb1ef2c07d63f3dcdc67df3316546cfd50c5",
       "generator_exit": 0,
       "source": "https://github.com/ArduPilot/ardupilot/tree/fb773567896014da007bca58358704d4a0d8516f"
+    },
+    {
+      "commit": "d9c5097c3d8333435712ffed86bca8ce00c4bb46",
+      "tag": "Copter-4.7.3",
+      "family": "Copter",
+      "version": "4.7.3",
+      "key": "Copter4.7.3",
+      "file": "Copter4.7.3.apm.pdef.xml.gz",
+      "parameters": 5959,
+      "sha256": "effa462112eed01860fc04aa9e36f09adfcaf6529c41d5f21df57a37f21b4933",
+      "generator_exit": 0,
+      "source": "https://github.com/ArduPilot/ardupilot/tree/d9c5097c3d8333435712ffed86bca8ce00c4bb46"
+    },
+    {
+      "commit": "d9c5097c3d8333435712ffed86bca8ce00c4bb46",
+      "tag": "Plane-4.7.3",
+      "family": "Plane",
+      "version": "4.7.3",
+      "key": "Plane4.7.3",
+      "file": "Plane4.7.3.apm.pdef.xml.gz",
+      "parameters": 5948,
+      "sha256": "b923ff8c07fc16fb629b0aea7517b50c7897f8341c6af5eb979095c82420eef3",
+      "generator_exit": 0,
+      "source": "https://github.com/ArduPilot/ardupilot/tree/d9c5097c3d8333435712ffed86bca8ce00c4bb46"
+    },
+    {
+      "commit": "d9c5097c3d8333435712ffed86bca8ce00c4bb46",
+      "tag": "Rover-4.7.3",
+      "family": "Rover",
+      "version": "4.7.3",
+      "key": "Rover4.7.3",
+      "file": "Rover4.7.3.apm.pdef.xml.gz",
+      "parameters": 5668,
+      "sha256": "614c456729413778e984dd9ad52e3679d3d90c2ab1ae002d8b2c074279d771e9",
+      "generator_exit": 0,
+      "source": "https://github.com/ArduPilot/ardupilot/tree/d9c5097c3d8333435712ffed86bca8ce00c4bb46"
+    },
+    {
+      "commit": "d9c5097c3d8333435712ffed86bca8ce00c4bb46",
+      "tag": "Sub-4.7.3",
+      "family": "Sub",
+      "version": "4.7.3",
+      "key": "Sub4.7.3",
+      "file": "Sub4.7.3.apm.pdef.xml.gz",
+      "parameters": 5595,
+      "sha256": "732d237d43dbb142658baf964b56f5836fe5fa244725ea3ef9bd362a7300fcea",
+      "generator_exit": 0,
+      "source": "https://github.com/ArduPilot/ardupilot/tree/d9c5097c3d8333435712ffed86bca8ce00c4bb46"
+    },
+    {
+      "commit": "d9c5097c3d8333435712ffed86bca8ce00c4bb46",
+      "tag": "Tracker-4.7.3",
+      "family": "Tracker",
+      "version": "4.7.3",
+      "key": "Tracker4.7.3",
+      "file": "Tracker4.7.3.apm.pdef.xml.gz",
+      "parameters": 3774,
+      "sha256": "f80015dc8602e78b4f4de5620220db719a9ec6e1f310a19bdd7ee9e0fcc54cae",
+      "generator_exit": 0,
+      "source": "https://github.com/ArduPilot/ardupilot/tree/d9c5097c3d8333435712ffed86bca8ce00c4bb46"
     }
   ]
 }

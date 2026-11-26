@@ -1,0 +1,48 @@
+FMTPlanner 首次參數下載完整性修正 — 2026-11-27
+
+測試版：bin/ParameterDownload125/net472/FMTPlanner.exe
+版本：V1.2.5，本機測試版，尚未發布。
+FMTPlanner.exe SHA-256：CABF3C93FE63BF3E640DD04A6BB43722C8F9A2D642DCC678ACD3D2B8F0543B30
+MissionPlanner.ArduPilot.dll SHA-256：D2B88005643008D0610525B1B605B337319C1CB9619303EACDC678EB281BAB94
+
+使用者補充：首次讀取不完整的是「參數清單」。本次修改參數下載流程。
+
+確認的程式問題與修正：
+- MAVFTP 封裝中的 num_params 可以小於 total_params；原流程丟失 total_params，
+  將已收到的數量當成應收到總數，部分資料可能被當成完整清單。
+  現在保留飛控回報總數，完整下載須兩者相符，否則改用 PARAM_VALUE 逐筆下載及缺漏補讀。
+- 封裝解析補上截斷、重複名稱、名稱前綴與長度檢查；保留合法部分封裝的通用解析能力，
+  由完整下載入口明確拒絕部分清單。
+- 一般下載以同步保護的索引及名稱集合核對完整性，過濾無效索引與計數。
+  重複封包不增加已收數；計數、索引對應名稱或名稱對應索引改變時重新讀取，最多三輪。
+  缺漏參數每秒最多補讀十筆；無進展達 60 秒、斷線或取消時不回報成功。
+- 兩種下載入口共用防重入與成功判定；所有路徑均清理封包訂閱及忙碌狀態。
+  取消 MAVFTP 時等待其工作結束，避免舊工作與下一次下載重疊。
+- 快取使用含格式版本、回報總數及參數清單的格式；只保存成功且完整的清單。
+  舊版陣列快取不能核對完整性，會重新下載。修正快取計時器提早返回後未清除排程標記。
+- 背景下載先保存原通訊物件及系統／元件編號，失敗寫入錯誤日誌。
+
+驗證：
+- Release/net472 最終建置：0 錯誤、1,288 警告（首次完整建置為 1,378 警告）。
+- Test-ParameterDownload.ps1：278 項檢查，使用 CommsInjection 與實際 MAVLink／MAVFTP 解析。
+  涵蓋兩種封裝格式的每個截斷位置、部分封裝、重複名稱、錯誤前綴、值與預設值、
+  快取完整性、500 筆延遲分批讀取、200 筆亂序／漏包補讀、重複及錯誤來源封包、
+  清單變更後重讀、持續不一致的失敗、斷線、重複啟動、整數型別保留，
+  MAVFTP 完整下載及三種失敗後轉一般下載，以及一般／MAVFTP 取消與訂閱清理。
+- Test-ParameterWriteReadback.ps1：通過。實際進階調校頁、讀回不符保留修改、
+  確認重試、快取相同仍送出、小幅 PID 差異與取消。
+- Test-PageParameterRefresh.ps1：通過。當頁讀取的名稱去重、可見列、OSD 分頁隔離、
+  非同步節奏、取消、目標改變、逾時、唯讀與 F5 範圍。
+- 新增 ParameterDownload 至 Test-Release124.ps1，供後續發布前回歸使用。
+- git diff --check（core.whitespace=cr-at-eol，忽略子模組）通過。
+- 日誌：tmp/build-parameterdownload125.log、tmp/parameterdownload125-tests.log、
+  tmp/parameterdownload125-write-tests.log、tmp/parameterdownload125-page-tests.log。
+
+來源核對：
+https://mavlink.io/en/services/ftp.html
+https://github.com/ArduPilot/ardupilot/blob/d9c5097c3d8333435712ffed86bca8ce00c4bb46/libraries/AP_Filesystem/AP_Filesystem_Param.cpp
+完整參數檔請求使用 start=0、count=0；封裝標頭分別記錄本檔筆數與飛控參數總數。
+
+限制：尚無出問題電腦的封包或日誌，不能認定上述缺陷是該電腦的唯一原因。
+本次為離線模擬及編譯後回歸，未讀寫實體飛控；未實際等待 60 秒無進展門檻或做長時間硬體測試。
+慢速傳輸測試模擬排程延遲，不代表已涵蓋所有 USB／串列埠驅動或無線鏈路。

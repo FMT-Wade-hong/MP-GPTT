@@ -79,18 +79,21 @@ namespace MissionPlanner
                     {
                         if (cs.uid2 == null || cs.uid2 == "" || sysid == 0)
                             return;
+                        if (parent.IsParameterListLoading || !parent.LastParamListSucceeded ||
+                            param.TotalReported <= 0 || param.Count != param.TotalReported)
+                            return;
                         if (!Directory.Exists(Path.GetDirectoryName(ParamCachePath)))
                             Directory.CreateDirectory(Path.GetDirectoryName(ParamCachePath));
 
                         lock (this.param)
-                            File.WriteAllText(ParamCachePath, param.ToJSON());
+                            File.WriteAllText(ParamCachePath, ParameterCacheSnapshot.Write(param));
                     }
                     catch (Exception e)
                     {
                         log.Error(e);
                     }
 
-                    queuewrite = false;
+                    finally { queuewrite = false; }
 
                 }, null, 2000, -1);
             };

@@ -36,10 +36,10 @@ namespace MissionPlanner.Utilities
                 default: return firmware;
             }
             if (VersionDetection.TryGetVersion(versionText, out var version) &&
-                version.Major == 4 && version.Minor >= 5 && version.Minor <= 7 && version.Build >= 0)
+                version.Major >= 4 && version.Build >= 0)
             {
                 var key = family + version.ToString(3);
-                return firmware == "Heli" && VersionedParameterMetadata.ContainsVersion(key)
+                return firmware == "Heli"
                     ? "Heli" + version.ToString(3) : key;
             }
             return firmware;
@@ -50,6 +50,39 @@ namespace MissionPlanner.Utilities
             {
                 /*SizeLimit = 1024 * 1024 * 500*/
             }));
+
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> CompatibilitySources =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, string>();
+
+        public static string GetCompatibilitySource(string nodeKey, string vehicleType)
+        {
+            if (String.IsNullOrWhiteSpace(nodeKey)) return string.Empty;
+            vehicleType = VehicleTypeResolver?.Invoke(vehicleType) ?? vehicleType;
+            if (!ParameterMetaDataRepositoryAPMpdef.IsVersionKey(vehicleType) || VersionedParameterMetadata.ContainsVersion(vehicleType) ||
+                ParameterMetaDataRepositoryAPMpdef.ContainsVersion(vehicleType)) return string.Empty;
+            var source = CompatibilitySources.GetOrAdd(vehicleType + "|" + ParameterMetaDataRepositoryAPMpdef.Revision, _ =>
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(vehicleType, @"^([A-Za-z]+)(\d+\.\d+\.\d+)$");
+                var family = match.Groups[1].Value;
+                var version = new Version(match.Groups[2].Value);
+                return VersionedParameterMetadata.AvailableVersions.Concat(ParameterMetaDataRepositoryAPMpdef.AvailableVersions)
+                    .Select(key => family == "Heli" && key.StartsWith("Copter", StringComparison.Ordinal) ? "Heli" + key.Substring(6) : key)
+                    .Where(key => key.StartsWith(family, StringComparison.Ordinal) && Version.TryParse(key.Substring(family.Length), out var v) && v < version)
+                    .OrderByDescending(key => new Version(key.Substring(family.Length)))
+                    .FirstOrDefault(key => VersionedParameterMetadata.ContainsVersion(key) || ParameterMetaDataRepositoryAPMpdef.ContainsVersion(key)) ?? string.Empty;
+            });
+            if (source.Length == 0) return string.Empty;
+            // Never alias a renamed parameter or resurrect a name missing from the nearest release.
+            VersionedParameterMetadata.TryGet(source, nodeKey, ParameterMetaDataConstants.DisplayName, out var title);
+            if (title.Length == 0) title = ParameterMetaDataRepositoryAPMpdef.GetParameterMetaData(nodeKey, ParameterMetaDataConstants.DisplayName, source);
+            return title.Length > 0 ? source : string.Empty;
+        }
+
+        public static string GetCompatibilityNotice(string nodeKey, string vehicleType)
+        {
+            var source = GetCompatibilitySource(nodeKey, vehicleType);
+            return source.Length == 0 ? string.Empty : "同名參數參考說明：" + source + "；單位、範圍及選項尚待目前韌體資料確認。";
+        }
 
         /// <summary>
         /// Gets the parameter meta data.
@@ -63,16 +96,26 @@ namespace MissionPlanner.Utilities
             if (string.IsNullOrWhiteSpace(nodeKey) || string.IsNullOrWhiteSpace(metaKey))
                 return string.Empty;
             vechileType = VehicleTypeResolver?.Invoke(vechileType) ?? vechileType;
-            // An explicit firmware snapshot must never fall back to another release's units/ranges.
+            // Exact releases remain authoritative, including absent names/fields.
             if (System.Text.RegularExpressions.Regex.IsMatch(vechileType ?? "", @"^(Copter|Heli|Plane|Rover|Sub|Tracker)\d+\.\d+\.\d+$"))
             {
                 if (VersionedParameterMetadata.TryGet(vechileType, nodeKey, metaKey, out var snapshotValue))
                     return snapshotValue;
-                return ParameterMetaDataRepositoryAPMpdef.GetParameterMetaData(nodeKey, metaKey, vechileType);
+                if (ParameterMetaDataRepositoryAPMpdef.ContainsVersion(vechileType))
+                    return ParameterMetaDataRepositoryAPMpdef.GetParameterMetaData(nodeKey, metaKey, vechileType);
+                // Name equality permits reference text, not assumptions about changed units,
+                // scaling, value ranges, options, bit positions or write restrictions.
+                if (metaKey != ParameterMetaDataConstants.Description && metaKey != ParameterMetaDataConstants.DisplayName &&
+                    metaKey != ParameterMetaDataConstants.User) return string.Empty;
+                var source = GetCompatibilitySource(nodeKey, vechileType);
+                if (source.Length == 0) return string.Empty;
+                return VersionedParameterMetadata.TryGet(source, nodeKey, metaKey, out snapshotValue) ? snapshotValue :
+                    ParameterMetaDataRepositoryAPMpdef.GetParameterMetaData(nodeKey, metaKey, source);
             }
+            var cacheKey = nodeKey + "|" + metaKey + "|" + vechileType + "|" + ParameterMetaDataRepositoryAPMpdef.Revision;
             lock (_cache)
             {
-                var ans = _cache.Value.Get(nodeKey + metaKey + vechileType) as string;
+                var ans = _cache.Value.Get(cacheKey) as string;
                 if (ans != null)
                     return ans;
             }
@@ -99,7 +142,7 @@ namespace MissionPlanner.Utilities
                 {
                     try
                     {
-                        var ci = _cache.Value.CreateEntry(nodeKey + metaKey + vechileType);
+                        var ci = _cache.Value.CreateEntry(cacheKey);
                         ci.Value = answer;
                         ci.Size = ((string)ci.Value).Length;
                         // evict after no access

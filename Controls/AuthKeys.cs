@@ -38,7 +38,8 @@ namespace MissionPlanner.Controls
 
         private void Save()
         {
-            MAVAuthKeys.Save();
+            try { MAVAuthKeys.Save(); }
+            catch (Exception ex) { CustomMessageBox.Show("簽署金鑰儲存失敗，原檔已保留。\r\n" + ex.Message, "簽署金鑰"); }
         }
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)

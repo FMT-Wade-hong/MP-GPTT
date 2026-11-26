@@ -71,6 +71,8 @@ namespace MissionPlanner.GCSViews
         private readonly CheckBox chkFmt3DMap;
         private readonly CheckBox chkFmtMqtt;
         private readonly CheckBox chkFmtSafety;
+        private readonly CheckBox chkFmtSurfaceAngles;
+        private FmtSurfaceAngleWindow fmtSurfaceAngleWindow;
         private readonly CheckBox chkFmtRelay;
         private OpenGLtest2 fmt3DMapControl;
         private FmtMqttPanel fmtMqttPanel;
@@ -332,6 +334,12 @@ namespace MissionPlanner.GCSViews
                 UseVisualStyleBackColor = true
             };
             chkFmtSafety.CheckedChanged += (sender, args) => SelectFmtEmbeddedMapView(chkFmtSafety);
+            chkFmtSurfaceAngles = new CheckBox
+            {
+                Name = "CHK_fmtSurfaceAngles", Text = "舵角指示器", AutoSize = true,
+                Anchor = AnchorStyles.Left | AnchorStyles.Bottom, UseVisualStyleBackColor = true
+            };
+            chkFmtSurfaceAngles.CheckedChanged += (sender, args) => ToggleFmtSurfaceAngles();
             chkFmtRelay = new CheckBox
             {
                 Name = "CHK_fmtRelay",
@@ -999,6 +1007,9 @@ namespace MissionPlanner.GCSViews
 
             if (disposing)
             {
+                var surfaceWindow = fmtSurfaceAngleWindow;
+                fmtSurfaceAngleWindow = null;
+                surfaceWindow?.Dispose();
                 // The detached tab is outside this control's tree and must be disposed explicitly.
                 var quickWindow = quickViewWindow;
                 quickViewWindow = null;
@@ -1432,8 +1443,8 @@ namespace MissionPlanner.GCSViews
             }
 
             var confirmation = IsFmtTraditionalChineseUi
-                ? "請將飛機保持靜止並鬆散遮住空速管，避免風吹影響零點。\r\n\r\n確定要執行空速計歸零嗎？"
-                : "Keep the vehicle still and loosely cover the pitot tube so wind cannot affect the zero point.\r\n\r\nRun airspeed zeroing now?";
+                ? "請將飛機保持靜止並鬆散遮住空速管，避免風吹影響零點。\r\n\r\nArduPilot 的此項校正會同時更新氣壓計校正與空速計零點。\r\n\r\n確定要執行嗎？"
+                : "Keep the vehicle still and loosely cover the pitot tube so wind cannot affect the zero point.\r\n\r\nThis ArduPilot calibration updates both the barometer calibration and airspeed zero offset.\r\n\r\nRun calibration now?";
             if (CustomMessageBox.Show(confirmation, "FMT Airspeed Zero", MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning) != (int)DialogResult.Yes)
                 return;
@@ -1441,7 +1452,7 @@ namespace MissionPlanner.GCSViews
             var link = MainV2.comPort;
             var sysid = (byte)link.sysidcurrent;
             var compid = (byte)link.compidcurrent;
-            if (link.BaseStream == null || !link.BaseStream.IsOpen || link.ReadOnly ||
+            if (link.BaseStream == null || !link.BaseStream.IsOpen || link.ReadOnly || link.logreadmode ||
                 link.MAV.cs.armed || link.giveComport || link.IsParameterListLoading || link.IsLogDownloadActive)
             {
                 CustomMessageBox.Show(IsFmtTraditionalChineseUi
@@ -1453,31 +1464,16 @@ namespace MissionPlanner.GCSViews
             IsFmtAirspeedZeroRunning = true;
             try
             {
-                // MAV_CMD_PREFLIGHT_CALIBRATION param6=2 requests airspeed-only calibration.
                 // The transport may wait 25 seconds and retry. Never block the UI thread.
-                var accepted = await Task.Run(async () =>
-                {
-                    if (!ReferenceEquals(link, MainV2.comPort) || link.sysidcurrent != sysid ||
-                        link.compidcurrent != compid || link.BaseStream == null || !link.BaseStream.IsOpen ||
-                        link.ReadOnly || link.MAV.cs.armed || link.giveComport ||
-                        link.IsParameterListLoading || link.IsLogDownloadActive)
-                        throw new InvalidOperationException("Connection or vehicle state changed; calibration was not sent.");
-                    try
-                    {
-                        return await link.doCommandAsync(sysid, compid, MAVLink.MAV_CMD.PREFLIGHT_CALIBRATION,
-                            0, 0, 0, 0, 0, 2, 0).ConfigureAwait(false);
-                    }
-                    finally { link.giveComport = false; }
-                });
+                var result = await Task.Run(() => SendFmtAirspeedZeroAsync(link, sysid, compid));
+                var accepted = result == MAVLink.MAV_RESULT.ACCEPTED;
                 if (IsDisposed || Disposing || !ReferenceEquals(link, MainV2.comPort) ||
                     link.sysidcurrent != sysid || link.compidcurrent != compid) return;
                 CustomMessageBox.Show(accepted
                         ? (IsFmtTraditionalChineseUi
-                            ? "飛控已接受空速計歸零命令，請等待校正完成訊息。"
-                            : "The flight controller accepted the airspeed-zero command. Wait for the calibration-complete message.")
-                        : (IsFmtTraditionalChineseUi
-                            ? "飛控拒絕空速計歸零命令。"
-                            : "The flight controller rejected the airspeed-zero command."),
+                            ? "飛控已確認氣壓計／空速計校正命令，請查看飛控訊息確認各感測器的校正結果。"
+                            : "The flight controller acknowledged barometer/airspeed calibration. Check vehicle messages for each sensor's calibration result.")
+                        : GetFmtAirspeedZeroFailureMessage(result, IsFmtTraditionalChineseUi),
                     "FMT Airspeed Zero", MessageBoxButtons.OK,
                     accepted ? MessageBoxIcon.Information : MessageBoxIcon.Error);
             }
@@ -1496,6 +1492,66 @@ namespace MissionPlanner.GCSViews
                     "FMT Airspeed Zero", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally { IsFmtAirspeedZeroRunning = false; }
+        }
+
+        internal static async Task<MAVLink.MAV_RESULT?> SendFmtAirspeedZeroAsync(MAVLinkInterface link,
+            byte sysid, byte compid)
+        {
+            if (link == null || !ReferenceEquals(link, MainV2.comPort) || link.sysidcurrent != sysid ||
+                link.compidcurrent != compid || link.BaseStream == null || !link.BaseStream.IsOpen ||
+                link.ReadOnly || link.logreadmode || link.MAV.cs.armed || link.giveComport ||
+                link.IsParameterListLoading || link.IsLogDownloadActive)
+                throw new InvalidOperationException("Connection or vehicle state changed; calibration was not sent.");
+
+            int ackResult = -1;
+            var subscription = link.SubscribeToPacketType(MAVLink.MAVLINK_MSG_ID.COMMAND_ACK, message =>
+            {
+                var ack = message.ToStructure<MAVLink.mavlink_command_ack_t>();
+                if (ack.command == (ushort)MAVLink.MAV_CMD.PREFLIGHT_CALIBRATION)
+                    Interlocked.Exchange(ref ackResult, ack.result);
+                return true;
+            }, sysid, compid);
+            try
+            {
+                // ArduPilot 4.6/4.7: param3=1 calibrates barometer AND airspeed.
+                // param6=2 (MAVLink's airspeed-only convention) is unsupported by these releases.
+                // Keep the other parameters zero: do not also start gyro/accelerometer/compass calibration.
+                bool accepted = await link.doCommandAsync(sysid, compid, MAVLink.MAV_CMD.PREFLIGHT_CALIBRATION,
+                    0, 0, 1, 0, 0, 0, 0).ConfigureAwait(false);
+                if (accepted) return MAVLink.MAV_RESULT.ACCEPTED;
+                int lastResult = Volatile.Read(ref ackResult);
+                return lastResult >= 0 && lastResult != (int)MAVLink.MAV_RESULT.IN_PROGRESS &&
+                       lastResult != (int)MAVLink.MAV_RESULT.ACCEPTED
+                    ? (MAVLink.MAV_RESULT?)lastResult : null;
+            }
+            finally
+            {
+                link.UnSubscribeToPacketType(subscription);
+                link.giveComport = false;
+            }
+        }
+
+        internal static string GetFmtAirspeedZeroFailureMessage(MAVLink.MAV_RESULT? result, bool chinese)
+        {
+            switch (result)
+            {
+                case MAVLink.MAV_RESULT.UNSUPPORTED:
+                    return chinese ? "飛控不支援此校正命令（UNSUPPORTED），請確認飛控韌體與空速計設定。"
+                        : "Calibration is unsupported (UNSUPPORTED). Check the firmware and airspeed sensor configuration.";
+                case MAVLink.MAV_RESULT.TEMPORARILY_REJECTED:
+                    return chinese ? "飛控暫時無法校正（TEMPORARILY_REJECTED），請等待目前作業結束並查看飛控訊息。"
+                        : "Calibration is temporarily unavailable (TEMPORARILY_REJECTED). Wait for the current operation and check vehicle messages.";
+                case MAVLink.MAV_RESULT.DENIED:
+                    return chinese ? "飛控不允許校正（DENIED），請確認飛機未解鎖並查看飛控訊息。"
+                        : "Calibration was denied (DENIED). Confirm the vehicle is disarmed and check vehicle messages.";
+                case MAVLink.MAV_RESULT.FAILED:
+                    return chinese ? "飛控校正失敗（FAILED），請查看飛控校正訊息及感測器狀態。"
+                        : "Calibration failed (FAILED). Check vehicle calibration messages and sensor status.";
+                default:
+                    var detail = result.HasValue ? " (" + result.Value + ")" : "";
+                    return chinese ? "未取得飛控校正成功回覆" + detail + "，請查看連線狀態及飛控訊息。"
+                        : "No successful calibration acknowledgement" + detail + ". Check the connection and vehicle messages.";
+            }
         }
 
         internal void ExecuteFmtQnh()
@@ -2314,7 +2370,39 @@ namespace MissionPlanner.GCSViews
             CB_tuning.Checked = false;
             CB_tuning.Visible = false;
             return FmtMapOptionsLayout.Configure(panel1, coords1,
-                chkFmtRelay, CHK_autopan, chkFmtAirspace, chkFmt3DMap, chkFmtMqtt, chkFmtSafety);
+                chkFmtRelay, CHK_autopan, chkFmtAirspace, chkFmt3DMap, chkFmtMqtt, chkFmtSafety, chkFmtSurfaceAngles);
+        }
+
+        private void ToggleFmtSurfaceAngles()
+        {
+            if (IsDisposed || Disposing) return;
+            if (!chkFmtSurfaceAngles.Checked)
+            {
+                fmtSurfaceAngleWindow?.Close();
+                return;
+            }
+            if (fmtSurfaceAngleWindow != null && !fmtSurfaceAngleWindow.IsDisposed)
+            {
+                if (fmtSurfaceAngleWindow.WindowState == FormWindowState.Minimized)
+                    fmtSurfaceAngleWindow.WindowState = FormWindowState.Normal;
+                fmtSurfaceAngleWindow.Activate();
+                return;
+            }
+            var window = new FmtSurfaceAngleWindow();
+            fmtSurfaceAngleWindow = window;
+            window.FormClosed += (sender, args) =>
+            {
+                if (!ReferenceEquals(fmtSurfaceAngleWindow, window)) return;
+                fmtSurfaceAngleWindow = null;
+                if (!IsDisposed && !Disposing) chkFmtSurfaceAngles.Checked = false;
+            };
+            var position = gMapControl1.PointToScreen(new Point(Math.Max(0, gMapControl1.Width - window.Width - 16), 16));
+            var screen = Screen.FromPoint(position).WorkingArea;
+            window.StartPosition = FormStartPosition.Manual;
+            window.Location = new Point(Math.Max(screen.Left, Math.Min(position.X, screen.Right - window.Width)),
+                Math.Max(screen.Top, Math.Min(position.Y, screen.Bottom - window.Height)));
+            var owner = FindForm();
+            if (owner != null) window.Show(owner); else window.Show();
         }
 
         private void BUT_setwp_Click(object sender, EventArgs e)
@@ -2337,6 +2425,17 @@ namespace MissionPlanner.GCSViews
         {
             LogPlayBackSpeed = double.Parse(((MyButton) sender).Tag.ToString(), CultureInfo.InvariantCulture);
             lbl_playbackspeed.Text = "x " + LogPlayBackSpeed;
+        }
+
+        internal static int[] GetFmtActionParameters(string action, Firmwares firmware)
+        {
+            if (action == actions.Do_Parachute.ToString())
+                return new[] { (int)MAVLink.PARACHUTE_ACTION.PARACHUTE_RELEASE, 0, 0 };
+            if (action == actions.Preflight_Calibration.ToString())
+                return new[] { firmware == Firmwares.ArduCopter2 ? 1 : 0, 0, 1 };
+            if (action == actions.Battery_Reset.ToString())
+                return new[] { 0xff, 100, 0 };
+            return new[] { 0, 0, 0 };
         }
 
         private void BUTactiondo_Click(object sender, EventArgs e)
@@ -2443,17 +2542,10 @@ namespace MissionPlanner.GCSViews
                 {
                     ((Control) sender).Enabled = false;
 
-                    int param1 = 0;
-                    int param2 = 0;
-                    int param3 = 1;
-
-                    // request gyro
-                    if (CMB_action.Text == actions.Preflight_Calibration.ToString())
-                    {
-                        if (MainV2.comPort.MAV.cs.firmware == Firmwares.ArduCopter2)
-                            param1 = 1; // gyro
-                        param3 = 1; // baro / airspeed
-                    }
+                    var parameters = GetFmtActionParameters(CMB_action.Text, MainV2.comPort.MAV.cs.firmware);
+                    int param1 = parameters[0];
+                    int param2 = parameters[1];
+                    int param3 = parameters[2];
 
                     if (CMB_action.Text == actions.Terminate_Flight.ToString())
                     {
@@ -2504,13 +2596,6 @@ namespace MissionPlanner.GCSViews
                         MainV2.comPort.doEngineControl((byte)MainV2.comPort.sysidcurrent, (byte)MainV2.comPort.compidcurrent, false);
                         ((Control)sender).Enabled = true;
                         return;
-                    }
-
-                    if (CMB_action.Text == actions.Battery_Reset.ToString())
-                    {
-                        param1 = 0xff; // batt 1
-                        param2 = 100; // 100%
-                        param3 = 0;
                     }
 
                     MAVLink.MAV_CMD cmd;
@@ -3958,8 +4043,10 @@ namespace MissionPlanner.GCSViews
 
         private void EnsureFmt3DMapControl()
         {
-            if (fmt3DMapControl != null && !fmt3DMapControl.IsDisposed)
+            if (fmt3DMapControl != null && !fmt3DMapControl.IsDisposed && !fmt3DMapControl.GraphicsFailed)
                 return;
+
+            fmt3DMapControl?.Dispose();
 
             fmt3DMapControl = new OpenGLtest2
             {
@@ -3968,6 +4055,13 @@ namespace MissionPlanner.GCSViews
                 Dock = DockStyle.Fill,
                 Margin = Padding.Empty,
                 BackColor = Color.FromArgb(13, 29, 37)
+            };
+            fmt3DMapControl.GraphicsUnavailable += (sender, args) =>
+            {
+                if (IsDisposed || Disposing || !ReferenceEquals(sender, fmt3DMapControl)) return;
+                chkFmt3DMap.Checked = false;
+                UpdateFmtEmbeddedMapView();
+                log.Warn("3D map unavailable; returned to 2D map. Reopening 3D creates a fresh control.");
             };
             splitContainer1.Panel1.Controls.Add(fmt3DMapControl);
         }
@@ -5221,27 +5315,9 @@ namespace MissionPlanner.GCSViews
 
                         lock (MainV2.instance.adsblock)
                         {
-                            // draw OA_DB
-                            foreach (adsb.PointLatLngAltHdg plla in MainV2.instance.adsbPlanes.Values)
-                            {
-                                if (plla.Raw != null)
-                                {
-                                    var msg = ((MAVLink.mavlink_adsb_vehicle_t) plla.Raw);
-                                    if (msg.emitter_type == 255 &&
-                                        Encoding.ASCII.GetString(msg.callsign).Trim('\0') == "OA_DB")
-                                    {
-                                        // cm
-                                        var radius = msg.squawk;
-
-                                        if (((DateTime) plla.Time) > DateTime.Now.AddSeconds(-10))
-                                            addMissionRouteMarker(new GMapMarkerDistance(plla, radius / 100.0, 0)
-                                                {Pen = new Pen(Color.Red, 3)});
-                                        continue;
-                                    }
-                                }
-                            }
-
-                            // filter out OA_DB adsb
+                            // FMT: omit OA_DB obstacle distance circles from the map.
+                            // Keep obstacle reports out of the aircraft overlay as well;
+                            // this display-only choice does not change vehicle avoidance.
                             var adsbitems = MainV2.instance.adsbPlanes.Values.Where(a =>
                             {
                                 // Apply the same Taiwan boundary to receiver/MAVLink traffic on the map.
@@ -5306,7 +5382,7 @@ namespace MissionPlanner.GCSViews
                                         switch (pllau.ThreatLevel)
                                         {
                                             case MAVLink.MAV_COLLISION_THREAT_LEVEL.NONE:
-                                                adsbplane.AlertLevel = GMapMarkerADSBPlane.AlertLevelOptions.Orange;
+                                                adsbplane.AlertLevel = GMapMarkerADSBPlane.AlertLevelOptions.Green;
                                                 break;
                                             case MAVLink.MAV_COLLISION_THREAT_LEVEL.LOW:
                                                 adsbplane.AlertLevel = GMapMarkerADSBPlane.AlertLevelOptions.Orange;

@@ -1,5 +1,5 @@
 param([string]$Directory='bin/Release124/net461', [ValidateRange(30,1800)][int]$Seconds=600,
-    [string]$Report='tmp/release124-soak.json')
+    [string]$Report='tmp/release124-soak.json', [switch]$NoForcedGc)
 $ErrorActionPreference='Stop'
 . "$PSScriptRoot/Test-RoverChinese.ps1" -Directory $Directory
 Add-Type -TypeDefinition @'
@@ -30,11 +30,13 @@ $samples=New-Object Collections.Generic.List[object]
 $frames=0; $pages=0; $nextSample=0
 $process=[Diagnostics.Process]::GetCurrentProcess()
 function Sample-Resources([double]$Elapsed) {
-    [GC]::Collect(); [GC]::WaitForPendingFinalizers(); [GC]::Collect()
+    if (!$NoForcedGc) { [GC]::Collect(); [GC]::WaitForPendingFinalizers(); [GC]::Collect() }
     $process.Refresh()
     [pscustomobject]@{Seconds=[Math]::Round($Elapsed,1); Frames=$frames; IcePages=$pages;
         PrivateMiB=[Math]::Round($process.PrivateMemorySize64/1MB,2);
         WorkingSetMiB=[Math]::Round($process.WorkingSet64/1MB,2); Handles=$process.HandleCount;
+        ManagedMiB=[Math]::Round([GC]::GetTotalMemory($false)/1MB,2); Threads=$process.Threads.Count;
+        Gen0Collections=[GC]::CollectionCount(0); Gen1Collections=[GC]::CollectionCount(1); Gen2Collections=[GC]::CollectionCount(2);
         GdiObjects=[FmtSoakResources]::GetGuiResources($process.Handle,0);
         UserObjects=[FmtSoakResources]::GetGuiResources($process.Handle,1)}
 }
@@ -96,9 +98,10 @@ try {
     if($growth.PrivateMiB -gt 150 -or $growth.Handles -gt 150 -or $growth.GdiObjects -gt 100 -or $growth.UserObjects -gt 100){throw 'Retained resources kept growing after warm-up'}
     [pscustomobject]@{Passed=$true; DurationSeconds=[Math]::Round($clock.Elapsed.TotalSeconds,1);
         FramesPerHud=$frames; IcePages=$pages; OpenGL=$gl.opengl; Samples=$samples.ToArray();
-        GrowthAfterWarmup=$growth; Note='Offline WinForms/GDI/OpenGL exercise; GC at samples measures retained resources; no vehicle or flight validation.'} |
+        GrowthAfterWarmup=$growth; ForcedGcBeforeSample=(!$NoForcedGc);
+        Note=$(if($NoForcedGc){'Offline WinForms/GDI/OpenGL exercise with normal GC; samples include uncollected allocations; no vehicle or flight validation.'}else{'Offline WinForms/GDI/OpenGL exercise; GC at samples measures retained resources; no vehicle or flight validation.'})} |
         ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Report -Encoding UTF8
-    Write-Output "PASS: $Seconds-second offline soak; $frames frames per HUD; $pages ICE lifecycles; repeated mode resizing; bounded retained resources."
+    Write-Output "PASS: $Seconds-second offline soak; $frames frames per HUD; $pages ICE lifecycles; repeated mode resizing; bounded sampled resources; forced GC=$(!$NoForcedGc)."
 } finally {
     if($ice){$ice.Deactivate();$ice.Dispose()}
     $form.Dispose(); $gdi.Dispose(); $gl.Dispose(); $bar.Dispose(); $graphics.Dispose(); $fontProbe.Dispose()

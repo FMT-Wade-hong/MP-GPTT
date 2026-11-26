@@ -60,7 +60,12 @@ $projectXml = [xml](Get-Content -LiteralPath (Join-Path $projectRoot 'MissionPla
 $publicArtwork = @($projectXml.SelectNodes('//EmbeddedResource[@Include]') |
     Where-Object { $_.Include -like 'FMT\Assets\*' } |
     ForEach-Object { [IO.Path]::GetFileName($_.Include) })
-foreach ($guide in 'MQTT-EMBEDDED.md', 'SIK-SETTINGS.md', 'P400-AT-README.md', "RELEASE-AUDIT-V$ReleaseVersion.md") {
+$publicArtwork += @('fmt-login-v111.png', 'fmt-splash-v111.png') # Screenshots linked by the public manual.
+$guides = @('README.md', 'FrameParams/README.md', 'MQTT-EMBEDDED.md', 'SIK-SETTINGS.md', 'P400-AT-README.md',
+    "RELEASE-AUDIT-V$ReleaseVersion.md", 'RELEASE-AUDIT-V1.2.4.md', 'RELEASE-AUDIT-V1.2.5.md',
+    'GitHubIssueAudit-20261127.txt', 'FullFunction-Verification-20261127.txt',
+    'Stability-Verification-20261127.txt', 'ParameterDownload-Verification-20261127.txt') | Select-Object -Unique
+foreach ($guide in $guides) {
     $documentationFiles += [PSCustomObject]@{
         Source = Join-Path $documentationAssetRoot $guide
         Entry = "$rootFolder/FMT/$guide"
@@ -88,6 +93,9 @@ $excludedFiles = @()
 $excludedBytes = 0L
 
 function Get-ReleaseExclusionReason([string]$RelativePath) {
+    if ($RelativePath -match '(?i)(^|[\\/])(github-audit-[^\\/]+|stability-lifecycle-[^\\/]+|mission-clear-test-data|parameter-download-test-data)([\\/]|$)') {
+        return 'isolated regression settings, signing fixtures and downloaded test data'
+    }
     if ($RelativePath -match '(?i)(^|[\\/])(crash-test-[^\\/]+|Diagnostics)([\\/]|$)') {
         return 'local crash diagnostics and regression artifacts'
     }
@@ -110,7 +118,7 @@ function Get-ReleaseExclusionReason([string]$RelativePath) {
     }
     $extension = [IO.Path]::GetExtension($RelativePath)
     if ($RelativePath -match '(?i)(^|[\\/])(private-signing|tmp|logs|gmapcache|mqtt|\.git)([\\/]|$)' -or
-        $RelativePath -match '(?i)(^|[\\/])(config\.xml|settings\.json|password\.bin|\.env)$' -or
+        $RelativePath -match '(?i)(^|[\\/])(config\.xml|authkeys\.xml|settings\.json|password\.bin|\.env)$' -or
         $extension -match '(?i)^\.(pfx|p12|key|tlog|rlog|dmp|log)$') {
         return 'private configuration, credentials, logs or test artifacts'
     }

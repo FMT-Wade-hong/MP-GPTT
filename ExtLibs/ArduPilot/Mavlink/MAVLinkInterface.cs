@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using MissionPlanner.ArduPilot;
 using MissionPlanner.ArduPilot.Mavlink;
 using MissionPlanner.Comms;
@@ -1872,10 +1872,11 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
             frmProgressReporter.RunBackgroundOperationAsync();
 
-            LastParamListSucceeded = !frmProgressReporter.doWorkArgs.CancelRequested &&
+            LastParamListSucceeded = LastParamListSucceeded && !frmProgressReporter.doWorkArgs.CancelRequested &&
                 !frmProgressReporter.doWorkArgs.CancelAcknowledged &&
                 string.IsNullOrEmpty(frmProgressReporter.doWorkArgs.ErrorMessage);
             frmProgressReporter.Dispose();
+            frmProgressReporter = null;
 
             _ParamListChanged?.Invoke(this, null);
         }
@@ -1898,9 +1899,26 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
         public async Task<MAVLinkParamList> getParamListMavftpAsync(byte sysid, byte compid)
         {
-            Interlocked.Increment(ref activeParamDownloads);
-            try { return await GetParamListMavftpCoreAsync(sysid, compid).ConfigureAwait(false); }
-            finally { Interlocked.Decrement(ref activeParamDownloads); }
+            return await RunParameterDownloadAsync(() => GetParamListMavftpCoreAsync(sysid, compid)).ConfigureAwait(false);
+        }
+
+        private async Task<MAVLinkParamList> RunParameterDownloadAsync(Func<Task<MAVLinkParamList>> operation)
+        {
+            if (Interlocked.CompareExchange(ref activeParamDownloads, 1, 0) != 0)
+                throw new InvalidOperationException("已有參數下載進行中，請等待完成。");
+            LastParamListSucceeded = false;
+            try
+            {
+                var result = await operation().ConfigureAwait(false);
+                if (frmProgressReporter?.doWorkArgs.CancelRequested == true)
+                    throw new OperationCanceledException("參數下載已取消。");
+                if (result == null || result.TotalReported <= 0 || result.Count != result.TotalReported ||
+                    result.Select(item => item.Name).Distinct(StringComparer.Ordinal).Count() != result.TotalReported)
+                    throw new InvalidDataException("參數下載未完成，請重新讀取全部參數。");
+                LastParamListSucceeded = true;
+                return result;
+            }
+            finally { Interlocked.Exchange(ref activeParamDownloads, 0); }
         }
 
         private int activeParamDownloads;
@@ -1908,6 +1926,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
         private async Task<MAVLinkParamList> GetParamListMavftpCoreAsync(byte sysid, byte compid)
         {
+            var originalStream = BaseStream;
             var sub2 = SubscribeToPacketType(MAVLINK_MSG_ID.STATUSTEXT, buffer =>
             {
                 if (buffer.msgid == (byte) MAVLINK_MSG_ID.STATUSTEXT)
@@ -1948,82 +1967,88 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                 return true;
             }, (byte)sysid, (byte)compid);
 
-            // get the banner
-            doCommand((byte) sysid, (byte) compid, MAV_CMD.DO_SEND_BANNER, 0, 0, 0, 0, 0, 0, 0,
-                false);
-
             try
             {
+                // get the banner
+                doCommand(sysid, compid, MAV_CMD.DO_SEND_BANNER, 0, 0, 0, 0, 0, 0, 0, false);
                 if (((MAVlist[sysid,compid].cs.capabilities & (int) MAV_PROTOCOL_CAPABILITY.FTP) > 0) && Settings.Instance.GetBoolean("UseMavFtpParams", true))
                 {
                     if (frmProgressReporter != null)
                         frmProgressReporter.UpdateProgressAndStatus(-1, $"Checking for Param MAVFTP {sysid}-{compid}");
-                    var cancel = new CancellationTokenSource();
-                    var paramfileTask = Task.Run<MemoryStream>(() =>
+                    using (var cancel = new CancellationTokenSource())
                     {
-                        var ftp = new MAVFtp(this, sysid, compid);
-                        ftp.Progress += (s,i) =>
+                        var paramfileTask = Task.Run<MemoryStream>(() =>
+                        {
+                            var ftp = new MAVFtp(this, sysid, compid);
+                            ftp.Progress += (s,i) =>
+                            {
+                                if (frmProgressReporter != null)
+                                    frmProgressReporter.UpdateProgressAndStatus(i,
+                                        $"Getting Param MAVFTP {sysid}-{compid} : {s}");
+                            };
+                            return ftp.GetFile(
+                                // always try to get defualts, AP will send orginal format if not avalable
+                                "@PARAM/param.pck?withdefaults=1", cancel, true, 110);
+                        });
+                        while (!paramfileTask.IsCompleted)
                         {
                             if (frmProgressReporter != null)
-                                frmProgressReporter.UpdateProgressAndStatus(i,
-                                    $"Getting Param MAVFTP {sysid}-{compid} : {s}");
-                        };
-                        return ftp.GetFile(
-                            // always try to get defualts, AP will send orginal format if not avalable
-                            "@PARAM/param.pck?withdefaults=1", cancel, true, 110);
-                    });
-                    while (!paramfileTask.IsCompleted)
-                    {
-                        if (frmProgressReporter != null)
-                            if (frmProgressReporter.doWorkArgs.CancelRequested)
-                            {
-                                cancel.Cancel();
-                                frmProgressReporter.doWorkArgs.CancelAcknowledged = true;
-                                return MAVlist[sysid, compid].param;
-                            }
+                                if (frmProgressReporter.doWorkArgs.CancelRequested)
+                                {
+                                    cancel.Cancel();
+                                    frmProgressReporter.doWorkArgs.CancelAcknowledged = true;
+                                    try { await paramfileTask.ConfigureAwait(false); } catch { }
+                                    CheckParameterDownloadCancellation();
+                                }
 
-                        await Task.Delay(10).ConfigureAwait(false);
-                    }
+                            await Task.Delay(10).ConfigureAwait(false);
+                        }
 
-                    if (frmProgressReporter != null)
-                        if (frmProgressReporter.doWorkArgs.CancelRequested)
-                            return MAVlist[sysid, compid].param;
+                        CheckParameterDownloadCancellation();
 
-                    var paramfile = await paramfileTask;
-                    if (paramfile != null && paramfile.Length > 0)
-                    {
-                        var mavlist = parampck.unpack(paramfile.ToArray());
-                        if (mavlist != null)
+                        using (var paramfile = await paramfileTask.ConfigureAwait(false))
                         {
-                            MAVlist[sysid, compid].param.Clear();
-                            MAVlist[sysid, compid].param.TotalReported =
-                                mavlist.Count;
-                            MAVlist[sysid, compid].param.AddRange(mavlist);
-                            var gen = new MavlinkParse();
-                            mavlist.ForEach(a =>
+                            if (!ReferenceEquals(BaseStream, originalStream) || originalStream?.IsOpen != true)
+                                throw new IOException("參數下載連線已中斷或變更。");
+                            if (paramfile != null && paramfile.Length > 0)
                             {
-                                MAVlist[sysid, compid].param_types[a.Name] =
-                                    a.Type;
-                                SaveToTlog(gen.GenerateMAVLinkPacket10(
-                                    MAVLINK_MSG_ID.PARAM_VALUE,
-                                    new mavlink_param_value_t((float) a.Value, (ushort) mavlist.Count,
-                                        0,
-                                        a.Name.MakeBytesSize(16), (byte) a.Type), sysid, compid));
-                            });
+                                var mavlist = parampck.unpack(paramfile.ToArray());
+                                if (mavlist != null && mavlist.TotalReported > 0 && mavlist.Count == mavlist.TotalReported)
+                                {
+                                    MAVlist[sysid, compid].param.Clear();
+                                    MAVlist[sysid, compid].param.TotalReported =
+                                        mavlist.TotalReported;
+                                    MAVlist[sysid, compid].param.AddRange(mavlist);
+                                    var gen = new MavlinkParse();
+                                    mavlist.ForEach(a =>
+                                    {
+                                        MAVlist[sysid, compid].param_types[a.Name] =
+                                            a.Type;
+                                        SaveToTlog(gen.GenerateMAVLinkPacket10(
+                                            MAVLINK_MSG_ID.PARAM_VALUE,
+                                            new mavlink_param_value_t((float) a.Value, (ushort) mavlist.Count,
+                                                0,
+                                                a.Name.MakeBytesSize(16), (byte) a.Type), sysid, compid));
+                                    });
 
-                            UnSubscribeToPacketType(sub2);
-                            return MAVlist[sysid, compid].param;
+                                    return MAVlist[sysid, compid].param;
+                                }
+                            }
                         }
                     }
                 }
             }
+            catch (OperationCanceledException) { throw; }
             catch (Exception e)
             {
                 log.Error(e);
+                if (!ReferenceEquals(BaseStream, originalStream) || originalStream?.IsOpen != true) throw;
             }
+            finally { UnSubscribeToPacketType(sub2); }
 
-            UnSubscribeToPacketType(sub2);
-            return await getParamListAsync(sysid, compid);
+            CheckParameterDownloadCancellation();
+            frmProgressReporter?.UpdateProgressAndStatus(-1, "快速下載未取得完整參數，改用一般下載並補讀缺漏。");
+            return await GetParamListStreamAsync(sysid, compid).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -2043,305 +2068,156 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
         /// <returns></returns>
         public async Task<MAVLinkParamList> getParamListAsync(byte sysid, byte compid)
         {
-            List<int> indexsreceived = new List<int>();
-
-            // create new list so if canceled we use the old list
-            MAVLinkParamList newparamlist = new MAVLinkParamList();
-
-            int param_total = 1;
-
-            mavlink_param_request_list_t req = new mavlink_param_request_list_t
-            {
-                target_system = sysid,
-                target_component = compid
-            };
-
-            DateTime start = DateTime.Now;
-
-            DateTime lastmessage = DateTime.MinValue;
-
-            //hires.Stopwatch stopwatch = new hires.Stopwatch();
-            int retry = 0;
-            bool onebyone = false;
-            bool missing_params = false;
-            DateTime lastonebyone = DateTime.MinValue;
-
-            var sub2 = SubscribeToPacketType(MAVLINK_MSG_ID.STATUSTEXT, buffer =>
-            {
-                if (buffer.msgid == (byte) MAVLINK_MSG_ID.STATUSTEXT)
-                {
-                    var msg = buffer.ToStructure<mavlink_statustext_t>();
-
-                    string logdata = Encoding.UTF8.GetString(msg.text);
-
-                    int ind = logdata.IndexOf('\0');
-                    if (ind != -1)
-                        logdata = logdata.Substring(0, ind);
-
-                    if (logdata.ToLower().Contains("copter") || logdata.ToLower().Contains("rover") ||
-                        logdata.ToLower().Contains("plane"))
-                    {
-                        MAVlist[sysid, compid].VersionString = logdata;
-                    }
-                    else if (logdata.ToLower().Contains("nuttx") || logdata.ToLower().Contains("chibios"))
-                    {
-                        MAVlist[sysid, compid].SoftwareVersions = logdata;
-                    }
-                    else if (logdata.ToLower().Contains("px4v2") ||
-                             (Regex.IsMatch(logdata, @"\s[0-9A-F]+\s[0-9A-F]+\s[0-9A-F]+") && !logdata.Contains("IOMCU")))
-                    {
-                        MAVlist[sysid, compid].SerialString = logdata;
-                    }
-                    else if (logdata.ToLower().Contains("frame"))
-                    {
-                        MAVlist[sysid, compid].FrameString = logdata;
-                    }
-                    else
-                    {
-                    }
-                }
-
-                return true;
-            }, (byte)sysid, (byte)compid);
-
-            int seenvalid = 0;
-
-            var sub1 = SubscribeToPacketType(MAVLINK_MSG_ID.PARAM_VALUE, buffer =>
-            {
-                if (buffer.msgid == (byte) MAVLINK_MSG_ID.PARAM_VALUE && buffer.sysid == req.target_system &&
-                    buffer.compid == req.target_component)
-                {
-                    // if we are doing one by one dont update start time
-                    if (!onebyone)
-                        start = DateTime.Now;
-
-                    mavlink_param_value_t par = buffer.ToStructure<mavlink_param_value_t>();
-
-                    // set new target
-                    param_total = (par.param_count);
-                    newparamlist.TotalReported = param_total;
-
-                    if (param_total == 0)
-                        return true;
-
-                    string paramID = Encoding.UTF8.GetString(par.param_id);
-
-                    int pos = paramID.IndexOf('\0');
-                    if (pos != -1)
-                    {
-                        paramID = paramID.Substring(0, pos);
-                    }
-
-                    // check if we already have it
-                    if (indexsreceived.Contains(par.param_index))
-                    {
-                        log.Info("Already got " + (par.param_index) + " '" + paramID + "' " +
-                                 (indexsreceived.Count * 100) / param_total);
-                        if (frmProgressReporter != null)
-                            this.frmProgressReporter.UpdateProgressAndStatus(
-                                (indexsreceived.Count * 100) / param_total, "Already Got param " + paramID);
-                        return true;
-                    }
-
-                    seenvalid++;
-                    //Console.WriteLine(DateTime.Now.Millisecond + " gp2 ");
-
-                    log.Info(DateTime.Now.Millisecond + " got param " + (par.param_index) + " of " +
-                             (par.param_count) + " name: " + paramID + " " + par.param_value);
-
-                    //Console.WriteLine(DateTime.Now.Millisecond + " gp2a ");
-
-                    // item uses float based param system
-                    if ((MAVlist[sysid, compid].cs.capabilities & (uint) MAV_PROTOCOL_CAPABILITY.PARAM_FLOAT) > 0 ||
-                        MAVlist[sysid, compid].apname == MAV_AUTOPILOT.ARDUPILOTMEGA)
-                    {
-                        var offset = Marshal.OffsetOf(typeof(mavlink_param_value_t), "param_value");
-                        newparamlist[paramID] = new MAVLinkParam(paramID, BitConverter.GetBytes(par.param_value),
-                            MAV_PARAM_TYPE.REAL32, (MAV_PARAM_TYPE) par.param_type);
-                    }
-                    else
-                    {
-                        var offset = Marshal.OffsetOf(typeof(mavlink_param_value_t), "param_value");
-                        newparamlist[paramID] = new MAVLinkParam(paramID, BitConverter.GetBytes(par.param_value),
-                            (MAV_PARAM_TYPE) par.param_type, (MAV_PARAM_TYPE) par.param_type);
-                    }
-
-                    //Console.WriteLine(DateTime.Now.Millisecond + " gp2b ");
-
-                    // exclude index of 65535
-                    if (par.param_index != 65535)
-                        indexsreceived.Add(par.param_index);
-
-                    lock(MAVlist[sysid, compid].param_types)
-                        MAVlist[sysid, compid].param_types[paramID] = (MAV_PARAM_TYPE) par.param_type;
-
-                    //Console.WriteLine(DateTime.Now.Millisecond + " gp3 ");
-
-                    if (frmProgressReporter != null)
-                        this.frmProgressReporter.UpdateProgressAndStatus((indexsreceived.Count * 100) / param_total,
-                            Strings.Gotparam + paramID);
-
-                    // we hit the last param, jump striaght to retry if params missing
-                    if (par.param_index == (param_total - 1))
-                        missing_params |= indexsreceived.Count < param_total;
-                }
-
-                return true;
-            }, (byte)sysid, (byte)compid);
-
-
-            generatePacket((byte)MAVLINK_MSG_ID.PARAM_REQUEST_LIST, req);
-
-            short tenbytenindex = 0;
-
-            do
-            {
-                if (frmProgressReporter != null && frmProgressReporter.doWorkArgs.CancelRequested)
-                {
-                    frmProgressReporter.doWorkArgs.CancelAcknowledged = true;
-
-                    UnSubscribeToPacketType(sub1);
-                    UnSubscribeToPacketType(sub2);
-                    frmProgressReporter.doWorkArgs.ErrorMessage = "User Canceled";
-                    return MAVlist[sysid, compid].param;
-                }
-
-                // 4 seconds between valid packets or got to last param and have some missing
-                if ((missing_params || !(start.AddMilliseconds(4000) > DateTime.Now)) && !logreadmode)
-                {
-                    // if we have less than 75% of the total use full list pull
-                    if (!onebyone && (retry < 2) && ((param_total <= 1) || (indexsreceived.Count < ((param_total / 4) * 3))))
-                    {
-                        if (param_total > 1)
-                        {
-                            // only increment retry counter if we have a valid total
-                            // otherwise keep requesting full list
-                            retry++;
-                        }
-                        log.InfoFormat("Get Param whole list retry {0} got {1} 75%={2} count {3}", retry,
-                            indexsreceived.Count, ((param_total / 4) * 3), param_total);
-                        generatePacket((byte) MAVLINK_MSG_ID.PARAM_REQUEST_LIST, req);
-                        start = DateTime.Now;
-                        missing_params = false;
-                        continue;
-                    }
-
-                    onebyone = true;
-
-                    if (lastonebyone.AddMilliseconds(1000) < DateTime.Now)
-                    {
-                        int queued = 0;
-                        short startindex = 0;
-                        var backupseenvalid = seenvalid;
-                        if (param_total > 1)
-                            startindex = (short) (tenbytenindex % (param_total - 1));
-                        
-                        seenvalid = 0;
-
-                        // seeing more than what we requested... skip this round - maybe full param list is still inflight
-                        if(backupseenvalid > 10)
-                            continue;
-
-                        log.Info("Get param 10 by 10 - got " + indexsreceived.Count + " of " + param_total +
-                                 " request from startindex " + startindex + " seen since last requests " + backupseenvalid);
-
-                        // try getting individual params
-                        bool found_missing_param = false;
-                        for (short i = startindex; i <= (param_total - 1); i++)
-                        {
-                            if (!indexsreceived.Contains(i))
-                            {
-                                found_missing_param = true;
-
-                                if (frmProgressReporter != null && frmProgressReporter.doWorkArgs.CancelRequested)
-                                {
-                                    frmProgressReporter.doWorkArgs.CancelAcknowledged = true;
-                                    UnSubscribeToPacketType(sub1);
-                                    UnSubscribeToPacketType(sub2);
-                                    frmProgressReporter.doWorkArgs.ErrorMessage = "User Canceled";
-                                    return MAVlist[sysid, compid].param;
-                                }
-
-                                // prevent dropping out of this get params loop
-                                try
-                                {
-                                    queued++;
-                                    tenbytenindex = (short)(i + 1);
-
-                                    mavlink_param_request_read_t req2 = new mavlink_param_request_read_t
-                                    {
-                                        target_system = sysid,
-                                        target_component = compid,
-                                        param_index = i,
-                                        param_id = new byte[] {0}
-                                    };
-
-                                    Array.Resize(ref req2.param_id, 16);
-
-                                    generatePacket((byte) MAVLINK_MSG_ID.PARAM_REQUEST_READ, req2);
-
-                                    if (queued >= 10)
-                                    {
-                                        break;
-                                    }
-                                }
-                                catch (Exception excp)
-                                {
-                                    log.Info("GetParam Failed index: " + i + " " + excp);
-                                    UnSubscribeToPacketType(sub1);
-                                    UnSubscribeToPacketType(sub2);
-                                    throw excp;
-                                }
-                            }
-                        }
-                        if (!found_missing_param)
-                        {
-                            // no missing param after start index, start from the begining
-                            tenbytenindex = 0;
-                        }
-
-                        lastonebyone = DateTime.Now;
-                    }
-                }
-
-                await readPacketAsync();
-
-                if (logreadmode && logplaybackfile.BaseStream.Position >= logplaybackfile.BaseStream.Length)
-                {
-                    break;
-                }
-
-                if (!logreadmode && !BaseStream.IsOpen)
-                {
-                    var exp = new Exception("Not Connected");
-                    frmProgressReporter.doWorkArgs.ErrorMessage = exp.Message;
-                    UnSubscribeToPacketType(sub1);
-                    UnSubscribeToPacketType(sub2);
-                    throw exp;
-                }
-            } while (indexsreceived.Count < param_total);
-
-            if (indexsreceived.Count != param_total)
-            {
-                var exp = new Exception("Missing Params " + indexsreceived.Count + " vs " + param_total);
-                frmProgressReporter.doWorkArgs.ErrorMessage = exp.Message;
-                UnSubscribeToPacketType(sub1);
-                UnSubscribeToPacketType(sub2);
-                throw exp;
-            }
-
-            UnSubscribeToPacketType(sub1);
-            UnSubscribeToPacketType(sub2);
-
-            log.InfoFormat("list count {0}, rcvd total {1} indexseen count {2}", newparamlist.Count, param_total,
-                indexsreceived.Count);
-
-            MAVlist[sysid, compid].param.Clear();
-            MAVlist[sysid, compid].param.TotalReported = param_total;
-            MAVlist[sysid, compid].param.AddRange(newparamlist);
-            return MAVlist[sysid, compid].param;
+            return await RunParameterDownloadAsync(() => GetParamListStreamAsync(sysid, compid)).ConfigureAwait(false);
         }
 
+        private void CheckParameterDownloadCancellation()
+        {
+            if (frmProgressReporter?.doWorkArgs.CancelRequested == true)
+            {
+                frmProgressReporter.doWorkArgs.CancelAcknowledged = true;
+                frmProgressReporter.doWorkArgs.ErrorMessage = "User Canceled";
+                throw new OperationCanceledException("參數下載已取消。");
+            }
+        }
+
+        private async Task<MAVLinkParamList> GetParamListStreamAsync(byte sysid, byte compid)
+        {
+            var stream = BaseStream;
+            var vehicle = MAVlist[sysid, compid];
+            var req = new mavlink_param_request_list_t { target_system = sysid, target_component = compid };
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                var state = new ParameterDownloadState();
+                int? parameterSubscription = null;
+                var sub2 = SubscribeToPacketType(MAVLINK_MSG_ID.STATUSTEXT, buffer =>
+                {
+                    if (buffer.msgid == (byte) MAVLINK_MSG_ID.STATUSTEXT)
+                    {
+                        var msg = buffer.ToStructure<mavlink_statustext_t>();
+
+                        string logdata = Encoding.UTF8.GetString(msg.text);
+
+                        int ind = logdata.IndexOf('\0');
+                        if (ind != -1)
+                            logdata = logdata.Substring(0, ind);
+
+                        if (logdata.ToLower().Contains("copter") || logdata.ToLower().Contains("rover") ||
+                            logdata.ToLower().Contains("plane"))
+                        {
+                            MAVlist[sysid, compid].VersionString = logdata;
+                        }
+                        else if (logdata.ToLower().Contains("nuttx") || logdata.ToLower().Contains("chibios"))
+                        {
+                            MAVlist[sysid, compid].SoftwareVersions = logdata;
+                        }
+                        else if (logdata.ToLower().Contains("px4v2") ||
+                                 (Regex.IsMatch(logdata, @"\s[0-9A-F]+\s[0-9A-F]+\s[0-9A-F]+") && !logdata.Contains("IOMCU")))
+                        {
+                            MAVlist[sysid, compid].SerialString = logdata;
+                        }
+                        else if (logdata.ToLower().Contains("frame"))
+                        {
+                            MAVlist[sysid, compid].FrameString = logdata;
+                        }
+                        else
+                        {
+                        }
+                    }
+
+                    return true;
+                }, (byte)sysid, (byte)compid);
+                try
+                {
+                    CheckParameterDownloadCancellation();
+                    if (!logreadmode && (!ReferenceEquals(BaseStream, stream) || stream?.IsOpen != true))
+                        throw new IOException("參數下載連線已中斷或變更。");
+                    parameterSubscription = SubscribeToPacketType(MAVLINK_MSG_ID.PARAM_VALUE, message =>
+                    {
+                        state.Accept(message.ToStructure<mavlink_param_value_t>(),
+                            vehicle.apname == MAV_AUTOPILOT.ARDUPILOTMEGA ||
+                            (vehicle.cs.capabilities & (uint)MAV_PROTOCOL_CAPABILITY.PARAM_FLOAT) != 0);
+                        return true;
+                    }, sysid, compid);
+                    generatePacket(MAVLINK_MSG_ID.PARAM_REQUEST_LIST, req, sysid, compid);
+                    var lastRequest = Stopwatch.StartNew();
+                    var lastProgress = Stopwatch.StartNew();
+                    var lastMissing = Stopwatch.StartNew();
+                    var lastUi = Stopwatch.StartNew();
+                    int lastReceived = 0, fullRetries = 0, nextMissing = 0;
+                    while (true)
+                    {
+                        CheckParameterDownloadCancellation();
+                        if (!logreadmode && (!ReferenceEquals(BaseStream, stream) || stream?.IsOpen != true))
+                            throw new IOException("參數下載連線已中斷或變更。");
+                        var status = state.Status;
+                        if (status.Changed)
+                        {
+                            log.Warn("Parameter table changed during download; restarting a complete read");
+                            frmProgressReporter?.UpdateProgressAndStatus(-1, "參數清單已變更，重新讀取完整清單。");
+                            break;
+                        }
+                        if (status.Total > 0 && status.Received == status.Total)
+                        {
+                            var complete = state.CompleteSnapshot();
+                            vehicle.param.Clear();
+                            vehicle.param.TotalReported = complete.TotalReported;
+                            vehicle.param.AddRange(complete);
+                            lock (vehicle.param_types)
+                                foreach (var parameter in complete) vehicle.param_types[parameter.Name] = parameter.TypeAP;
+                            frmProgressReporter?.UpdateProgressAndStatus(100, "參數已完整讀取：" + complete.Count + "/" + complete.TotalReported);
+                            return vehicle.param;
+                        }
+                        if (status.Received != lastReceived)
+                        {
+                            lastReceived = status.Received;
+                            lastProgress.Restart();
+                        }
+                        if (lastProgress.ElapsedMilliseconds >= 60000)
+                            throw new TimeoutException("參數下載沒有進展，已收到 " + status.Received + "/" + status.Total + "；請重新讀取全部參數。");
+                        if (lastUi.ElapsedMilliseconds >= 100)
+                        {
+                            frmProgressReporter?.UpdateProgressAndStatus(status.Total > 0 ? status.Received * 100 / status.Total : -1,
+                                "讀取參數：" + status.Received + "/" + status.Total);
+                            lastUi.Restart();
+                        }
+                        if (!logreadmode && (status.SawLast || lastRequest.ElapsedMilliseconds >= 4000))
+                        {
+                            if ((fullRetries < 2 && status.Received < status.Total * 0.75) || status.Total == 0)
+                            {
+                                generatePacket(MAVLINK_MSG_ID.PARAM_REQUEST_LIST, req, sysid, compid);
+                                fullRetries++;
+                                lastRequest.Restart();
+                            }
+                            else if (lastMissing.ElapsedMilliseconds >= 1000)
+                            {
+                                foreach (var index in state.Missing(nextMissing, 10))
+                                {
+                                    if (index > short.MaxValue)
+                                        throw new InvalidDataException("參數索引超過此協定可補讀的範圍。");
+                                    generatePacket(MAVLINK_MSG_ID.PARAM_REQUEST_READ, new mavlink_param_request_read_t
+                                    {
+                                        target_system = sysid, target_component = compid,
+                                        param_index = (short)index, param_id = new byte[16]
+                                    }, sysid, compid);
+                                    nextMissing = index + 1;
+                                }
+                                lastMissing.Restart();
+                            }
+                        }
+                        if (logreadmode && logplaybackfile.BaseStream.Position >= logplaybackfile.BaseStream.Length)
+                            throw new InvalidDataException("記錄中的參數清單不完整。");
+                        await readPacketAsync().ConfigureAwait(false);
+                    }
+                }
+                finally
+                {
+                    if (parameterSubscription.HasValue) UnSubscribeToPacketType(parameterSubscription.Value);
+                    UnSubscribeToPacketType(sub2);
+                }
+            }
+            throw new InvalidDataException("飛控參數清單持續變更，未能確認完整下載，請稍後重新讀取。");
+        }
         private int _parampoll = 0;
 
         public void getParamPoll()
@@ -4403,10 +4279,19 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                             return (MAV_MISSION_RESULT) ans.type;
                         }
                     }
-                    else if (buffer.msgid == (byte) MAVLINK_MSG_ID.MISSION_REQUEST &&
+                    else if ((buffer.msgid == (byte) MAVLINK_MSG_ID.MISSION_REQUEST ||
+                              buffer.msgid == (byte) MAVLINK_MSG_ID.MISSION_REQUEST_INT) &&
                              buffer.sysid == req.target_system && buffer.compid == req.target_component)
                     {
-                        var ans = buffer.ToStructure<mavlink_mission_request_t>();
+                        mavlink_mission_request_t ans;
+                        if (buffer.msgid == (byte) MAVLINK_MSG_ID.MISSION_REQUEST_INT)
+                        {
+                            var next = buffer.ToStructure<mavlink_mission_request_int_t>();
+                            ans = new mavlink_mission_request_t { seq = next.seq,
+                                target_system = next.target_system, target_component = next.target_component,
+                                mission_type = next.mission_type };
+                        }
+                        else ans = buffer.ToStructure<mavlink_mission_request_t>();
                         if (ans.target_system != gcssysid ||
                             ans.target_component != (byte) MAV_COMPONENT.MAV_COMP_ID_MISSIONPLANNER)
                             continue;

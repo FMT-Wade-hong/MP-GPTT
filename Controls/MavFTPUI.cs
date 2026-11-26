@@ -21,6 +21,11 @@ namespace MissionPlanner.Controls
 
         private MAVLinkInterface _mav;
         private MAVFtp _mavftp;
+        private readonly CancellationTokenSource viewLifetime = new CancellationTokenSource();
+        private bool populating;
+        private int navigationVersion;
+        private bool ViewUnavailable => IsDisposed || Disposing || viewLifetime.IsCancellationRequested ||
+            treeView1 == null || treeView1.IsDisposed;
 
         public MavFTPUI() : this(MainV2.comPort)
         {
@@ -37,7 +42,6 @@ namespace MissionPlanner.Controls
                 {
                     if (this.IsDisposed)
                     {
-                        _mavftp = null;
                         return;
                     }
 
@@ -46,6 +50,7 @@ namespace MissionPlanner.Controls
                         {
                             try
                             {
+                                if (ViewUnavailable) return;
                                 nextupdate = DateTime.UtcNow.AddMilliseconds(100);
                                 if (percent >= 0)
                                     toolStripProgressBar1.Value = percent;
@@ -64,6 +69,7 @@ namespace MissionPlanner.Controls
                 }
             };
             InitializeComponent();
+            Disposed += (sender, args) => viewLifetime.Cancel();
 
             ThemeManager.ApplyThemeTo(this);
 
@@ -72,6 +78,17 @@ namespace MissionPlanner.Controls
 
         private async void PopulateTreeView()
         {
+            try { await PopulateTreeViewAsync(); }
+            catch (Exception ex) { log.Error("FTP folder refresh failed", ex); }
+        }
+
+        private async Task PopulateTreeViewAsync()
+        {
+            if (ViewUnavailable || populating) return;
+            populating = true;
+            ++navigationVersion;
+            try
+            {
             toolStripStatusLabel1.Text = "Updating Folders";
             toolStripProgressBar1.ProgressBar.Style = ProgressBarStyle.Marquee;
 
@@ -83,12 +100,15 @@ namespace MissionPlanner.Controls
 
             TreeNode rootNode = null;
 
-            DirectoryInfo info = new DirectoryInfo(@"/", _mavftp);
+            DirectoryInfo info = new DirectoryInfo(@"/", _mavftp, viewLifetime);
             if (info.Exists)
             {
                 rootNode = new TreeNode(info.Name, 0, 0);
                 rootNode.Tag = info;
-                await PopulateDirectories(await info.GetDirectories().ConfigureAwait(true), rootNode).ConfigureAwait(true);
+                var directories = await info.GetDirectories().ConfigureAwait(true);
+                if (ViewUnavailable) return;
+                await PopulateDirectories(directories.Where(d =>
+                    !string.Equals(d.Name.TrimEnd('/'), "@SYS", StringComparison.Ordinal)).ToArray(), rootNode).ConfigureAwait(true);
                 treeView1.Nodes.Add(rootNode);
             }
             /*
@@ -101,27 +121,34 @@ namespace MissionPlanner.Controls
                 treeView1.Nodes.Add(rootNode);
             }
             */
-            info = new DirectoryInfo(@"@SYS/", _mavftp);
+            info = new DirectoryInfo(@"@SYS/", _mavftp, viewLifetime);
             if (info.Exists)
             {
                 rootNode = new TreeNode("@SYS", 0, 0);
                 rootNode.Tag = info;
-                await PopulateDirectories(await info.GetDirectories().ConfigureAwait(true), rootNode).ConfigureAwait(true);
+                var directories = await info.GetDirectories().ConfigureAwait(true);
+                if (ViewUnavailable) return;
+                await PopulateDirectories(directories, rootNode).ConfigureAwait(true);
                 treeView1.Nodes.Add(rootNode);
             }
             
 
             toolStripStatusLabel1.Text = "Ready";
 
-            treeView1.Enabled = true;
-            
-            treeView1.EndUpdate();
-
-            toolStripProgressBar1.ProgressBar.Style = ProgressBarStyle.Blocks;
-
             treeView1.SelectedNode = rootNode;
 
             TreeView1_NodeMouseClick(this, new TreeNodeMouseClickEventArgs(rootNode, MouseButtons.Left, 1, 1, 1));
+            }
+            finally
+            {
+                populating = false;
+                if (!ViewUnavailable)
+                {
+                    treeView1.EndUpdate();
+                    treeView1.Enabled = true;
+                    toolStripProgressBar1.ProgressBar.Style = ProgressBarStyle.Blocks;
+                }
+            }
         }
 
         private async Task PopulateDirectories(DirectoryInfo[] subDirs,
@@ -141,16 +168,24 @@ namespace MissionPlanner.Controls
 
         private async void TreeView1_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            if (e.Node == null)
+            try { await ShowDirectoryAsync(e.Node); }
+            catch (Exception ex) { log.Error("FTP directory display failed", ex); }
+        }
+
+        private async Task ShowDirectoryAsync(TreeNode node)
+        {
+            if (ViewUnavailable || node == null)
                 return;
 
-            TreeNode newSelected = e.Node;
+            var version = ++navigationVersion;
+            TreeNode newSelected = node;
             listView1.Items.Clear();
             DirectoryInfo nodeDirInfo = (DirectoryInfo)newSelected.Tag;
             ListViewItem.ListViewSubItem[] subItems;
             ListViewItem item = null;
 
             var dirs = await nodeDirInfo.GetDirectories().ConfigureAwait(true);
+            if (ViewUnavailable || version != navigationVersion) return;
 
             newSelected.Nodes.Clear();
 
@@ -169,7 +204,9 @@ namespace MissionPlanner.Controls
                 listView1.Items.Add(item);
             }
 
-            foreach (var file in await nodeDirInfo.GetFiles())
+            var files = await nodeDirInfo.GetFiles();
+            if (ViewUnavailable || version != navigationVersion) return;
+            foreach (var file in files)
             {
                 item = new ListViewItem(file.Name, 1);
                 subItems = new ListViewItem.ListViewSubItem[]
@@ -196,10 +233,14 @@ namespace MissionPlanner.Controls
         {
             private readonly MAVFtp _mavftp;
             private List<MAVFtp.FtpFileInfo> cache;
+            private readonly CancellationTokenSource cancellation;
 
-            public DirectoryInfo(string dir, MAVFtp mavftp)
+            public DirectoryInfo(string dir, MAVFtp mavftp) : this(dir, mavftp, null) { }
+
+            public DirectoryInfo(string dir, MAVFtp mavftp, CancellationTokenSource cancellation)
             {
                 _mavftp = mavftp;
+                this.cancellation = cancellation;
                 FullPath = dir;
             }
 
@@ -226,11 +267,13 @@ namespace MissionPlanner.Controls
                     {
                         lock (_mavftp)
                         {
-                            cache = _mavftp.kCmdListDirectory(FullPath, new CancellationTokenSource());
+                            if (cancellation?.IsCancellationRequested == true) return;
+                            cache = _mavftp.kCmdListDirectory(FullPath, cancellation ?? new CancellationTokenSource());
                         }
                     }).ConfigureAwait(true);
+                    if (cancellation?.IsCancellationRequested == true) return new DirectoryInfo[0];
                     return cache.Where(a => a.isDirectory && a.Name != "." && a.Name != "..")
-                        .Select(a => new DirectoryInfo(a.FullName, _mavftp)).ToArray();
+                        .Select(a => new DirectoryInfo(a.FullName, _mavftp, cancellation)).ToArray();
 
                 }
                 catch (Exception e)

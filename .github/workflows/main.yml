@@ -69,9 +69,30 @@ jobs:
           name: FMTPlanner-Windows-Portable-ZIP
           path: ${{ env.FMT_PACKAGE }}
 
+      - name: Check whether release already exists
+        id: release_status
+        if: startsWith(github.ref, 'refs/tags/FMTPlanner-v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Keep an existing release (including a staged draft) and its verified assets intact.
+          # Authentication/network failures must fail the job, never imply a missing release.
+          $headers = @{ Authorization = "Bearer $env:GH_TOKEN"; Accept = 'application/vnd.github+json' }
+          $tag = [Uri]::EscapeDataString($env:GITHUB_REF_NAME)
+          try {
+            $null = Invoke-RestMethod -Uri "$env:GITHUB_API_URL/repos/$env:GITHUB_REPOSITORY/releases/tags/$tag" -Headers $headers
+            'publish=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host 'Existing release retained; CI build remains available as an artifact.'
+          } catch {
+            if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) {
+              'publish=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            } else { throw }
+          }
+
       - name: Publish tagged GitHub release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/FMTPlanner-v')
+        if: startsWith(github.ref, 'refs/tags/FMTPlanner-v') && steps.release_status.outputs.publish == 'true'
         with:
           name: ${{ github.ref_name }}
           body_path: FMT/RELEASE-NOTES.md

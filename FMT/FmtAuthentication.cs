@@ -28,21 +28,38 @@ namespace MissionPlanner.FMT
 
         internal static void EnsureDefaults()
         {
+            bool changed = false;
             if (string.IsNullOrWhiteSpace(Settings.Instance[LoginUserKey]))
+            {
                 Settings.Instance[LoginUserKey] = DefaultUserName;
+                changed = true;
+            }
 
             if (string.IsNullOrWhiteSpace(Settings.Instance[LoginPasswordKey]))
+            {
                 Settings.Instance[LoginPasswordKey] = HashPassword("1234");
+                changed = true;
+            }
 
             if (string.IsNullOrWhiteSpace(Settings.Instance[ParameterPasswordKey]))
+            {
                 Settings.Instance[ParameterPasswordKey] = HashPassword("1234");
+                changed = true;
+            }
 
             if (string.IsNullOrWhiteSpace(Settings.Instance["language"]))
+            {
                 Settings.Instance["language"] = "en-US";
+                changed = true;
+            }
 
-            Settings.Instance["theme"] = ThemeName;
+            if (Settings.Instance["theme"] != ThemeName)
+            {
+                Settings.Instance["theme"] = ThemeName;
+                changed = true;
+            }
 
-            Settings.Instance.Save();
+            if (changed) Settings.Instance.Save();
         }
 
         internal static bool ValidateLogin(string userName, string password)

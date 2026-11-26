@@ -1,0 +1,107 @@
+﻿歷史開發驗證紀錄；修正已整合於 V1.2.6。正式建置與最終測試結果請見 RELEASE-AUDIT-V1.2.6.md。
+
+FMTPlanner V1.2.5 穩定性檢查 — 2026-11-27
+
+狀態：修正後 91 組功能回歸、三輪重複生命週期檢查及 20 分鐘正常 GC 連續測試通過。
+測試版：bin/Stability125/net472/FMTPlanner.exe
+版本維持 V1.2.5，本次尚未發布 GitHub。
+
+本機錯誤紀錄與修正
+
+1. 設定檔占用造成啟動失敗。
+   crash.log 在 11/12、11/23、11/25 記錄 Settings.Save → EnsureDefaults 的 IOException。
+   設定改為先序列化完整 XML，再以同目錄暫存檔原子替換；讀寫使用依路徑區分的
+   跨程序鎖，短暫分享衝突會有限次重試。沒有變更的啟動預設值不再重複存檔。
+   持續占用仍明確回報失敗，保留原設定並清理此次暫存檔，不假報儲存成功。
+   同時開啟多份程式仍採最後一次成功存檔的內容，不合併各程序的個別設定變更。
+
+2. 切換 3D 地圖時 OpenGL context 失效。
+   11/24 的堆疊為 OpenGLtest2.test_Resize → OnLoad → 面板顯示切換，錯誤代碼 6。
+   載入／縮放／繪圖加入有效狀態檢查與失效通知；失效後停止重複繪圖並回到 2D。
+   再次開啟 3D 時建立新控制項，避免重用失效狀態；重複 Load 不再啟動多個載圖執行緒。
+   關閉時停止計時器及背景載圖、釋放圖形資源與地圖快取；背景 GL 視窗由所屬執行緒釋放。
+   不再從 finalizer 執行 OpenGL 清理，重新建立 context 時重新核對 shader program。
+
+3. FTP 目錄讀取完成後存取已關閉的控制項。
+   10/29 日誌記錄 MavFTPUI.PopulateTreeView → 已釋放 TreeView 的例外；目前原碼仍有該路徑。
+   視窗關閉會取消目錄讀取，await 返回及排入佇列的進度更新均檢查視窗狀態。
+   重複刷新合併，過期的資料夾導覽結果不再覆寫後來選擇。
+   此修正涵蓋目錄讀取／刷新／導覽；未宣稱所有 FTP 上傳下載操作均已重寫。
+
+驗證方式
+
+- 建置 Release 成功：0 errors、1270 warnings，保留建置紀錄。
+- 新增 Test-StabilityLifecycle.ps1：四個程序各存檔 80 次，同時以正式 Load 讀取，
+  檢查完整 XML、分享鎖重試、持續占用保留舊檔及啟動不做多餘存檔。
+- 10 個真實 GL 控制項、100 次顯示／縮放／重新 Load，包含無 handle、零尺寸、
+  注入 GraphicsContextException、通知去重及關閉後背景執行緒停止。
+  這是實際 GL context 生命週期加受控例外注入，不是重現特定顯示驅動故障。
+- 實際 FlightData 控制項另做 5 次失效通知／退回 2D／重新開啟 3D，核對選項狀態、
+  面板收合及失效控制項被釋放並替換。測試不啟動 FlightData 遙測工作。
+- 10 個 FTP 視窗，以記憶體 MAVLink 回覆空目錄，測試正常讀取、重複刷新，
+  以及根目錄／子資料夾讀取中關閉。啟用跨執行緒控制項存取檢查；沒有檔案變更命令。
+- 正常 GC 的連續測試反覆 GDI／OpenGL HUD 繪圖、縮放、擷取、模式列縮放與 ICE 頁面開關。
+  不在採樣前強制 GC，因此記憶體包含尚未回收的配置，不能當成全數留存量。
+
+功能回歸結果
+
+- 91 組回歸通過：50 個基礎腳本、38 組擴充檢查，以及 MQTT、SiK、飛行操作 3 組。
+  38 組擴充內含新增的 StabilityLifecycle，不重複累加其細項或重跑次數。
+  MQTT 編譯目前原始碼；SiK、飛行操作與其他執行檔檢查均指定本次 Stability125 輸出。
+  受控注入的 GL 例外及模擬空目錄的 FTP EOF 會出現在測試日誌中，屬預期輸出。
+- 新增主頁 3D 復原檢查後，StabilityLifecycle 最後一次完整執行有 348 個判定通過。
+  判定數會隨同時存檔期間的讀取次數略有變動；固定情境與次數列於上方。
+- 原始完整回歸結果保留第一次預覽存圖撞檔的失敗；分開重跑 50 個基礎腳本後全數通過。
+  repaired-regression-final-results.json 對該項同時記錄首次退出碼與重測證據。
+
+本次測試執行檔 SHA-256
+FMTPlanner.exe：FDE5A1F82CE9922ADAAAA661878281520BAC1B5E91DA29B475BC04889FDFF600
+MissionPlanner.Utilities.dll：4308E0CE30DEDA4C0BEA4F5D08E53B63E16D2FC12E1103945B12D71A76525FE0
+MissionPlanner.ArduPilot.dll：524DA6CCA8D44FF06FEDE6AF8150E14515005276CC5E7D83278BDB66C02F0363
+
+重複生命週期驗證：同一份測試執行檔連續三輪通過（348／343／348 個判定）。
+修正後 20 分鐘連續測試：通過（1200 秒，正常 GC）。
+- GDI 與實際 OpenGL HUD 各 16932 次繪圖／擷取、170 次 ICE 頁面生命週期。
+- 暖機後私用記憶體 338 → 247.18 MiB（變化 -90.82 MiB）。
+  暖機後各採樣點介於 201.01～349.18 MiB，未超過既有門檻。
+- Handles 840 → 831、GDI 物件 45 → 45、
+  USER 物件 74 → 73、執行緒 16 → 14。
+- 測試完成時 OpenGL 保持啟用，無未處理例外或檢查失敗。
+
+保留的待查線索
+
+Windows Application 記錄在 2026-11-27 00:07（台灣時間）有 FMTPlanner 1.2.5.0 的
+Windows Error Reporting 1001／RADAR_PRE_LEAK_64 事件。事件未提供堆疊或傾印，
+所列暫存附件已不存在；不能單憑事件名稱確認記憶體洩漏位置，也不宣稱上述修正已解決它。
+既有程式的 20 分鐘正常 GC 基準測試亦通過，但不能代替修正後版本的驗證。
+
+測試環境曾遇到的問題
+
+- 首次完整回歸的 ReleaseVersion 共用預覽存圖與同時啟動的連續測試撞檔，
+  Test-RoverChinese.ps1 的 Bitmap.Save 回報 GDI+ 錯誤；已分開重跑通過並保留首次結果。
+- FTP 測試使用手動 Application.DoEvents，初版測試未安裝 WinForms SynchronizationContext，
+  導致 await 返回非 UI 執行緒；補上正式 UI 的同步環境後，開啟跨執行緒檢查再驗證。
+  此項是測試環境修正，不當作產品缺陷或產品修復成果。
+- GL 故障注入需等待非忙碌的縮放嘗試，因產品在繪圖資源忙碌時會跳過當次縮放；
+  未顯示的主頁測試也需明確建立通知 handle。初版測試的時序／handle 假設已調整，
+  診斷紀錄保留在 lifecycle-with-fallback*.log、lifecycle-diagnostic.log。
+
+證據位置
+
+- tmp/stability125-build.log。
+- tmp/stability-20261127/repaired-regression/：原始結果及各套件輸出。
+- tmp/stability-20261127/repaired-Local124-retry.log、repaired-retry-result.json、
+  repaired-regression-final-results.json：分開重測與整合結果。
+- tmp/stability-20261127/repaired-ci-results.json、repaired-Mqtt.log、repaired-SiK.log、
+  repaired-FlightActions.log：三組補充檢查。
+- tmp/stability-20261127/lifecycle-final.log、lifecycle-repeat-*.log：針對性檢查與重複測試。
+- tmp/stability-20261127/repaired-soak.log、repaired-soak-normal-gc.json：修正後連續測試。
+- tmp/stability-20261127/soak-normal-gc.json：修正前 20 分鐘基準，不與修正後數據混用。
+- tmp/stability-20261127/recent-app-events.json：本次讀取的 Windows 事件。
+
+範圍與限制
+
+未連接實體飛控、馬達、舵機或數傳，未寫入真實飛控參數或任務。
+設定檔壓測使用測試輸出目錄內的獨立檔案，沒有改動使用者實際 config.xml。
+20 分鐘與本次操作組合不能保證任意長時間、所有顯示驅動、網路服務及實機鏈路不出錯。
+仍需在原出問題的電腦與實際連線情境確認。

@@ -24,6 +24,10 @@ namespace MissionPlanner.Utilities
 
         public static bool ContainsVersion(string key) => Resources.Contains(Prefix + ResourceKey(key) + ".apm.pdef.xml.gz");
 
+        public static IEnumerable<string> AvailableVersions => Resources
+            .Where(name => name.StartsWith(Prefix, StringComparison.Ordinal) && name.EndsWith(".apm.pdef.xml.gz", StringComparison.Ordinal))
+            .Select(name => name.Substring(Prefix.Length, name.Length - Prefix.Length - ".apm.pdef.xml.gz".Length));
+
         public static bool TryGet(string key, string name, string field, out string value)
         {
             value = string.Empty;
@@ -42,9 +46,15 @@ namespace MissionPlanner.Utilities
             using (var resource = typeof(VersionedParameterMetadata).Assembly.GetManifestResourceStream(Prefix + ResourceKey(key) + ".apm.pdef.xml.gz"))
             using (var gzip = new GZipStream(resource, CompressionMode.Decompress))
             {
+                return BuildIndex(key, XDocument.Load(gzip));
+            }
+        }
+
+        internal static Dictionary<string, Dictionary<string, string>> BuildIndex(string key, XDocument document)
+        {
                 var index = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
                 var helicopter = key.StartsWith("Heli", StringComparison.Ordinal);
-                var nodes = XDocument.Load(gzip).Descendants("param");
+                var nodes = document.Descendants("param");
                 // Copter's documentation includes both controllers. Prefer the
                 // matching frame's definitions without dropping unique parameters.
                 nodes = nodes.OrderByDescending(node =>
@@ -76,7 +86,6 @@ namespace MissionPlanner.Utilities
                     index.Add(name, fields);
                 }
                 return index;
-            }
         }
     }
 }

@@ -45,6 +45,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private NaturalStringComparer naturalsorter = new NaturalStringComparer();
         private bool fmtEditingEnabled;
         private string fmtMetadataVehicle;
+        private readonly System.Windows.Forms.Timer fmtMetadataRefresh = new System.Windows.Forms.Timer { Interval = 1000 };
+        private int fmtMetadataRevision;
+        private List<DataGridViewRow> fmtMetadataRows = new List<DataGridViewRow>();
 
         internal static string GetFmtMetadataVehicle(string firmware, string versionText)
         {
@@ -62,6 +65,19 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             }
             Params.CellClick += Params_FmtCellClick;
             Params.CellFormatting += Params_FormatDecimalValue;
+            fmtMetadataRefresh.Tick += (sender, args) => RefreshFmtMetadata();
+            Disposed += (sender, args) => fmtMetadataRefresh.Dispose();
+        }
+
+        private void RefreshFmtMetadata()
+        {
+            var revision = ParameterMetaDataRepositoryAPMpdef.Revision;
+            if (IsDisposed || Disposing || Params.IsCurrentCellInEditMode || fmtMetadataRevision == revision ||
+                fmtMetadataVehicle != MainV2.GetCurrentFirmwareMetadataKey()) return;
+            // Refresh metadata cells only: preserve values, staged writes, selection and filters.
+            foreach (var row in fmtMetadataRows)
+                ApplyFmtMetadata(row, Convert.ToString(row.Cells[Command.Index].Value));
+            fmtMetadataRevision = revision;
         }
 
         private void Params_FormatDecimalValue(object sender, DataGridViewCellFormattingEventArgs e)
@@ -179,9 +195,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         public void Activate()
         {
+            fmtMetadataRevision = ParameterMetaDataRepositoryAPMpdef.Revision;
             var metadataVehicle = MainV2.GetCurrentFirmwareMetadataKey();
             if (fmtMetadataVehicle != metadataVehicle) startup = true;
             fmtMetadataVehicle = metadataVehicle;
+            _ = ParameterMetaDataRepositoryAPMpdef.GetMetaDataVersioned(metadataVehicle);
             if ((rowlist.Count == 0) || (!Settings.Instance.GetBoolean("SlowMachine", false))) startup = true;
             //If we connected to another vehicle the do a full refresh
             if (rowlist.Count != MainV2.comPort.MAV.param.Count()) startup = true;
@@ -227,11 +245,14 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             startup = false;
 
+            fmtMetadataRefresh.Start();
+
             txt_search.Focus();
         }
 
         public void Deactivate()
         {
+            fmtMetadataRefresh.Stop();
             fmtEditingEnabled = false;
             Params.EndEdit();
             Params.Enabled = false;
@@ -697,6 +718,92 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             return sb.ToString();
         }
 
+        private void ApplyFmtMetadata(DataGridViewRow row, string value)
+        {
+            row.Cells[Desc.Index].Value = "";
+            row.Cells[Units.Index].Value = "";
+            row.Cells[Options.Index] = new DataGridViewTextBoxCell();
+            try
+            {
+                var metaDataDescription = ParameterMetaDataRepository.GetParameterMetaData(value,
+                    ParameterMetaDataConstants.Description, (fmtMetadataVehicle ?? MainV2.comPort.MAV.cs.firmware.ToString()));
+                if (!string.IsNullOrEmpty(metaDataDescription))
+                {
+                    var notice = ParameterMetaDataRepository.GetCompatibilityNotice(value, fmtMetadataVehicle);
+                    var tooltipDescription = AddNewLinesForTooltip(
+                        GetFmtTooltipDescription(value, metaDataDescription) + (notice.Length > 0 ? "\r\n" + notice : ""));
+
+                    // Localize display only; parameter identifiers and wire values stay unchanged.
+                    foreach (DataGridViewCell cell in row.Cells)
+                        cell.ToolTipText = tooltipDescription;
+
+                    var range = ParameterMetaDataRepository.GetParameterMetaData(value,
+                        ParameterMetaDataConstants.Range, (fmtMetadataVehicle ?? MainV2.comPort.MAV.cs.firmware.ToString()));
+                    var options = ParameterMetaDataRepository.GetParameterMetaData(value,
+                        ParameterMetaDataConstants.Values, (fmtMetadataVehicle ?? MainV2.comPort.MAV.cs.firmware.ToString()));
+                    var units = ParameterMetaDataRepository.GetParameterMetaData(value,
+                        ParameterMetaDataConstants.Units, (fmtMetadataVehicle ?? MainV2.comPort.MAV.cs.firmware.ToString()));
+
+                    row.Cells[Units.Index].Value = units;
+                    row.Cells[Options.Index].Value = (range + "\n" + LocalizeFmtOptions(options).Replace(",", "\n")).Trim();
+                    if (options.Length > 0)
+                        row.Cells[Options.Index].ToolTipText = tooltipDescription + "\r\n原始選項：\r\n" + options;
+                    int N = options.Count(c => c.Equals(','));
+                    if (N > 50)
+                    {
+                        int columns = (N - 1) / 50 + 1;
+                        StringBuilder ans = new StringBuilder();
+                        var opts = options.Split(',');
+                        int i = 0;
+                        while(true)
+                        {
+                            for(int j=0; j<columns; j++)
+                            {
+                                ans.Append(opts[i] + ", ");
+                                i++;
+                                if (i >= N) break;
+                            }
+                            if (i >= N) break;
+                            ans.Append("\n");
+                        }
+                        row.Cells[Options.Index].ToolTipText = tooltipDescription + "\r\n原始選項：\r\n" + options;
+                    }
+                    row.Cells[Desc.Index].Value = GetFmtDisplayDescription(value, metaDataDescription) +
+                        (notice.Length > 0 ? "\r\n" + notice : "");
+                    row.Cells[Desc.Index].ToolTipText = tooltipDescription;
+                }
+                else if (fmtMetadataVehicle != MainV2.comPort.MAV.cs.firmware.ToString())
+                {
+                    row.Cells[Desc.Index].Value = "缺少對應版本參數說明：" + fmtMetadataVehicle;
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+            }
+
+            try
+            {
+                var bitmask = ParameterMetaDataRepository.GetParameterBitMaskInt(value,
+                    (fmtMetadataVehicle ?? MainV2.comPort.MAV.cs.firmware.ToString()));
+                if (bitmask.Count > 0)
+                {
+                    var tooltip = row.Cells[Options.Index].ToolTipText + "\r\n原始位元選項：\r\n" +
+                        string.Join("\r\n", bitmask.Select(item => item.Key + ":" + item.Value));
+                    row.Cells[Options.Index] = new DataGridViewButtonCell
+                    {
+                        Value = BitmaskButtonText,
+                        FlatStyle = FlatStyle.Flat,
+                        ToolTipText = tooltip
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+            }
+        }
+
         internal void processToScreen()
         {
             toolTip1.RemoveAll();
@@ -738,83 +845,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     } else {
                         row.Cells[Default_value.Index].Value = "NaN";
                     }
-                    try
-                    {
-                        var metaDataDescription = ParameterMetaDataRepository.GetParameterMetaData(value,
-                            ParameterMetaDataConstants.Description, (fmtMetadataVehicle ?? MainV2.comPort.MAV.cs.firmware.ToString()));
-                        if (!string.IsNullOrEmpty(metaDataDescription))
-                        {
-                            var tooltipDescription = AddNewLinesForTooltip(
-                                GetFmtTooltipDescription(value, metaDataDescription));
-
-                            // Localize display only; parameter identifiers and wire values stay unchanged.
-                            foreach (DataGridViewCell cell in row.Cells)
-                                cell.ToolTipText = tooltipDescription;
-
-                            var range = ParameterMetaDataRepository.GetParameterMetaData(value,
-                                ParameterMetaDataConstants.Range, (fmtMetadataVehicle ?? MainV2.comPort.MAV.cs.firmware.ToString()));
-                            var options = ParameterMetaDataRepository.GetParameterMetaData(value,
-                                ParameterMetaDataConstants.Values, (fmtMetadataVehicle ?? MainV2.comPort.MAV.cs.firmware.ToString()));
-                            var units = ParameterMetaDataRepository.GetParameterMetaData(value,
-                                ParameterMetaDataConstants.Units, (fmtMetadataVehicle ?? MainV2.comPort.MAV.cs.firmware.ToString()));
-
-                            row.Cells[Units.Index].Value = units;
-                            row.Cells[Options.Index].Value = (range + "\n" + LocalizeFmtOptions(options).Replace(",", "\n")).Trim();
-                            if (options.Length > 0)
-                                row.Cells[Options.Index].ToolTipText = tooltipDescription + "\r\n原始選項：\r\n" + options;
-                            int N = options.Count(c => c.Equals(','));
-                            if (N > 50)
-                            {
-                                int columns = (N - 1) / 50 + 1;
-                                StringBuilder ans = new StringBuilder();
-                                var opts = options.Split(',');
-                                int i = 0;
-                                while(true)
-                                {
-                                    for(int j=0; j<columns; j++)
-                                    {
-                                        ans.Append(opts[i] + ", ");
-                                        i++;
-                                        if (i >= N) break;
-                                    }
-                                    if (i >= N) break;
-                                    ans.Append("\n");
-                                }
-                                row.Cells[Options.Index].ToolTipText = tooltipDescription + "\r\n原始選項：\r\n" + options;
-                            }
-                            row.Cells[Desc.Index].Value = GetFmtDisplayDescription(value, metaDataDescription);
-                            row.Cells[Desc.Index].ToolTipText = tooltipDescription;
-                        }
-                        else if (fmtMetadataVehicle != MainV2.comPort.MAV.cs.firmware.ToString())
-                        {
-                            row.Cells[Desc.Index].Value = "缺少對應版本參數說明：" + fmtMetadataVehicle;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        log.Error(ex);
-                    }
-
-                    try
-                    {
-                        var bitmask = ParameterMetaDataRepository.GetParameterBitMaskInt(value,
-                            (fmtMetadataVehicle ?? MainV2.comPort.MAV.cs.firmware.ToString()));
-                        if (bitmask.Count > 0)
-                        {
-                            var tooltip = row.Cells[Options.Index].ToolTipText + "\r\n原始位元選項：\r\n" +
-                                string.Join("\r\n", bitmask.Select(item => item.Key + ":" + item.Value));
-                            row.Cells[Options.Index] = new DataGridViewButtonCell
-                            {
-                                Value = BitmaskButtonText,
-                                FlatStyle = FlatStyle.Flat,
-                                ToolTipText = tooltip
-                            };
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        log.Error(ex);
-                    }
+                    ApplyFmtMetadata(row, value);
                 });
 
                 Default_value.Visible = has_defaults;
@@ -835,6 +866,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             Params.Visible = false;
 
             Params.Rows.AddRange(rowlist.ToArray());
+            fmtMetadataRows = rowlist.ToList();
 
             log.Info("about to sort");
 

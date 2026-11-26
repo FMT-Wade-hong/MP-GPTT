@@ -14,7 +14,7 @@ using System.Windows.Forms;
 
 namespace MissionPlanner.GCSViews.ConfigurationView
 {
-    public partial class ConfigFriendlyParams : MyUserControl, IActivate
+    public partial class ConfigFriendlyParams : MyUserControl, IActivate, IDeactivate
     {
         string searchfor = "";
 
@@ -65,7 +65,12 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
                 foreach (Control ctl in flowLayoutPanel1.Controls)
                 {
-                    if (ctl.GetType() == typeof(RangeControl))
+                    if (ctl is MissionPlanner.FMT.FmtReferenceParameterControl reference)
+                    {
+                        ctl.Visible = reference.LabelText.IndexOf(searchfor, StringComparison.CurrentCultureIgnoreCase) >= 0 ||
+                            reference.DescriptionText.IndexOf(searchfor, StringComparison.CurrentCultureIgnoreCase) >= 0;
+                    }
+                    else if (ctl.GetType() == typeof(RangeControl))
                     {
                         var rng = (RangeControl)ctl;
                         if (rng.LabelText.ToLower().Contains(searchfor.ToLower()) ||
@@ -126,6 +131,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private readonly Dictionary<string, string> _params_changed = new Dictionary<string, string>();
         private MAVState boundParameterVehicle;
         private string boundMetadataKey;
+        private int boundMetadataRevision = -1;
+        private readonly System.Windows.Forms.Timer metadataRefresh = new System.Windows.Forms.Timer { Interval = 1000 };
 
         #endregion
 
@@ -157,6 +164,14 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             BUT_writePIDS.Click += BUT_writePIDS_Click;
 
             ParameterMode = ParameterMode = ParameterMetaDataConstants.Standard;
+            metadataRefresh.Tick += (sender, args) =>
+            {
+                if (!IsDisposed && !Disposing && !ContainsFocus && _params_changed.Count == 0 &&
+                    ReferenceEquals(boundParameterVehicle, MainV2.comPort.MAV) &&
+                    boundMetadataKey == MainV2.GetCurrentFirmwareMetadataKey() &&
+                    boundMetadataRevision != ParameterMetaDataRepositoryAPMpdef.Revision) BindParamList();
+            };
+            Disposed += (sender, args) => metadataRefresh.Dispose();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -236,11 +251,15 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         public void Activate()
         {
             y = 10;
+            _ = ParameterMetaDataRepositoryAPMpdef.GetMetaDataVersioned(MainV2.GetCurrentFirmwareMetadataKey());
 
             Console.WriteLine("Activate " + DateTime.Now.ToString("ss.fff"));
             BindParamList();
+            metadataRefresh.Start();
             Console.WriteLine("Activate Done " + DateTime.Now.ToString("ss.fff"));
         }
+
+        public void Deactivate() => metadataRefresh.Stop();
 
         #endregion
 
@@ -283,13 +302,16 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         {
             var vehicle = MainV2.comPort.MAV;
             var metadataKey = MainV2.GetCurrentFirmwareMetadataKey();
-            if (!ReferenceEquals(boundParameterVehicle, vehicle) || boundMetadataKey != metadataKey)
+            var changedVehicle = !ReferenceEquals(boundParameterVehicle, vehicle) || boundMetadataKey != metadataKey;
+            var revision = ParameterMetaDataRepositoryAPMpdef.Revision;
+            if (changedVehicle || (boundMetadataRevision != revision && _params_changed.Count == 0))
             {
                 foreach (Control control in flowLayoutPanel1.Controls.Cast<Control>().ToArray()) control.Dispose();
                 flowLayoutPanel1.Controls.Clear();
                 _params_changed.Clear();
                 boundParameterVehicle = vehicle;
                 boundMetadataKey = metadataKey;
+                boundMetadataRevision = revision;
             }
             Console.WriteLine("BindParamList " + DateTime.Now.ToString("ss.fff"));
 
@@ -346,6 +368,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     var items = flowLayoutPanel1.Controls.Find(x.Key, false);
                     if (items.Length > 0)
                     {
+                        if (items[0] is MissionPlanner.FMT.FmtReferenceParameterControl reference)
+                        {
+                            if (!_params_changed.ContainsKey(x.Key)) reference.Value = value;
+                            return;
+                        }
                         if (items[0].GetType() == typeof(RangeControl))
                         {
                             ((RangeControl)items[0]).ValueChanged -= Control_ValueChanged;
@@ -377,6 +404,17 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     var displayName = x.Value + " (" + x.Key + ")";
                     var units = ParameterMetaDataRepository.GetParameterMetaData(x.Key, ParameterMetaDataConstants.Units,
                         MainV2.comPort.MAV.cs.firmware.ToString());
+
+                    var notice = ParameterMetaDataRepository.GetCompatibilityNotice(x.Key, MainV2.GetCurrentFirmwareMetadataKey());
+                    if (notice.Length > 0)
+                    {
+                        var reference = new MissionPlanner.FMT.FmtReferenceParameterControl(x.Key, displayName,
+                            notice + "\r\n" + description, value, integerOnly) { Width = Math.Max(250, flowLayoutPanel1.Width - 50) };
+                        ThemeManager.ApplyThemeTo(reference);
+                        reference.ValueChanged += Control_ValueChanged;
+                        lock (locker) toadd.Add(reference);
+                        return;
+                    }
 
                     // If this is a range
                     var rangeRaw = ParameterMetaDataRepository.GetParameterMetaData(x.Key,

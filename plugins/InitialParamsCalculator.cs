@@ -211,7 +211,14 @@ namespace MissionPlanner.InitialParamCalc
             button.Text = "Write to FC";
 
             paramCompareForm.ShowDialog();
-            CustomMessageBox.Show("Initial Parameters succesfully updated.\r\nCheck parameters before flight!\r\n\r\nAfter test flight :\r\n\tSet ATC_THR_MIX_MAN to 0.5\r\n\tSet PSC_ACCZ_P to MOT_THST_HOVER\r\n\tSet PSC_ACCZ_I to 2*MOT_THST_HOVER\r\n\r\nHappy flying!", "Initial parameter calculator");
+            if (paramCompareForm.DialogResult == DialogResult.OK)
+            {
+                var guidance = MainV2.comPort.MAV.param.ContainsKey("PSC_D_ACC_P")
+                    ? "PSC_D_ACC_P = 0.1 * MOT_THST_HOVER; PSC_D_ACC_I = 0.2 * MOT_THST_HOVER"
+                    : "PSC_ACCZ_P = MOT_THST_HOVER; PSC_ACCZ_I = 2 * MOT_THST_HOVER";
+                CustomMessageBox.Show("Initial parameters updated. Check before flight.\r\nAfter hover learning, land and disarm before evaluating: "+guidance+
+                    "\r\nDo not overwrite already tuned values solely from this guidance.", "Initial parameter calculator");
+            }
 
         }
 

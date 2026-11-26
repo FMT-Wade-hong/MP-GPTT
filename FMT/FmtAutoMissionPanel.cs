@@ -29,12 +29,15 @@ namespace MissionPlanner.FMT
 
         private readonly Panel layout;
         private readonly Control[] missionRowControls;
-        private readonly int[] missionColumnWidths = new int[9];
+        private readonly int[] missionColumnWidths = new int[10];
         private readonly Label currentActionLabel;
         private readonly Panel missionComboHost;
         private readonly Label missionComboCaption;
         private readonly ComboBox missionCombo;
         private readonly Button executeButton;
+        private readonly Button resetButton;
+        private readonly Image jumpWaypointIcon;
+        private readonly CancellationTokenSource lifetime = new CancellationTokenSource();
         private readonly Label progressTextLabel;
         private readonly Label progressPercentLabel;
         private readonly Label nextActionLabel;
@@ -52,6 +55,7 @@ namespace MissionPlanner.FMT
         private int missionRefreshQueued;
         private int reportedMissionItemCount = -1;
         private bool busy;
+        private bool resetting;
         private int responsiveLayoutMode = -1;
         private int lastComboHighlightSequence = int.MinValue;
         private bool missionSelectionActive;
@@ -81,7 +85,7 @@ namespace MissionPlanner.FMT
 
             toolTip = new ToolTip();
 
-            currentActionLabel = CreateLabel("fmtMissionCurrent", "目前執行\r\n○ 未啟用", FontStyle.Bold);
+            currentActionLabel = CreateLabel("fmtMissionCurrent", "目前執行\r\n○ 尚未讀取任務", FontStyle.Bold);
             currentActionLabel.ForeColor = InactiveText;
             currentActionLabel.Font = new Font(SystemFonts.MessageBoxFont.FontFamily,
                 MissionValueFontSize, FontStyle.Bold);
@@ -135,6 +139,7 @@ namespace MissionPlanner.FMT
             missionComboHost.Controls.Add(missionCombo);
             missionComboHost.SizeChanged += (sender, args) => LayoutMissionComboHost();
 
+            jumpWaypointIcon = CreateJumpWaypointIcon();
             executeButton = new RoundedActionButton
             {
                 Name = "fmtMissionExecute",
@@ -145,7 +150,7 @@ namespace MissionPlanner.FMT
                 BackColor = Color.FromArgb(10, 39, 52),
                 ForeColor = Color.White,
                 Font = new Font(SystemFonts.MessageBoxFont.FontFamily, MissionValueFontSize, FontStyle.Bold),
-                Image = CreateJumpWaypointIcon(),
+                Image = jumpWaypointIcon,
                 ImageAlign = ContentAlignment.MiddleLeft,
                 TextAlign = ContentAlignment.MiddleCenter,
                 TextImageRelation = TextImageRelation.ImageBeforeText,
@@ -155,6 +160,18 @@ namespace MissionPlanner.FMT
             };
             executeButton.FlatAppearance.BorderColor = Color.FromArgb(95, 205, 240);
             executeButton.Click += ExecuteButtonClick;
+
+            resetButton = new RoundedActionButton
+            {
+                Name = "fmtMissionReset", Text = "重置任務", Dock = DockStyle.None,
+                Margin = executeButton.Margin, FlatStyle = FlatStyle.Flat,
+                BackColor = executeButton.BackColor, ForeColor = Color.White,
+                Font = new Font(executeButton.Font, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleCenter, Cursor = Cursors.Hand,
+                UseVisualStyleBackColor = false, Enabled = false
+            };
+            resetButton.FlatAppearance.BorderColor = executeButton.FlatAppearance.BorderColor;
+            resetButton.Click += ResetButtonClick;
 
             progressTextLabel = CreateLabel("fmtMissionProgressText", "Mission Item\r\n-- / --", FontStyle.Bold);
             progressTextLabel.TextAlign = ContentAlignment.MiddleCenter;
@@ -205,6 +222,7 @@ namespace MissionPlanner.FMT
                 currentActionLabel,
                 missionComboHost,
                 executeButton,
+                resetButton,
                 progressTextLabel,
                 progressPercentLabel,
                 nextActionLabel,
@@ -277,6 +295,7 @@ namespace MissionPlanner.FMT
             // refresh until the operator has finished selecting an item.
             if (missionSelectionActive || missionCombo.DroppedDown || missionCombo.Focused)
             {
+                UpdateExecuteState();
                 pendingVehicleRefresh = true;
                 return;
             }
@@ -332,8 +351,10 @@ namespace MissionPlanner.FMT
             }
             else
             {
-                currentValue = "○ 未啟用";
-                currentToolTip = "目前執行僅在 AUTO 或 RTL 模式啟用。";
+                currentValue = missionItems.Count == 0 ? "○ 尚未讀取任務" : "○ 未啟用";
+                currentToolTip = missionItems.Count == 0
+                    ? "尚未讀取飛控任務，請先讀取任務。"
+                    : "目前執行僅在 AUTO 或 RTL 模式啟用。";
             }
             var currentText = "目前執行\r\n" + currentValue;
             var nextText = nextItem == null
@@ -557,6 +578,7 @@ namespace MissionPlanner.FMT
 
         private async void ExecuteButtonClick(object sender, EventArgs e)
         {
+            if (busy) return;
             var target = missionCombo.SelectedItem as FmtMissionItem;
             string error;
             if (!ValidateTarget(target, out error))
@@ -605,6 +627,50 @@ namespace MissionPlanner.FMT
                 catch (Exception ex)
                 {
                     Log.Warn("FMT AUTO mission panel refresh failed after Mission Item change", ex);
+                }
+            }
+        }
+
+        private async void ResetButtonClick(object sender, EventArgs e)
+        {
+            if (busy || IsDisposed || Disposing) return;
+            var request = new FmtMissionReset(MainV2.comPort);
+            var reason = request.Validate();
+            if (reason != null) { ShowFailure(reason); return; }
+            resetting = true;
+            SetBusy(true);
+            try
+            {
+                if (CustomMessageBox.Show("將保留飛控內的航線，將任務進度回到起點，並清除重複跳轉計數。\r\n\r\n" +
+                    "若正在 AUTO 執行任務，可能立即重新執行開頭的起飛或航點指令，改變飛行方向與高度。\r\n\r\n" +
+                    "此操作不會自動解鎖或切換飛行模式。確定重置任務？", "FMT 重置任務",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != (int)DialogResult.Yes) return;
+                var result = await request.ExecuteAsync(lifetime.Token);
+                if (IsDisposed || Disposing) return;
+                if (result == MAVLink.MAV_RESULT.ACCEPTED)
+                {
+                    operatorSelectedMissionSequence = -1;
+                    missionSelectionActive = false;
+                    RebuildMissionCombo(1);
+                    CustomMessageBox.Show("飛控已確認任務重置。\r\n請確認目前航點及飛行狀態。",
+                        "FMT 重置任務", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                    ShowFailure("飛控未確認任務重置成功（" + result + "）。請查看飛控訊息與任務進度。");
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                Log.Error("FMT mission reset failed", ex);
+                if (!IsDisposed && !Disposing) ShowFailure(ex.Message);
+            }
+            finally
+            {
+                resetting = false;
+                if (!IsDisposed && !Disposing)
+                {
+                    SetBusy(false);
+                    UpdateFromVehicle(true);
                 }
             }
         }
@@ -696,6 +762,13 @@ namespace MissionPlanner.FMT
 
         private void UpdateExecuteState()
         {
+            if (resetButton != null)
+            {
+                var resetReason = busy ? "正在等待飛控確認任務操作。" : FmtMissionReset.UnavailableReason(MainV2.comPort);
+                resetButton.Enabled = resetReason == null;
+                resetButton.BackColor = resetButton.Enabled ? Color.FromArgb(10, 39, 52) : Color.FromArgb(42, 55, 62);
+                toolTip.SetToolTip(resetButton, resetReason ?? "保留航線並將任務進度回到起點；AUTO 執行中可能立即重新執行開頭任務。");
+            }
             var target = missionCombo.SelectedItem as FmtMissionItem;
             var connected = MainV2.comPort != null && MainV2.comPort.BaseStream != null &&
                             MainV2.comPort.BaseStream.IsOpen;
@@ -738,7 +811,8 @@ namespace MissionPlanner.FMT
             busy = value;
             executeStateSignature = string.Empty;
             missionCombo.Enabled = !value;
-            executeButton.Text = value ? "跳轉中…" : "跳轉航點";
+            executeButton.Text = value && !resetting ? "跳轉中…" : "跳轉航點";
+            resetButton.Text = value && resetting ? "重置中…" : "重置任務";
             UpdateExecuteState();
         }
 
@@ -859,21 +933,21 @@ namespace MissionPlanner.FMT
             responsiveLayoutMode = mode;
             if (ClientSize.Width >= 1500)
             {
-                ConfigureColumns(205, 220, 108, 105, 72, 185, 95, 110, 110);
+                ConfigureColumns(190, 210, 104, 104, 90, 62, 155, 85, 100, 100);
                 etaLabel.Visible = true;
                 distanceLabel.Visible = true;
                 homeDistanceLabel.Visible = true;
             }
             else if (ClientSize.Width >= 1050)
             {
-                ConfigureColumns(160, 175, 96, 92, 62, 150, 90, 95, 100);
+                ConfigureColumns(140, 155, 96, 96, 85, 56, 120, 75, 80, 85);
                 etaLabel.Visible = true;
                 distanceLabel.Visible = true;
                 homeDistanceLabel.Visible = true;
             }
             else
             {
-                ConfigureColumns(135, 155, 88, 82, 54, 130, 0, 0, 90);
+                ConfigureColumns(115, 145, 88, 88, 80, 52, 110, 0, 0, 80);
                 distanceLabel.Visible = false;
                 homeDistanceLabel.Visible = false;
                 etaLabel.Visible = true;
@@ -882,13 +956,13 @@ namespace MissionPlanner.FMT
             InvalidateMissionRow(false);
         }
 
-        private void ConfigureColumns(int current, int combo, int execute, int progressText,
+        private void ConfigureColumns(int current, int combo, int execute, int reset, int progressText,
             int percent, int nextWidth, int distance,
             int homeDistance, int eta)
         {
             var widths = new[]
             {
-                current, combo, execute, progressText, percent,
+                current, combo, execute, reset, progressText, percent,
                 nextWidth, distance, homeDistance, eta
             };
             Array.Copy(widths, missionColumnWidths, missionColumnWidths.Length);
@@ -903,7 +977,22 @@ namespace MissionPlanner.FMT
             try
             {
                 var widths = (int[]) missionColumnWidths.Clone();
-                // Keep every field at a fixed pixel position. Spare horizontal room stays
+                var available = Math.Max(0, layout.ClientSize.Width - layout.Padding.Horizontal);
+                var totalWidth = widths.Sum();
+                var scale = totalWidth > available && totalWidth > 0 ? available / (double)totalWidth : 1.0;
+                for (var i = 0; i < widths.Length; i++) widths[i] = (int)Math.Floor(widths[i] * scale);
+                var buttonFontSize = Math.Max(7F, MissionValueFontSize * (float)scale);
+                foreach (var button in new[] { executeButton, resetButton })
+                {
+                    if (Math.Abs(button.Font.Size - buttonFontSize) > 0.1F)
+                    {
+                        var previousFont = button.Font;
+                        button.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, buttonFontSize, FontStyle.Bold);
+                        previousFont.Dispose();
+                    }
+                }
+                executeButton.Image = widths[2] >= 100 ? jumpWaypointIcon : null;
+                // Keep every field at a fixed pixel position for the current window size. Spare horizontal room stays
                 // at the right edge instead of being redistributed across the mission row;
                 // therefore MISSION_CURRENT, progress, distance and ETA updates cannot
                 // move any neighbouring control.
@@ -927,8 +1016,7 @@ namespace MissionPlanner.FMT
                     x += cellWidth;
 
                     if (cellWidth > 0 && control.Visible &&
-                        (index == 0 || index == 2 || index == 3 || index == 4 ||
-                         index == 5 || index == 6 || index == 7))
+                        index != 1 && index != 2 && index != missionRowControls.Length - 1)
                         separators.Add(x);
                 }
                 ((MissionStripPanel) layout).SetSeparators(separators);
@@ -1108,8 +1196,10 @@ namespace MissionPlanner.FMT
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            if (disposing && !IsDisposed)
             {
+                lifetime.Cancel();
+                lifetime.Dispose();
                 var port = missionSubscriptionPort;
                 if (port != null)
                 {
@@ -1118,12 +1208,11 @@ namespace MissionPlanner.FMT
                 }
                 missionPacketSubscriptions.Clear();
                 missionSubscriptionPort = null;
-                if (executeButton != null && executeButton.Image != null)
+                if (executeButton != null)
                 {
-                    var image = executeButton.Image;
                     executeButton.Image = null;
-                    image.Dispose();
                 }
+                jumpWaypointIcon?.Dispose();
                 toolTip.Dispose();
             }
             base.Dispose(disposing);

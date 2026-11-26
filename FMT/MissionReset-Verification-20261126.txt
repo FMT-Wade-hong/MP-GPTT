@@ -1,0 +1,45 @@
+FMTPlanner mission reset — 2026-11-26
+
+Local test executable: bin/MissionReset125/net472/FMTPlanner.exe
+Version: V1.2.5; no GitHub publication performed.
+SHA-256: 355B23B4987F1EAF1B667FDD657F14F28DD250022F2B28B88A9E8CD614763653
+
+Behavior:
+- New 重置任務 button directly to the right of 跳轉航點, with matching width/height.
+- One confirmation explains that the stored route remains and the next execution starts over.
+- Uses ArduPilot MAV_CMD_DO_SET_MISSION_CURRENT, sequence 0, remaining parameters 0.
+  ArduPilot set_current_cmd(0) resets DO_JUMP counters/history and selects the first navigation item.
+  param2 remains 0 because param2=1 explicitly calls mission.resume() in the inspected releases.
+  No mode, arming, parameter-write, mission-clear, mission-upload or takeoff command is sent.
+- Requires current writable connection, ArduPilot, loaded mission, station control authority,
+  disarmed CurrentState and fresh disarmed HEARTBEAT. Fresh reported IN_AIR/TAKEOFF/LANDING blocks it.
+  If extended landed-state telemetry is unavailable, disarmed status and operator confirmation are required.
+- Pins connection, target, stream and mission snapshot across confirmation and ACK wait.
+- Uses normal telemetry reception; does not take giveComport/read-loop ownership.
+- Filters ACK by vehicle/component/command and GCS recipient; IN_PROGRESS is not success.
+- Duplicate operations are blocked. No automatic retry on timeout. Cancellation/disposal removes ACK subscription.
+- Success requires actual ACK; local wpno/progress is not fabricated. Selection returns to mission start;
+  flight-controller telemetry supplies the current navigation item and progress.
+
+Inspected official ArduPilot source (4.6.0 and 4.7.3):
+https://github.com/ArduPilot/ardupilot/blob/9cc2b9d59a54868be94e53bd45fc4279e33f6b9f/libraries/GCS_MAVLink/GCS_Common.cpp
+https://github.com/ArduPilot/ardupilot/blob/d9c5097c3d8333435712ffed86bca8ce00c4bb46/libraries/GCS_MAVLink/GCS_Common.cpp#L5012
+https://github.com/ArduPilot/ardupilot/blob/d9c5097c3d8333435712ffed86bca8ce00c4bb46/libraries/AP_Mission/AP_Mission.cpp#L597
+
+Validation:
+- Release/net472 build: 0 errors, 1,270 compiler/dependency warnings.
+- Test-MissionReset.ps1: 135 checks passed against compiled production code and actual MAVLink parser.
+  Success/rejection/progress/wrong-target/wrong-command/wrong-recipient ACKs, stale current-index cache,
+  duplicate command, state/connection/mission/control-authority guards, cancellation, target-change race,
+  actual five-second timeout without retry, ACK subscription cleanup.
+  Offline UI at 640/800/1024/1050/1366/1500/1920/2560 widths: adjacent equal-sized buttons,
+  row bounds, stable telemetry layout, current-first-item reset availability, armed/busy disabling,
+  repeated disposal and no command from rendering/refresh.
+- Test-MissionEstimate.ps1: passed.
+- Test-MissionReloadHome.ps1: passed (includes structural reload checks).
+- Test-PerformanceStability.ps1: passed (10,000 update-gate requests and existing source checks).
+- Rendered and visually inspected mission-reset-preview.png and mission-reset-640.png.
+- git diff --check with core.whitespace=cr-at-eol: passed.
+
+All command tests used memory streams and an isolated in-process station authority fixture.
+No real aircraft command, mission reset, arming or flight validation was performed.

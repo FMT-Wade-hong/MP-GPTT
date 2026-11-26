@@ -1,288 +1,244 @@
 using System;
-using System.Configuration;
-using System.IO;
-using System.Xml.Linq;
-using System.Linq;
-using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
+using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
 using log4net;
-using SharpCompress.Compressors.Xz;
 
 namespace MissionPlanner.Utilities
 {
     public static class ParameterMetaDataRepositoryAPMpdef
     {
-        private static readonly ILog log =
-            LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
-        private static Dictionary<string,XDocument> _parameterMetaDataXML = new Dictionary<string, XDocument>();
-
-        private static string[] vehicles = new[]
+        private static readonly ILog log = LogManager.GetLogger(typeof(ParameterMetaDataRepositoryAPMpdef));
+        private static readonly ConcurrentDictionary<string, Dictionary<string, Dictionary<string, string>>> Documents =
+            new ConcurrentDictionary<string, Dictionary<string, Dictionary<string, string>>>();
+        private static readonly ConcurrentDictionary<string, Lazy<bool>> CheckedFiles = new ConcurrentDictionary<string, Lazy<bool>>();
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private static readonly ConcurrentDictionary<string, DateTime> RetryAfter = new ConcurrentDictionary<string, DateTime>();
+        private static readonly string[] vehicles = { "SITL", "AP_Periph", "ArduSub", "Rover", "ArduCopter", "ArduPlane", "AntennaTracker", "Blimp", "Heli" };
+        private static readonly string[] vehicles_versioned = { "Copter", "Plane", "Rover", "Sub", "Tracker" };
+        // Scope TLS to metadata downloads; legacy process defaults must not break HTTPS.
+        private static HttpClient client = new HttpClient(new HttpClientHandler
         {
-             "SITL", "AP_Periph", "ArduSub", "Rover", "ArduCopter",
-            "ArduPlane", "AntennaTracker", "Blimp", "Heli"      
-        };
-
-        private static string[] vehicles_versioned = new[] 
+            SslProtocols = System.Security.Authentication.SslProtocols.Tls12
+        });
+        private static TimeSpan DownloadTimeout = TimeSpan.FromSeconds(12);
+        private const int MaxDocumentBytes = 32 * 1024 * 1024;
+        private static int revision;
+        public static int Revision => Volatile.Read(ref revision);
+        public static event Action<string> MetadataUpdated;
+        internal static IEnumerable<string> AvailableVersions
         {
-            "Copter", "Plane", "Rover", "Sub", "Tracker"
-        };
-
-        static string url = "https://autotest.ardupilot.org/Parameters/{0}/apm.pdef.xml.gz";
-
-        static string urlversioned = "https://autotest.ardupilot.org/Parameters/versioned/{0}/stable-{1}/apm.pdef.xml";
-
-        static ParameterMetaDataRepositoryAPMpdef()
-        {
-            GetMetaData();
+            get
+            {
+                var keys = new HashSet<string>(Documents.Keys.Where(IsVersionKey), StringComparer.Ordinal);
+                foreach (var directory in new[] { CacheDirectory, Settings.GetDataDirectory() }.Distinct())
+                {
+                    try
+                    {
+                        if (!Directory.Exists(directory)) continue;
+                        foreach (var file in Directory.GetFiles(directory, "*.apm.pdef.xml"))
+                        {
+                            var key = Path.GetFileName(file).Replace(".apm.pdef.xml", "");
+                            if (IsVersionKey(key)) keys.Add(key);
+                        }
+                    }
+                    catch (Exception ex) { log.Warn("Could not enumerate cached parameter versions", ex); }
+                }
+                return keys;
+            }
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ParameterMetaDataRepository"/> class.
-        /// </summary>
+        // A user-writable cache avoids requiring elevation for ProgramData.
+        private static string CacheDirectory => Path.Combine(Settings.GetUserDataDirectory(), "ParameterMetadata");
+        private static string url = "https://autotest.ardupilot.org/Parameters/{0}/apm.pdef.xml.gz";
+        private static string urlversioned = "https://autotest.ardupilot.org/Parameters/versioned/{0}/stable-{1}/apm.pdef.xml";
+
+        internal static bool IsVersionKey(string key) => Regex.IsMatch(key ?? "", @"^(Copter|Heli|Plane|Rover|Sub|Tracker)\d+\.\d+\.\d+$");
+        private static string PhysicalKey(string key) => key.StartsWith("Heli", StringComparison.Ordinal) && IsVersionKey(key)
+            ? "Copter" + key.Substring(4) : key;
+        private static string Normalize(string key)
+        {
+            switch (key)
+            {
+                case "ArduCopter2": return "ArduCopter";
+                case "ArduRover": return "Rover";
+                case "ArduTracker": return "AntennaTracker";
+                default: return key;
+            }
+        }
+
         public static void CheckLoad(string vehicle = "")
         {
-            if (!_parameterMetaDataXML.ContainsKey(vehicle))
-                Reload(vehicle);
+            vehicle = Normalize(vehicle);
+            if (string.IsNullOrEmpty(vehicle)) return;
+            var physical = PhysicalKey(vehicle);
+            _ = CheckedFiles.GetOrAdd(physical, name => new Lazy<bool>(() => { Reload(name); return true; },
+                LazyThreadSafetyMode.ExecutionAndPublication)).Value;
         }
 
-        public static async Task GetMetaDataVersioned(Version version)
+        public static bool ContainsVersion(string key)
         {
-            List<Task> tlist = new List<Task>();
-
-            vehicles_versioned.ForEach(a =>
-            {
-                try
-                {
-                    if (VersionedParameterMetadata.ContainsVersion(a + version.ToString())) return;
-                    var newurl = String.Format(urlversioned, a, version.ToString());
-                    var file = Path.Combine(Settings.GetDataDirectory(), a + version.ToString() + ".apm.pdef.xml");
-                    if (File.Exists(file))
-                        if (new FileInfo(file).LastWriteTime.AddDays(7) > DateTime.Now)
-                            return;
-                    var dltask = Download.getFilefromNetAsync(newurl, file);
-                    tlist.Add(dltask);
-                }
-                catch (Exception ex) { log.Error(ex); }
-            });
-
-            await Task.WhenAll(tlist);
-
-            vehicles_versioned.ForEach(a =>
-            {
-                try
-                {
-                    Reload(a + version.ToString());
-
-                    // Keep releases under their own key. Replacing a generic
-                    // vehicle's document leaks this version to other connections.
-                }
-                catch (Exception ex) { log.Error(ex); }
-            });
+            CheckLoad(key);
+            return key != null && Documents.ContainsKey(Normalize(key));
         }
 
-        public static async Task GetMetaData(bool force = false)
+        // Existing callers can request all families; each succeeds/fails independently.
+        public static Task GetMetaDataVersioned(Version version)
         {
-            List<Task> tlist = new List<Task>();
+            if (version == null || version.Build < 0) return Task.CompletedTask;
+            return Task.WhenAll(vehicles_versioned.Select(family => GetMetaDataVersioned(family + version.ToString(3))));
+        }
 
-            vehicles.ForEach(a =>
+        public static Task<bool> GetMetaDataVersioned(string key, bool force = false)
+        {
+            if (!IsVersionKey(key)) return Task.FromResult(false);
+            if (VersionedParameterMetadata.ContainsVersion(key)) return Task.FromResult(true);
+            var physical = PhysicalKey(key);
+            var match = Regex.Match(physical, @"^([A-Za-z]+)(\d+\.\d+\.\d+)$");
+            return Update(physical, String.Format(urlversioned, match.Groups[1].Value, match.Groups[2].Value), force);
+        }
+
+        public static Task GetMetaData(bool force = false) => Task.WhenAll(vehicles.Select(
+            vehicle => Update(vehicle, String.Format(url, vehicle), force)));
+
+        private static async Task<bool> Update(string key, string address, bool force)
+        {
+            var gate = Gates.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
+            await gate.WaitAsync().ConfigureAwait(false);
+            try
             {
-                try
-                {
-                    var newurl = String.Format(url, a);
-                    // try the gzipped version first
-                    var file = Path.Combine(Settings.GetDataDirectory(), a + ".apm.pdef.xml.gz");
-                    if(File.Exists(file))
-                        if (new FileInfo(file).LastWriteTime.AddDays(7) > DateTime.Now && !force)
-                            return;
-                    // try just the xml
-                    var file2 = Path.Combine(Settings.GetDataDirectory(), a + ".apm.pdef.xml");
-                    if (File.Exists(file2))
-                        if (new FileInfo(file2).LastWriteTime.AddDays(7) > DateTime.Now && !force)
-                            return;
-                    var dltask = Download.getFilefromNetAsync(newurl, file);
-                    tlist.Add(dltask);
-                }
-                catch (Exception ex) { log.Error(ex); }
-            });
+                CheckLoad(key);
+                var file = Path.Combine(CacheDirectory, key + ".apm.pdef.xml");
+                if (!force && RetryAfter.TryGetValue(key, out var retry) && retry > DateTime.UtcNow)
+                    return Documents.ContainsKey(key);
+                if (!force && Documents.ContainsKey(key) && File.Exists(file) &&
+                    File.GetLastWriteTimeUtc(file).AddDays(7) > DateTime.UtcNow) return true;
 
-            await Task.WhenAll(tlist);
-
-            vehicles.ForEach(a =>
-            {
-                try
+                Directory.CreateDirectory(CacheDirectory);
+                foreach (var candidate in new[] { address, address.EndsWith(".gz", StringComparison.Ordinal) ? address.Substring(0, address.Length - 3) : address + ".gz" })
                 {
-                    var fileout = Path.Combine(Settings.GetDataDirectory(), a + ".apm.pdef.xml");
-                    var fileouttemp = Path.Combine(Path.GetTempFileName());
-                    var file = Path.Combine(Settings.GetDataDirectory(), a + ".apm.pdef.xml.gz");
-                    if (File.Exists(file))
+                    string temporary = null;
+                    try
                     {
-                        // drop out to prevent unnessary fileio at startup
-                        if (File.Exists(fileout) && new FileInfo(fileout).LastWriteTime.AddDays(7) > DateTime.Now && !force)
-                            return;
-                        using (var read = File.OpenRead(file))
+                        using (var timeout = new CancellationTokenSource(DownloadTimeout))
+                        using (var response = await client.GetAsync(candidate, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false))
                         {
-                            //if (XZStream.IsXZStream(read))
+                            response.EnsureSuccessStatusCode();
+                            if (response.Content.Headers.ContentLength > MaxDocumentBytes) throw new InvalidDataException("Metadata response too large");
+                            using (var source = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                            using (var bytes = new MemoryStream())
                             {
-                                read.Position = 0;
-                                var stream = new GZipStream(read, CompressionMode.Decompress);
-                                //var stream = new XZStream(read);
-                                using (var outst = File.Open(fileouttemp, FileMode.Create))
+                                var buffer = new byte[16384];
+                                int count;
+                                while ((count = await source.ReadAsync(buffer, 0, buffer.Length, timeout.Token).ConfigureAwait(false)) > 0)
                                 {
-                                    stream.CopyTo(outst);
+                                    if (bytes.Length + count > MaxDocumentBytes) throw new InvalidDataException("Metadata response too large");
+                                    bytes.Write(buffer, 0, count);
                                 }
-                                // move after good decompress
-                                File.Delete(fileout);
-                                File.Move(fileouttemp, fileout);
+                                bytes.Position = 0;
+                                XDocument document;
+                                if (candidate.EndsWith(".gz", StringComparison.Ordinal))
+                                {
+                                    using (var gzip = new GZipStream(bytes, CompressionMode.Decompress, true)) document = ReadDocument(gzip, key);
+                                }
+                                else document = ReadDocument(bytes, key);
+                                // Failed downloads must retain the last good file and index.
+                                temporary = file + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                                document.Save(temporary);
+                                if (File.Exists(file)) File.Replace(temporary, file, null);
+                                else File.Move(temporary, file);
+                                temporary = null;
+                                Publish(key, document);
+                                RetryAfter.TryRemove(key, out _);
+                                return true;
                             }
                         }
                     }
+                    catch (Exception ex) { log.Warn("Parameter metadata download failed: " + candidate, ex); }
+                    finally { if (temporary != null) { try { File.Delete(temporary); } catch { } } }
                 }
-                catch (Exception ex)
-                {
-                    log.Error(ex);
-                }
-            });
+                RetryAfter[key] = DateTime.UtcNow.AddMinutes(2);
+                return Documents.ContainsKey(key);
+            }
+            catch (Exception ex)
+            {
+                RetryAfter[key] = DateTime.UtcNow.AddMinutes(2);
+                log.Warn("Parameter metadata cache update failed: " + key, ex);
+                return Documents.ContainsKey(key);
+            }
+            finally { gate.Release(); }
+        }
 
-            Reset();
+        private static XDocument ReadDocument(Stream stream, string key)
+        {
+            using (var reader = XmlReader.Create(stream, new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null, MaxCharactersInDocument = MaxDocumentBytes
+            }))
+            {
+                var document = XDocument.Load(reader);
+                if (document.Root?.Name.LocalName != "paramfile" || !document.Descendants("param").Any())
+                    throw new InvalidDataException("Empty or invalid parameter metadata");
+                var family = Regex.Match(PhysicalKey(key), @"^([A-Za-z]+)\d").Groups[1].Value;
+                var expected = family == "Copter" ? "ArduCopter" : family == "Plane" ? "ArduPlane" :
+                    family == "Sub" ? "ArduSub" : family == "Tracker" ? "AntennaTracker" : family;
+                if (expected.Length > 0 && !document.Descendants("parameters").Any(node => (string)node.Attribute("name") == expected))
+                    throw new InvalidDataException("Parameter metadata vehicle family mismatch");
+                return document;
+            }
+        }
+
+        private static void Publish(string key, XDocument document)
+        {
+            Documents[key] = VersionedParameterMetadata.BuildIndex(key, document);
+            if (key.StartsWith("Copter", StringComparison.Ordinal) && IsVersionKey(key))
+                Documents["Heli" + key.Substring(6)] = VersionedParameterMetadata.BuildIndex("Heli" + key.Substring(6), document);
+            Interlocked.Increment(ref revision);
+            var handlers = MetadataUpdated;
+            if (handlers != null)
+                foreach (Action<string> handler in handlers.GetInvocationList())
+                    try { handler(key); } catch (Exception ex) { log.Warn("Metadata refresh subscriber failed", ex); }
         }
 
         public static void Reset()
         {
-            _parameterMetaDataXML.Clear();
+            Documents.Clear(); CheckedFiles.Clear(); RetryAfter.Clear();
+            Interlocked.Increment(ref revision);
         }
 
         public static void Reload(string vehicle = "")
         {
-            string paramMetaDataXMLFileName =
-                String.Format("{0}{1}", Settings.GetDataDirectory(), vehicle + ".apm.pdef.xml");
-
-            try
+            vehicle = Normalize(vehicle);
+            if (String.IsNullOrEmpty(vehicle) || (!vehicles.Contains(vehicle) && !IsVersionKey(vehicle))) return;
+            var key = PhysicalKey(vehicle);
+            foreach (var directory in new[] { CacheDirectory, Settings.GetDataDirectory() }.Distinct())
             {
-                if (File.Exists(paramMetaDataXMLFileName))
-                {
-                    _parameterMetaDataXML[vehicle] = XDocument.Load(paramMetaDataXMLFileName);
-                }
-
-            }
-            catch (System.Xml.XmlException ex) 
-            {
+                var file = Path.Combine(directory, key + ".apm.pdef.xml");
                 try
                 {
-                    if (File.Exists(paramMetaDataXMLFileName))
-                        File.Delete(paramMetaDataXMLFileName);
+                    if (!File.Exists(file)) continue;
+                    using (var input = File.OpenRead(file)) Publish(key, ReadDocument(input, key));
+                    return;
                 }
-                catch { }
-                log.Error(paramMetaDataXMLFileName);
-                log.Error(ex);
-            }
-            catch (Exception ex)
-            {
-                log.Error(paramMetaDataXMLFileName);
-                log.Error(ex);
+                catch (Exception ex) { log.Warn("Could not load parameter metadata: " + file, ex); }
             }
         }
 
-        /// <summary>
-        /// Gets the parameter meta data.
-        /// </summary>
-        /// <param name="nodeKey">The node key.</param>
-        /// <param name="metaKey">The meta key.</param>
-        /// <returns></returns>
         public static string GetParameterMetaData(string nodeKey, string metaKey, string vechileType)
         {
-            // remap names
-            if (vechileType == "ArduCopter2")
-                vechileType = "ArduCopter";
-            if (vechileType == "ArduRover")
-                vechileType = "Rover";
-            if (vechileType == "ArduTracker")
-                vechileType = "AntennaTracker";
-
+            if (string.IsNullOrWhiteSpace(nodeKey) || string.IsNullOrWhiteSpace(metaKey) || string.IsNullOrEmpty(vechileType)) return string.Empty;
+            vechileType = Normalize(vechileType);
             CheckLoad(vechileType);
-
-            // remap keys
-            if (metaKey == ParameterMetaDataConstants.DisplayName)
-                metaKey = "humanName";
-            if (metaKey == ParameterMetaDataConstants.Description)
-                metaKey = "documentation";
-            if (metaKey == ParameterMetaDataConstants.User)
-                metaKey = "user";
-
-            if (_parameterMetaDataXML.ContainsKey(vechileType))
-            {
-                try
-                {
-                    var prefix = vechileType;
-                    var snapshot = System.Text.RegularExpressions.Regex.Match(vechileType, @"^(Copter|Plane|Rover|Sub|Tracker)\d+\.\d+\.\d+$");
-                    if (snapshot.Success)
-                    {
-                        switch (snapshot.Groups[1].Value)
-                        {
-                            case "Copter": prefix = "ArduCopter"; break;
-                            case "Plane": prefix = "ArduPlane"; break;
-                            case "Sub": prefix = "ArduSub"; break;
-                            case "Tracker": prefix = "AntennaTracker"; break;
-                            default: prefix = "Rover"; break;
-                        }
-                    }
-                    var vechileKey = prefix + ":" + nodeKey;
-                    foreach (var paramfile in _parameterMetaDataXML[vechileType].Element("paramfile").Elements())
-                    {
-                        foreach (var parameters in paramfile.Elements())
-                        {
-                            if (parameters.HasAttributes)
-                            {
-                                foreach (var param in parameters.Elements())
-                                {
-                                    if (param.Attribute("name").Value == vechileKey ||
-                                        param.Attribute("name").Value == nodeKey)
-                                    {
-                                        if (param.Attribute(metaKey) != null)
-                                        {
-                                            return param.Attribute(metaKey).Value;
-                                        }
-                                        if (metaKey == ParameterMetaDataConstants.Values)
-                                        {
-                                            var ans = "";
-                                            param.Elements("values").Elements().ForEach(a =>
-                                            {
-                                                if (a.Name == "value")
-                                                {
-                                                    var code = a.Attribute("code");
-                                                    var value = a.Value.ToString();
-                                                    ans += String.Format("{0}:{1},", code.Value, value);
-                                                }
-                                            });
-                                            return ans;
-                                        }
-                                        foreach (var xElement in param.Elements())
-                                        {
-                                            if (xElement.Name == "field")
-                                            {
-                                                var name = xElement.Attribute("name");
-                                                if (name != null && name.Value == metaKey)
-                                                {
-                                                    return xElement.Value;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    log.Error(ex);
-                } 
-            }
-
-            return string.Empty;
+            return Documents.TryGetValue(vechileType, out var index) && index.TryGetValue(nodeKey, out var parameter) &&
+                parameter.TryGetValue(metaKey, out var value) ? value : string.Empty;
         }
     }
 }
